@@ -1132,9 +1132,9 @@ fun VincularPropiedad(tiene: Boolean, alElegir: (Resultado?) -> Unit) {
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             if (tiene) BotonTexto("Desvincular", { alElegir(null); cerrar() }, Modifier.weight(1f), color = C.error)
-            BotonSecundario("Cerrar", { cerrar() }, Modifier.weight(1f))
+            BotonSecundario("Cerrar", { cerrar() })
         }
     }
 }
@@ -1161,8 +1161,9 @@ fun GuardarNumero(waId: String, nombre: String, tipo: String, guardar: suspend (
             )
         }
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Como el BotonSecundario de iOS: a su ancho; «Guardar» se queda con el resto.
+            BotonSecundario("Cancelar", { cerrar() })
             BotonPrincipal(if (creando) "Guardando…" else "Guardar", {
                 alcance.launch {
                     creando = true
@@ -1208,8 +1209,9 @@ fun GuardarRespuesta(texto: String, alGuardar: (RespuestaGuardada) -> Unit) {
         Etiquetado("Nombre") { CampoCorredor(titulo, { titulo = it }, sinCorrector = true) }
         Texto("Corto, para encontrarla: «Horarios», «Requisitos».", Estilo.footnote, C.texto3)
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Como el BotonSecundario de iOS: a su ancho; «Guardar» se queda con el resto.
+            BotonSecundario("Cancelar", { cerrar() })
             BotonPrincipal("Guardar", { alcance.launch { guardar() } }, Modifier.weight(1f), habilitado = titulo.trim().isNotEmpty() && !guardando)
         }
     }

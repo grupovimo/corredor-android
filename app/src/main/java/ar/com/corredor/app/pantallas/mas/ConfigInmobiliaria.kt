@@ -227,8 +227,11 @@ fun ConfigInmobiliaria() {
             Separador()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth().deshabilitado(!duenio), verticalAlignment = Alignment.CenterVertically) {
-                    Texto("Zona horaria", Estilo.body, C.texto, Modifier.weight(1f))
-                    SelectorMenu(ConfigInmobiliaria.opcionesZona(f), zona, { zona = it }, descripcion = "Zona horaria")
+                    // El Picker de iOS: la etiqueta en un renglón y el valor a la derecha, que es el que se acorta.
+                    Texto("Zona horaria", Estilo.body, C.texto, lineas = 1)
+                    Box(Modifier.weight(1f).padding(start = 12.dp), contentAlignment = Alignment.CenterEnd) {
+                        SelectorMenu(ConfigInmobiliaria.opcionesZona(f), zona, { zona = it }, descripcion = "Zona horaria")
+                    }
                 }
                 Texto("Con ella se calcula «hoy» en la agenda, los vencimientos y los avisos.", Estilo.footnote, C.texto3)
                 ErrorDeCampo(campos["zonaHoraria"])

@@ -468,7 +468,8 @@ private fun TarjetaAjusteFicha(s: FichaEstado, k: ContratoAPI, a: AjusteContrato
             Icono("arrow.right", 20f, C.oro, peso = Peso.bold)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Texto("Desde ${TextosCobro.nombreMes(p.fecha)}", Estilo.caption, claro)
-                Texto(p.monto?.let { Formato.plata(it, moneda) } ?: "a calcular", Estilo.titulo3, C.oro)
+                // En iOS entra en un renglón; acá «ARS» quedaba arriba y el monto abajo.
+                Texto(p.monto?.let { Formato.plata(it, moneda) } ?: "a calcular", Estilo.titulo3, C.oro, lineas = 1, escalaMinima = 0.7f)
             }
             if (p.monto != null) Texto("+${FichaContrato.dec(sube * 100, 1)} %", Estilo.subheadFuerte, Color.White)
         }

@@ -78,6 +78,7 @@ internal object Simbolos {
         "doc" to '\ue873', // description
         "doc.badge.plus" to '\ue89c', // note_add
         "doc.on.doc" to '\ue14d', // content_copy
+        "doc.on.clipboard" to '\ue14f', // content_paste
         "doc.plaintext" to '\uef42', // article
         "doc.richtext" to '\uf009', // feed
         "doc.text" to '\ue873', // description

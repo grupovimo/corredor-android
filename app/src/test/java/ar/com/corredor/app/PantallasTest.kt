@@ -243,6 +243,8 @@ class PantallasTest {
     /** Monta la vista con el Estado (en una pila, como el NavigationStack de iOS: la barra con el título que pone la
      *  pantalla) y captura claro y oscuro. */
     private fun montar(nombre: String, e: Estado = estado(), espera: Long = 1500, vista: @Composable () -> Unit) {
+        // El acento es global: sin esto, la marca que cargó la pantalla anterior teñía la siguiente.
+        ar.com.corredor.app.tema.Acento.actual = null
         val tema = mutableStateOf("claro")
         compose.setContent {
             TemaCorredor(tema.value) {

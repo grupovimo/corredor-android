@@ -72,6 +72,7 @@ crown=crown
 doc=description
 doc.badge.plus=note_add
 doc.on.doc=content_copy
+doc.on.clipboard=content_paste
 doc.plaintext=article
 doc.richtext=feed
 doc.text=description

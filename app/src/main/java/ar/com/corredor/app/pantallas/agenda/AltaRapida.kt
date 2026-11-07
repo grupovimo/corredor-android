@@ -371,8 +371,9 @@ fun LicenciasAgenda() {
                     Etiquetado("Hasta", Modifier.weight(1f)) { RenglonFecha("", hasta, { hasta = it }, minimo = desde) }
                 }
                 error?.let { MensajeError(it) }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f), lleno = true)
+                // Como en iOS: «Cancelar» a su ancho y «Cargar» con el resto.
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    BotonSecundario("Cancelar", { cerrar() })
                     BotonPrincipal(if (guardando) "Cargando…" else "Cargar", { alcance.launch { guardar() } }, Modifier.weight(1f), habilitado = !guardando)
                 }
             }

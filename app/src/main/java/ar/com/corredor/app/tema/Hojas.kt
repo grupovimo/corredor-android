@@ -52,10 +52,28 @@ import coil3.compose.AsyncImage
  *  cancelar a la izquierda (`.cancellationAction`) y lo de confirmar a la derecha (`.confirmationAction`). */
 @Composable
 fun BarraHoja(titulo: String, izquierda: (@Composable RowScope.() -> Unit)? = null, derecha: (@Composable RowScope.() -> Unit)? = null) {
-    Box(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp)) {
-        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) { izquierda?.invoke(this) }
-        Texto(titulo, Estilo.headline, C.texto, Modifier.align(Alignment.Center).widthIn(max = 220.dp), lineas = 1, alinear = TextAlign.Center)
-        Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) { derecha?.invoke(this) }
+    // Como la barra de iOS: el título centrado en el ancho que dejan los botones (el mismo a cada lado, el del más
+    // ancho) y con «…» si no entra; antes se montaba sobre «Seguir después».
+    androidx.compose.ui.layout.Layout(
+        content = {
+            Row(verticalAlignment = Alignment.CenterVertically) { izquierda?.invoke(this) }
+            Texto(titulo, Estilo.headline, C.texto, lineas = 1, alinear = TextAlign.Center)
+            Row(verticalAlignment = Alignment.CenterVertically) { derecha?.invoke(this) }
+        },
+        modifier = Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp),
+    ) { medibles, limites ->
+        val libre = limites.copy(minWidth = 0, minHeight = 0)
+        val izq = medibles[0].measure(libre)
+        val der = medibles[2].measure(libre)
+        val lado = maxOf(izq.width, der.width) + 8.dp.roundToPx()
+        val ancho = limites.maxWidth
+        val tit = medibles[1].measure(libre.copy(maxWidth = (ancho - 2 * lado).coerceAtLeast(0)))
+        val alto = limites.maxHeight
+        layout(ancho, alto) {
+            izq.placeRelative(0, (alto - izq.height) / 2)
+            tit.placeRelative((ancho - tit.width) / 2, (alto - tit.height) / 2)
+            der.placeRelative(ancho - der.width, (alto - der.height) / 2)
+        }
     }
 }
 
@@ -284,26 +302,26 @@ fun BotonAccion(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifie
     Tocable(alTocar = alTocar, modifier = modifier, habilitado = habilitado, hundir = false) { apretado ->
         Row(
             Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (!habilitado) 0.5f else if (apretado) 0.8f else 1f).clip(RoundedCornerShape(12.dp))
-                .background(C.accion).padding(horizontal = 10.dp),
+                .background(C.accion),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (simbolo != null) Icono(simbolo, 15f, C.sobreAccion)
-            Texto(texto, Estilo(15f, Peso.semibold), C.sobreAccion, lineas = 1, alinear = TextAlign.Center)
+            Texto(texto, Estilo(15f, Peso.semibold), C.sobreAccion, alinear = TextAlign.Center)
         }
     }
 }
 
-/** Su par hundido: 15/600 en tinta, 44 de alto, fondo `hundida`, radio 12. */
+/** Su par hundido: 15/600 en tinta, 44 de alto, fondo `hundida`, radio 12. Sin relleno y en dos renglones si no entra, como iOS. */
 @Composable
 fun BotonHundido(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifier, simbolo: String? = null, habilitado: Boolean = true) {
     Tocable(alTocar = alTocar, modifier = modifier, habilitado = habilitado, hundir = false) { apretado ->
         Row(
             Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (!habilitado) 0.5f else if (apretado) 0.8f else 1f).clip(RoundedCornerShape(12.dp))
-                .background(C.hundida).padding(horizontal = 10.dp),
+                .background(C.hundida),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (simbolo != null) Icono(simbolo, 15f, C.texto)
-            Texto(texto, Estilo(15f, Peso.semibold), C.texto, lineas = 1, alinear = TextAlign.Center)
+            Texto(texto, Estilo(15f, Peso.semibold), C.texto, alinear = TextAlign.Center)
         }
     }
 }

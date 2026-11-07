@@ -80,7 +80,8 @@ fun TarifasTemporada(propiedad: String) {
             editando = TarifaAPI(id = "", desde = hoy.toString(), hasta = hoy.plusDays(30).toString(), precio = 0.0, moneda = "USD", periodo = "noche")
         }
     }) else null) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // La List .insetGrouped de iOS: la tarjeta con 16 de margen a los costados (Bloque no lo trae).
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Bloque {
                 if (lista.isEmpty()) Box(Modifier.padding(16.dp)) { Texto("Cargá la tarifa de cada temporada (alta, baja, fines de semana largos).", Estilo.body, C.texto2) }
                 lista.forEachIndexed { i, t ->

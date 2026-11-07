@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.nucleo.*
@@ -416,9 +417,9 @@ fun PantallaReserva(id: String) {
                 BotonPrincipal("Llamar a ${r.quien}", { Afuera.llamar(ti) }, simbolo = "phone.fill")
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BotonHundido("Aceptada", { cerrarCon("concretada", null) }, Modifier.weight(1f), habilitado = !ocupado)
-                BotonHundido(if (ocupado) "Extendiendo…" else "Extender 48 h", { estado.tarea { extender(r) } }, Modifier.weight(1f), habilitado = !ocupado)
-                BotonHundido("Se cayó", { if (r.sena != null) preguntarSena = true else cerrarCon("caida", null) }, Modifier.weight(1f), habilitado = !ocupado)
+                SalidaHundida("Aceptada", { cerrarCon("concretada", null) }, Modifier.weight(1f), habilitado = !ocupado)
+                SalidaHundida(if (ocupado) "Extendiendo…" else "Extender 48 h", { estado.tarea { extender(r) } }, Modifier.weight(1f), habilitado = !ocupado)
+                SalidaHundida("Se cayó", { if (r.sena != null) preguntarSena = true else cerrarCon("caida", null) }, Modifier.weight(1f), habilitado = !ocupado)
             }
             Texto(Formato.sinViudas("«Se cayó» te pregunta si devolvés la seña y deja la propiedad disponible otra vez, con deshacer."), Estilo.footnote, C.texto2)
         }
@@ -555,6 +556,21 @@ fun NuevaReservaVenta(propiedadId: String, titulo: String, moneda: String = "USD
                 RenglonHora("a las", hora, { hora = it })
                 (errores["venceEl"] ?: errores["venceHora"])?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) { MensajeError(it) } }
             }
+        }
+    }
+}
+
+/** El BotonHundido de iOS (Inicio.swift) tal cual: sin relleno a los costados y sin cortar el texto, para que
+ *  «Extender 48 h» entre en un tercio de la fila (el de `tema` le suma 10 dp por lado y lo cortaba con «…»). */
+@Composable
+private fun SalidaHundida(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true) {
+    Tocable(alTocar = alTocar, modifier = modifier, habilitado = habilitado, hundir = false) { apretado ->
+        Box(
+            Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (!habilitado) 0.5f else if (apretado) 0.8f else 1f)
+                .clip(RoundedCornerShape(12.dp)).background(C.hundida),
+            contentAlignment = Alignment.Center,
+        ) {
+            Texto(texto, Estilo(15f, Peso.semibold, relativo = Relativo.subheadline), C.texto, alinear = TextAlign.Center)
         }
     }
 }

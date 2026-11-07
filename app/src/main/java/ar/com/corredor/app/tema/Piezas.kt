@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -165,7 +166,12 @@ fun BotonPrincipal(
     val tinta = C.sobreAccion
     Tocable(alTocar, modifier, habilitado, hundir = false) { apretado ->
         Row(
-            Modifier.alpha(if (habilitado) (if (apretado) 0.85f else 1f) else 0.5f)
+            // La opacidad sobre el botón y su sombra, como el .opacity de iOS; sin capa aparte (ModulateAlpha),
+            // que recortaba la sombra y dejaba esquinas cuadradas abajo con el botón apagado.
+            Modifier.graphicsLayer {
+                alpha = if (habilitado) (if (apretado) 0.85f else 1f) else 0.5f
+                compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.ModulateAlpha
+            }
                 .sombra(forma, C.sombraPrimario, 8.dp, y = 6.dp)
                 .then(if (lleno) Modifier.fillMaxWidth() else Modifier).heightIn(min = alto)
                 .clip(forma).background(accion).padding(horizontal = 22.dp),

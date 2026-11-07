@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.graphics.BitmapShader
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
+import androidx.compose.ui.graphics.toArgb
 import android.graphics.Shader
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -199,14 +200,19 @@ fun FondoApp(modifier: Modifier = Modifier) {
     val grano = remember(oscuro) {
         runCatching { BitmapFactory.decodeResource(ctx.resources, if (oscuro) Imagenes.granoClaro else Imagenes.grano) }.getOrNull()
     }
-    val pintura = remember(grano, densidad) {
+    val base = fondo.toArgb()
+    val pintura = remember(grano, densidad, oscuro, base) {
         grano?.let { b ->
+            // En claro, el `.blendMode(.multiply)` de iOS hecho a mano: el mosaico ya mezclado con el fondo
+            // (fondo × grano, según la transparencia de cada punto) y opaco. Pintarlo con PorterDuff MULTIPLY
+            // también multiplica la transparencia y dejaba ver el verde del grano en todas las pantallas.
+            val mosaico = if (oscuro) b else multiplicar(b, base)
             android.graphics.Paint().apply {
-                shader = BitmapShader(b, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT).apply {
+                shader = BitmapShader(mosaico, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT).apply {
                     // El @3x de iOS: 660 px son 220 pt.
                     setLocalMatrix(android.graphics.Matrix().apply { setScale(densidad / 3f, densidad / 3f) })
                 }
-                if (oscuro) alpha = (0.55f * 255).toInt() else xfermode = PorterDuffXfermode(PorterDuff.Mode.MULTIPLY)
+                if (oscuro) alpha = (0.55f * 255).toInt()
             }
         }
     }
@@ -215,6 +221,23 @@ fun FondoApp(modifier: Modifier = Modifier) {
         val p = pintura ?: return@drawBehind
         drawIntoCanvas { it.nativeCanvas.drawRect(0f, 0f, size.width, size.height, p) }
     })
+}
+
+/** El grano multiplicado sobre un color de fondo, opaco: cada canal es fondo × (1 − a + a × grano). */
+private fun multiplicar(grano: android.graphics.Bitmap, fondo: Int): android.graphics.Bitmap {
+    val w = grano.width; val h = grano.height
+    val px = IntArray(w * h)
+    grano.getPixels(px, 0, w, 0, 0, w, h)
+    val fr = (fondo shr 16) and 0xFF; val fg = (fondo shr 8) and 0xFF; val fb = fondo and 0xFF
+    for (i in px.indices) {
+        val c = px[i]
+        val a = ((c ushr 24) and 0xFF) / 255f
+        // Los colores del bitmap no vienen premultiplicados (getPixels devuelve ARGB «derecho»).
+        val r = ((c shr 16) and 0xFF) / 255f; val g = ((c shr 8) and 0xFF) / 255f; val bl = (c and 0xFF) / 255f
+        val mr = (fr * (1 - a + a * r)).toInt(); val mg = (fg * (1 - a + a * g)).toInt(); val mb = (fb * (1 - a + a * bl)).toInt()
+        px[i] = (0xFF shl 24) or (mr shl 16) or (mg shl 8) or mb
+    }
+    return android.graphics.Bitmap.createBitmap(px, w, h, android.graphics.Bitmap.Config.ARGB_8888)
 }
 
 /** «ARS 540.000», «USD 172.000» (sin decimales si es entero). */

@@ -524,7 +524,7 @@ fun SeCayo(propiedad: String, contacto: String?, alElegir: (String) -> Unit) {
     var otro by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().padding(horizontal = 20.dp).padding(bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Grabber() }
-        ConIcono("¿Por qué se cayó $propiedad?", "heart.slash", Estilo.tituloHojaChico, C.texto)
+        ConIcono(Formato.sinViudas("¿Por qué se cayó $propiedad?"), "heart.slash", Estilo.tituloHojaChico, C.texto)
         FlowLayout(espacio = 8.dp) {
             Operacion.motivos.forEach { m ->
                 val on = elegido == m

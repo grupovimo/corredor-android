@@ -483,10 +483,12 @@ fun HojaResponderAviso(aviso: AvisoCentro, accion: AvisoCentro.Accion, mandar: s
         if (e != null) MensajeError(texto = e)
         else if (aviso.tipo == "mercadolibre") Texto("Mercado Libre no deja poner teléfonos.", Estilo.footnote, C.texto3)
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f))
+        // HStack de iOS: los secundarios a su medida (BotonSecundario no se estira) y el principal con el resto
+        // (maxWidth: .infinity), centrados en alto.
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            BotonSecundario("Cancelar", { cerrar() })
             val ruta = aviso.url?.let { Ruta.de(it) }
-            if (ruta != null) BotonSecundario("Abrir", { cerrar(); estado.ir(ruta) }, Modifier.weight(1f))
+            if (ruta != null) BotonSecundario("Abrir", { cerrar(); estado.ir(ruta) })
             BotonPrincipal(
                 if (mandando) "Mandando…" else (accion.titulo ?: "Responder"),
                 {

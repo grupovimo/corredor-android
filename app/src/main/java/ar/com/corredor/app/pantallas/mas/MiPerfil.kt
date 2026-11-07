@@ -378,7 +378,7 @@ fun MiPerfil() {
                         Box(Modifier.width(26.dp), contentAlignment = Alignment.Center) { Icono("map", 20f, C.accion) }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Texto("Recorrido del panel", Estilo.filaLista, C.texto)
-                            Texto("Dónde está cada cosa, en 5 pasos.", Estilo.footnote, C.texto2)
+                            Texto(Formato.sinViudas("Dónde está cada cosa, en 5 pasos."), Estilo.footnote, C.texto2)
                         }
                         BotonSecundario("Verlo", { estado.mostrarRecorrido = true })
                     }
