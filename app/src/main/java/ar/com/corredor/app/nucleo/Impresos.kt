@@ -210,7 +210,8 @@ object Impresor {
                 val x = m + i * (w + separacion)
                 f.trazo?.let { trazo(c, it, RectF(x, y, x + w, y + 50)) }
                 c.drawRect(x, y + 54, x + w, y + 54.7f, Paint().apply { color = tinta })
-                val centro = pintura(10f, tinta, negrita = true).apply { textAlign = Paint.Align.CENTER }
+                // 10/600 en iOS: la semibold del sistema es sans-serif-medium.
+                val centro = pintura(10f, tinta, media = true).apply { textAlign = Paint.Align.CENTER }
                 c.drawText(f.nombre ?: f.parte, x + w / 2, y + 68, centro)
                 c.drawText(f.parte, x + w / 2, y + 80, pintura(9f, gris).apply { textAlign = Paint.Align.CENTER })
             }

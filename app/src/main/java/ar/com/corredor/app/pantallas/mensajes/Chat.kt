@@ -125,7 +125,6 @@ fun Chat(id: String) {
     var parametros by remember { mutableStateOf<List<String>>(emptyList()) }
     var otra by remember { mutableStateOf(false) }
     var mandandoPlantilla by remember { mutableStateOf(false) }
-    var pasando by remember { mutableStateOf(false) }
     val grabadora = remember { Grabadora() }
     var errorCarga by remember { mutableStateOf<ErrorApi?>(null) }
 
@@ -162,7 +161,7 @@ fun Chat(id: String) {
         conv = c
         if (cambio) { texto = BorradorChat.textos.remove(c.id) ?: ""; chip = null; adjunto = null }
         cargarMensajes()
-        if ((c.noLeidos ?: 0) > 0) runCatching { estado.api.hacer("POST", "/v1/whatsapp/conversaciones/$id/leida") }
+        if ((c.noLeidos ?: 0) > 0) intentar { estado.api.hacer("POST", "/v1/whatsapp/conversaciones/$id/leida") }
         val p = c.propiedadId
         if (p != null) {
             ficha = estado.api.opcional<Propiedad>("/v1/propiedades/$p")
@@ -532,7 +531,7 @@ fun Chat(id: String) {
         abiertaR = false
         chip = "guardada"
         texto = Charla.completarRespuesta(r.texto, primero)
-        alcance.launch { runCatching { estado.api.hacer("POST", "/v1/respuestas-guardadas/${r.id}/uso") } }
+        alcance.launch { intentar { estado.api.hacer("POST", "/v1/respuestas-guardadas/${r.id}/uso") } }
     }
 
     fun elegirPlantilla(p: PlantillaWA) {
@@ -913,7 +912,7 @@ fun Chat(id: String) {
                         val habilitado = !(subiendo || (texto.trim().isEmpty() && adjunto == null))
                         Tocable(alTocar = { alcance.launch { mandar() } }, habilitado = habilitado, descripcion = "Enviar") {
                             Box(Modifier.size(36.dp).alpha(if (habilitado) 1f else 0.5f).clip(CircleShape).background(C.accion), contentAlignment = Alignment.Center) {
-                                Icono("arrow.up", 17f, C.sobreAccion)
+                                Icono("arrow.up", 17f, C.sobreAccion, peso = Peso.bold)
                             }
                         }
                     }
@@ -1024,9 +1023,14 @@ fun Chat(id: String) {
                         val o = c.operacionId
                         if (o != null) add(OpcionDeMenu("Ver la operación", "rectangle.split.3x1") { estado.abrir(AFichaOperacion(id = o)) })
                         else add(OpcionDeMenu("Crear operación", "rectangle.split.3x1") { alcance.launch { crearOperacion() } })
-                        add(OpcionDeMenu("Pasársela a otro agente", "arrow.left.arrow.right") { pasando = true })
+                        add(OpcionDeMenu("Pasársela a otro agente", "arrow.left.arrow.right", submenu = buildList {
+                            equipo.filter { it.rol != "lector" && it.usuarioId != c.agenteId }.forEach { p ->
+                                add(OpcionDeMenu(if (p.usuarioId == estado.usuario?.id) "${p.completo} (vos)" else p.completo, "") { alcance.launch { pasar(p.usuarioId, p.completo) } })
+                            }
+                            if (c.agenteId != null) add(OpcionDeMenu("Dejarla sin dueño", "person.slash") { alcance.launch { pasar(null, "") } })
+                        }))
                         add(OpcionDeMenu(if (c.propiedadId == null) "Vincular a una propiedad" else "Cambiar la propiedad", "link") { vincular = true })
-                        add(OpcionDeMenu("Archivar", "archivebox") { alcance.launch { archivar() } })
+                        add(OpcionDeMenu("Archivar", "archivebox", separadorAntes = true) { alcance.launch { archivar() } })
                     }
                     MenuBoton(opciones = opciones, descripcion = "Más acciones") {
                         Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("ellipsis.circle", 20f, C.accion) }
@@ -1058,19 +1062,6 @@ fun Chat(id: String) {
         }
     }
 
-    // «Pasársela a otro agente» (un submenú en iOS).
-    val cc = conv
-    Confirmacion(
-        visible = pasando, titulo = "Pasársela a otro agente", alCerrar = { pasando = false },
-        opciones = buildList {
-            if (cc != null) {
-                equipo.filter { it.rol != "lector" && it.usuarioId != cc.agenteId }.forEach { p ->
-                    add(OpcionConfirmacion(if (p.usuarioId == estado.usuario?.id) "${p.completo} (vos)" else p.completo) { alcance.launch { pasar(p.usuarioId, p.completo) } })
-                }
-                if (cc.agenteId != null) add(OpcionConfirmacion("Dejarla sin dueño") { alcance.launch { pasar(null, "") } })
-            }
-        },
-    )
     Hoja(visible = vincular, alCerrar = { vincular = false }, alturas = listOf(Altura.grande)) {
         VincularPropiedad(tiene = conv?.propiedadId != null) { p ->
             alcance.launch {
@@ -1214,7 +1205,7 @@ fun GuardarRespuesta(texto: String, alGuardar: (RespuestaGuardada) -> Unit) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Grabber() }
         ConIcono("Guardar como respuesta", "bolt", Estilo.tituloHojaChico, C.texto)
         Texto(Formato.sinViudas("La ve todo el equipo. Escribí «/» en un mensaje para usarla."), Estilo.subhead, C.texto2)
-        Etiquetado("Nombre") { CampoCorredor(titulo, { titulo = it }) }
+        Etiquetado("Nombre") { CampoCorredor(titulo, { titulo = it }, sinCorrector = true) }
         Texto("Corto, para encontrarla: «Horarios», «Requisitos».", Estilo.footnote, C.texto3)
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

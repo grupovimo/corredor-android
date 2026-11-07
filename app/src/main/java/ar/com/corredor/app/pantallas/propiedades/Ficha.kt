@@ -771,7 +771,7 @@ fun FichaPropiedad(
                     }
                 }, "Más") {
                     Box(Modifier.size(40.dp).clip(CircleShape).background(VeloCirculo), contentAlignment = Alignment.Center) {
-                        Icono("ellipsis", 18f, Color.White)
+                        Icono("ellipsis", 18f, Color.White, peso = Peso.semibold)
                     }
                 }
             }
@@ -978,7 +978,7 @@ private fun FilaPersonaFicha(t: String, d: String, tono: Tono, primera: Boolean,
 private fun CirculoFicha(icono: String, etiqueta: String, hacer: () -> Unit) {
     Tocable(hacer, descripcion = etiqueta) {
         Box(Modifier.size(40.dp).clip(CircleShape).background(VeloCirculo), contentAlignment = Alignment.Center) {
-            Icono(icono, 18f, Color.White)
+            Icono(icono, 18f, Color.White, peso = Peso.semibold)
         }
     }
 }
@@ -987,7 +987,7 @@ private fun CirculoFicha(icono: String, etiqueta: String, hacer: () -> Unit) {
 private fun CuadradoFicha(icono: String, etiqueta: String, hacer: () -> Unit) {
     Tocable(hacer, descripcion = etiqueta) {
         Box(Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)).background(C.hundida), contentAlignment = Alignment.Center) {
-            Icono(icono, 19f, C.texto)
+            Icono(icono, 19f, C.texto, peso = Peso.semibold)
         }
     }
 }

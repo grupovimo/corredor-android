@@ -62,7 +62,7 @@ fun Senal.Companion.cuando(f: Instant, ahora: Instant = Instant.now()): String {
     if (d == 0) return "hoy ${Formato.horaDe(f)}"
     if (d == 1) return "mañana ${Formato.horaDe(f)}"
     val z = f.atZone(Formato.zona)
-    return String.format("%02d/%02d ", z.dayOfMonth, z.monthValue) + Formato.horaDe(f)
+    return String.format(java.util.Locale.ROOT, "%02d/%02d ", z.dayOfMonth, z.monthValue) + Formato.horaDe(f)
 }
 
 /** La reserva vence a las 12 del día `venceEl`. */

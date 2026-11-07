@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -452,6 +454,8 @@ internal fun CampoCobro(
     marco: Boolean = true,
     habilitado: Boolean = true,
     alinear: TextAlign = TextAlign.Start,
+    /** `.submitLabel(.done)` + `.onSubmit`: «Listo» en el teclado corre esto. */
+    alListo: (() -> Unit)? = null,
 ) {
     val forma = RoundedCornerShape(12.dp)
     BasicTextField(
@@ -460,7 +464,8 @@ internal fun CampoCobro(
             .padding(horizontal = 14.dp, vertical = if (lineasMax > 1) 12.dp else 0.dp) else Modifier.heightIn(min = 44.dp)),
         enabled = habilitado,
         textStyle = estilo.ts().copy(color = C.texto, textAlign = alinear),
-        keyboardOptions = KeyboardOptions(keyboardType = teclado),
+        keyboardOptions = KeyboardOptions(keyboardType = teclado, imeAction = if (alListo != null) ImeAction.Done else ImeAction.Default),
+        keyboardActions = if (alListo != null) KeyboardActions(onDone = { alListo() }) else KeyboardActions.Default,
         singleLine = lineasMax == 1,
         minLines = lineasMin, maxLines = lineasMax,
         cursorBrush = SolidColor(C.accion),

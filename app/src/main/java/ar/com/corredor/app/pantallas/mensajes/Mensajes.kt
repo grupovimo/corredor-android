@@ -285,13 +285,14 @@ fun MensajesRaiz() {
 
     @Composable
     fun Avatar(x: FilaBandeja) {
-        Box(Modifier.size(51.dp)) {
+        // El círculo de 48 y el canal encima, corrido 3 abajo a la derecha (.overlay + .offset: no suma al tamaño).
+        Box(Modifier.size(48.dp)) {
             if (x.conversacion?.sinNombre == true) {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(C.azulFondo), contentAlignment = Alignment.Center) { Texto("+54", Estilo(13f, Peso.bold), C.azulTinta) }
             } else {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(C.hundida), contentAlignment = Alignment.Center) { Texto(Formato.iniciales(x.nombre), Estilo(15f, Peso.bold), C.texto) }
             }
-            Box(Modifier.align(Alignment.BottomEnd).size(22.dp).clip(CircleShape).background(C.superficie), contentAlignment = Alignment.Center) {
+            Box(Modifier.align(Alignment.BottomEnd).offset(3.dp, 3.dp).size(22.dp).clip(CircleShape).background(C.superficie), contentAlignment = Alignment.Center) {
                 when (x.canal) {
                     "wa" -> Image(painterResource(R.drawable.logo_whatsapp), null, Modifier.size(16.dp), contentScale = ContentScale.Fit)
                     "ml" -> Image(painterResource(R.drawable.logo_mercadolibre), null, Modifier.size(16.dp), contentScale = ContentScale.Fit)
@@ -358,9 +359,9 @@ fun MensajesRaiz() {
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                     Avatar(x)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                            Texto(x.nombre, Estilo(16f, if (espera) Peso.bold else Peso.medium), C.texto, Modifier.weight(1f), lineas = 1)
-                            Texto(cuando(x), Estilo.footnote, colorHora)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Texto(x.nombre, Estilo(16f, if (espera) Peso.bold else Peso.medium), C.texto, Modifier.weight(1f).alignByBaseline(), lineas = 1)
+                            Texto(cuando(x), Estilo.footnote, colorHora, Modifier.alignByBaseline())
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             Texto(previa, Estilo.texto14, C.texto2, Modifier.weight(1f), lineas = 1)
@@ -526,7 +527,7 @@ fun NumeroCaido(numero: NumeroWA) {
         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (p.oro) C.avisoFondo else C.errorFondo).padding(14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top,
     ) {
-        Icono(p.icono, 20f, if (p.oro) C.avisoTinta else C.errorTinta)
+        Icono(p.icono, 20f, if (p.oro) C.avisoTinta else C.errorTinta, peso = Peso.semibold)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Texto(p.titulo, Estilo.subheadFuerte, C.texto)
             Texto(Formato.sinViudas((numero.estadoMotivo?.let { "$it " } ?: "") + p.texto), Estilo.texto14, C.texto2)
@@ -757,17 +758,20 @@ fun AudioMensaje(url: String?) {
     DisposableEffect(Unit) { onDispose { reproductor?.release(); reproductor = null } }
     Row(Modifier.width(196.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
         Tocable(alTocar = {
-            if (reproductor == null && url != null) {
+            // AVPlayer arranca cuando está listo: acá, prepareAsync (prepare() frena la pantalla con un audio de la red).
+            val nuevo = reproductor == null && url != null
+            if (nuevo) {
                 reproductor = runCatching {
                     MediaPlayer().apply {
                         setDataSource(url)
                         setOnCompletionListener { sonando = false }
-                        prepare()
+                        setOnPreparedListener { if (sonando) it.start() }
+                        prepareAsync()
                     }
                 }.getOrNull()
             }
             val r = reproductor
-            if (sonando) r?.pause() else { r?.seekTo(0); r?.start() }
+            if (!nuevo) runCatching { if (sonando) r?.pause() else { r?.seekTo(0); r?.start() } }
             sonando = !sonando
         }, descripcion = if (sonando) "Pausar" else "Escuchar") {
             Icono(if (sonando) "pause.circle.fill" else "play.circle.fill", 30f, C.accion)
@@ -805,7 +809,7 @@ class Grabadora {
                 start()
             }
         }.getOrNull()
-        if (grabador == null) return true
+        // Como en iOS: aunque el grabador no arranque, queda «grabando» (y al soltar no devuelve nada).
         desde = SystemClock.elapsedRealtime()
         grabando = true
         Haptico.impacto()
@@ -814,7 +818,7 @@ class Grabadora {
 
     fun terminar(): File? {
         if (!grabando) return null
-        val duracion = (SystemClock.elapsedRealtime() - desde) / 1000.0
+        val duracion = if (grabador == null) 0.0 else (SystemClock.elapsedRealtime() - desde) / 1000.0
         runCatching { grabador?.stop() }
         grabador?.release()
         grabador = null

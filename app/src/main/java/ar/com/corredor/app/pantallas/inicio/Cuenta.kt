@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -234,8 +235,8 @@ fun Avisos() {
         ocupado = a.id + (x.accion ?: "")
         try {
             estado.api.pedir(metodo, r, cuerpo = cuerpo.toByteArray())
-            if (a.accionable == true && !a.estaHecho) runCatching { estado.api.hacer("POST", "/v1/avisos/${a.id}/hecho") }
-            else runCatching { estado.api.hacer("POST", "/v1/avisos/${a.id}/leido") }
+            if (a.accionable == true && !a.estaHecho) intentar { estado.api.hacer("POST", "/v1/avisos/${a.id}/hecho") }
+            else intentar { estado.api.hacer("POST", "/v1/avisos/${a.id}/leido") }
             marcarLocal(listOf(a.id)) { it.copy(hecho = true, hechoEn = Instant.now(), leido = true, leidoEn = Instant.now()) }
             escribiendo = null
             val ruta = a.url?.let { Ruta.de(it) }
@@ -659,7 +660,8 @@ object ConfigAvisos {
             if (x != null) {
                 // La tabla: por tipo, al celular y por mail.
                 Column(Modifier.fillMaxWidth().tarjeta()) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp)) {
+                    // .accessibilityHidden(true): cada casilla ya dice «… por celular» o «… por mail».
+                    Row(Modifier.fillMaxWidth().clearAndSetSemantics {}.padding(horizontal = 14.dp, vertical = 8.dp)) {
                         Spacer(Modifier.weight(1f))
                         Box(Modifier.width(58.dp), contentAlignment = Alignment.Center) { Texto("Celular", Estilo(12f, Peso.bold), C.texto2) }
                         Box(Modifier.width(58.dp), contentAlignment = Alignment.Center) { Texto("Mail", Estilo(12f, Peso.bold), C.texto2) }
@@ -686,7 +688,7 @@ object ConfigAvisos {
                     Llave(prendido = x.silencio.activo, alCambiar = { n ->
                         val y = v ?: return@Llave
                         guardar(y.copy(silencio = y.silencio.copy(activo = n)))
-                    }, color = hex(0x2F9E6F))
+                    }, color = hex(0x2F9E6F), descripcion = "Silencio")
                 }
             } else if (e != null) {
                 EstadoError(que = "tus avisos", error = e) { alcance.launch { cargar() } }

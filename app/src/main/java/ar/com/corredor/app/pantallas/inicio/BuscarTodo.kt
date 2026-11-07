@@ -288,12 +288,12 @@ fun BuscarTodo(texto: String) {
                     Box(Modifier.width(34.dp), contentAlignment = Alignment.Center) { Icono(icono, 19f, C.accion) }
                 }
                 Column(Modifier.weight(1f)) {
-                    TextoRico(resaltado(x.titulo), Estilo.filaLista, C.texto)
+                    TextoRico(resaltado(x.titulo), Estilo.filaLista, C.texto, subrayado = C.oro)
                     x.subtitulo?.let { Texto(it, Estilo.footnote, C.texto2) }
                 }
                 if (rapida != null && estado.escribe) {
                     Tocable(alTocar = { hacerRapida(x) }, descripcion = rapida.first) {
-                        Box(Modifier.size(40.dp, 44.dp), contentAlignment = Alignment.Center) { Icono(rapida.second, 16f, C.accion) }
+                        Box(Modifier.size(40.dp, 44.dp), contentAlignment = Alignment.Center) { Icono(rapida.second, 16f, C.accion, peso = Peso.semibold) }
                     }
                 } else {
                     Chevron()

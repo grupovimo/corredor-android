@@ -114,8 +114,7 @@ fun Entrada() {
                 f()
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 error = Entrada.mensaje(e, proveedor = true)
-            }
-            ocupado = false
+            } finally { ocupado = false }
         }
     }
 
@@ -240,7 +239,7 @@ fun IngresoMail() {
                     is ClerkMail.Paso.clave -> f.entrarConClave(clave)
                     is ClerkMail.Paso.codigo -> f.confirmarCodigo(codigo)
                     is ClerkMail.Paso.claveNueva -> f.guardarClave(clave)
-                    is ClerkMail.Paso.listo -> { ocupado = false; return@launch }
+                    is ClerkMail.Paso.listo -> return@launch
                 }
                 if (sig is ClerkMail.Paso.listo) {
                     estado.ingresarConJWT(sig.token)
@@ -252,8 +251,7 @@ fun IngresoMail() {
                 }
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 error = Entrada.mensaje(e)
-            }
-            ocupado = false
+            } finally { ocupado = false }
         }
     }
 
@@ -374,8 +372,7 @@ fun RecuperarAcceso(email: String) {
                 }
             } catch (e: CancellationException) { throw e } catch (e: Exception) {
                 error = Entrada.mensaje(e)
-            }
-            enviando = false
+            } finally { enviando = false }
         }
     }
 
@@ -563,8 +560,7 @@ fun FormCrearInmobiliaria() {
                 if (e.codigo == "slug_tomado") { errorSlugApi = e.detalle; disponible = "tomado" }
                 else if (e.estado == 422 || e.estado == 400) error = e.detalle.ifEmpty { e.titulo }
                 else estado.avisar(e)
-            } catch (e: Exception) { estado.avisar(e) }
-            enviando = false
+            } catch (e: Exception) { estado.avisar(e) } finally { enviando = false }
         }
     }
 

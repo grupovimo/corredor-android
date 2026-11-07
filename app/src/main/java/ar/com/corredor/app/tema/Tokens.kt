@@ -167,6 +167,8 @@ object C {
 
 /** Pesos de Geist incluidos en la app (los mismos .ttf que UIAppFonts en iOS: 400, 600, 700 y 800). */
 enum class Peso(val peso: FontWeight) {
+    /** `.light` de iOS (`.font(.system(size:, weight: .light))`). Geist no trae 300: el texto cae en la 400. */
+    light(FontWeight.Light),
     regular(FontWeight.Normal),
     /** Como en iOS, medium usa Geist-SemiBold. */
     medium(FontWeight.SemiBold),

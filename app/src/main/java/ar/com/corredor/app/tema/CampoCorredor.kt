@@ -53,6 +53,8 @@ fun CampoCorredor(
     accion: ImeAction = ImeAction.Default,
     alAccion: (() -> Unit)? = null,
     derecha: (@Composable RowScope.() -> Unit)? = null,
+    /** `.autocorrectionDisabled()` de iOS: sin autocorrector, pero con la mayúscula de `mayusculas`. */
+    sinCorrector: Boolean = false,
 ) {
     val color = C.texto
     val gris = C.texto3
@@ -64,7 +66,7 @@ fun CampoCorredor(
         visualTransformation = if (secreto) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(
             capitalization = if (secreto || teclado == KeyboardType.Email || teclado == KeyboardType.Uri) KeyboardCapitalization.None else mayusculas,
-            autoCorrectEnabled = !(secreto || teclado == KeyboardType.Email || teclado == KeyboardType.Uri || mayusculas == KeyboardCapitalization.None),
+            autoCorrectEnabled = !(sinCorrector || secreto || teclado == KeyboardType.Email || teclado == KeyboardType.Uri || mayusculas == KeyboardCapitalization.None),
             keyboardType = teclado, imeAction = accion,
         ),
         keyboardActions = KeyboardActions(onAny = { alAccion?.invoke() }),

@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -98,7 +99,7 @@ fun Separador(inset: Dp = 16.dp) {
 /** El chevron de fila (9 × 15). */
 @Composable
 fun Chevron(ancho: Float = 9f) {
-    Icono("chevron.right", ancho * 1.45f, C.chevron)
+    Icono("chevron.right", ancho * 1.45f, C.chevron, peso = Peso.semibold)
 }
 
 /** Label de sección (14/600, `text-2`). */
@@ -133,11 +134,11 @@ fun BotonRedondo(simbolo: String, etiqueta: String, punto: Boolean = false, acci
     Tocable(accion, Modifier.size(44.dp), descripcion = etiqueta) {
         Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(40.dp).clip(CircleShape).background(C.superficie).border(1.dp, C.linea, CircleShape), contentAlignment = Alignment.Center) {
-                Icono(simbolo, 18f, C.texto)
+                Icono(simbolo, 18f, C.texto, peso = Peso.medium)
             }
             if (punto) {
                 val sup = C.superficie
-                Box(Modifier.align(Alignment.TopEnd).offset(x = (-7).dp, y = 6.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
+                Box(Modifier.align(Alignment.TopEnd).offset(x = (-9).dp, y = 8.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
             }
         }
     }
@@ -262,10 +263,11 @@ fun Insignia(n: Int) {
 
 // MARK: - Segmentado y buscador
 
-/** Control segmentado (36 de alto, radio 11/8): Picker(.segmented) de iOS. */
+/** Control segmentado (36 de alto, radio 11/8): Picker(.segmented) de iOS. `descripcion`: el nombre del control para
+ *  el lector de pantalla (el título del Picker en iOS, «Moneda»). */
 @Composable
-fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) -> Unit, modifier: Modifier = Modifier) {
-    BoxWithConstraints(modifier.fillMaxWidth().height(36.dp).clip(RoundedCornerShape(11.dp)).background(C.segmentado).padding(3.dp)) {
+fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) -> Unit, modifier: Modifier = Modifier, descripcion: String? = null) {
+    BoxWithConstraints(modifier.then(if (descripcion != null) Modifier.semantics { contentDescription = descripcion; isTraversalGroup = true } else Modifier).fillMaxWidth().height(36.dp).clip(RoundedCornerShape(11.dp)).background(C.segmentado).padding(3.dp)) {
         val n = opciones.size.coerceAtLeast(1)
         val ancho = maxWidth / n
         val i = opciones.indexOfFirst { it.first == elegido }.coerceAtLeast(0)
@@ -295,7 +297,7 @@ fun Buscador(placeholder: String, texto: String, alCambiar: (String) -> Unit, mo
         modifier.fillMaxWidth().height(40.dp).clip(RoundedCornerShape(12.dp)).background(C.segmentado).padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Icono("magnifyingglass", 15f, C.texto3)
+        Icono("magnifyingglass", 15f, C.texto3, peso = Peso.semibold)
         Box(Modifier.weight(1f)) {
             Entrada(texto, alCambiar, placeholder, estilo = Estilo.body16, accionTeclado = ImeAction.Search, alEnviar = alBuscar, sinCorrector = true)
         }
@@ -446,20 +448,24 @@ fun Grabber() {
 
 /** Toggle de 51 × 31 en `ok`, con su texto. Ocupa todo el ancho: para el Toggle sin texto (.labelsHidden()), `Llave`. */
 @Composable
-fun Interruptor(texto: String, prendido: Boolean, alCambiar: (Boolean) -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true, detalle: String? = null) {
-    Row(modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(enabled = habilitado) { alCambiar(!prendido) }.alpha(if (habilitado) 1f else 0.5f),
+fun Interruptor(texto: String, prendido: Boolean, alCambiar: (Boolean) -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true, detalle: String? = null,
+               /** `.estilo(...)` del texto del Toggle (sin él, 16 regular) y `.tint(...)` de la llave. */
+               estilo: Estilo? = null, color: Color = C.ok) {
+    // Como el Toggle de iOS: una sola parada del lector, con el nombre y si está prendido.
+    Row(modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(enabled = habilitado) { alCambiar(!prendido); Haptico.seleccion() }.alpha(if (habilitado) 1f else 0.5f)
+        .semantics(mergeDescendants = true) { role = androidx.compose.ui.semantics.Role.Switch; toggleableState = androidx.compose.ui.state.ToggleableState(prendido) },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Texto(texto, Estilo.body16, C.texto)
+            Texto(texto, estilo ?: Estilo.body16, C.texto)
             if (!detalle.isNullOrEmpty()) Texto(detalle, Estilo.footnote, C.texto2)
         }
-        Llave(prendido, alCambiar, habilitado = habilitado)
+        Llave(prendido, alCambiar, color = color, habilitado = habilitado, enFila = true)
     }
 }
 
 /** El interruptor suelto (Toggle con .labelsHidden()). */
 @Composable
-fun Llave(prendido: Boolean, alCambiar: (Boolean) -> Unit, color: Color = C.ok, habilitado: Boolean = true, descripcion: String? = null) {
+fun Llave(prendido: Boolean, alCambiar: (Boolean) -> Unit, color: Color = C.ok, habilitado: Boolean = true, descripcion: String? = null, enFila: Boolean = false) {
     val x by animateDpAsState(if (prendido) 20.dp else 0.dp, tween(180), label = "llave")
     // Como el Toggle de iOS: el lector dice el nombre (el label escondido) y si está prendido.
     val lector = Modifier.semantics {
@@ -467,7 +473,9 @@ fun Llave(prendido: Boolean, alCambiar: (Boolean) -> Unit, color: Color = C.ok, 
         toggleableState = androidx.compose.ui.state.ToggleableState(prendido)
         if (descripcion != null) contentDescription = descripcion
     }
-    Box(Modifier.size(51.dp, 31.dp).then(lector).clip(Capsula).background(if (prendido) color else C.linea2).clickable(enabled = habilitado) { alCambiar(!prendido); Haptico.seleccion() }.padding(2.dp)) {
+    // `enFila`: dentro de un Interruptor, la fila entera es la que toca y la que lee el lector.
+    val toque = if (enFila) Modifier else lector.clip(Capsula).clickable(enabled = habilitado) { alCambiar(!prendido); Haptico.seleccion() }
+    Box(Modifier.size(51.dp, 31.dp).then(toque).clip(Capsula).background(if (prendido) color else C.linea2).padding(2.dp)) {
         Box(Modifier.offset(x = x).size(27.dp).sombra(CircleShape, Color.Black.copy(alpha = 0.15f), 4.dp, y = 2.dp).clip(CircleShape).background(Color.White))
     }
 }

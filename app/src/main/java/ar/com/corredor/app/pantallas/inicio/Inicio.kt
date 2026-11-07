@@ -658,7 +658,7 @@ fun InicioRaiz() {
                     val e = error
                     if (d != null) {
                         val entrada = remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
-                        androidx.compose.animation.AnimatedVisibility(visibleState = entrada, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { 16 }) {
+                        androidx.compose.animation.AnimatedVisibility(visibleState = entrada, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { with(densidad) { 16.dp.roundToPx() } }) {
                             if (estado.esDuenio) Duena(d) else Agente(d)
                         }
                     } else if (e != null) {
@@ -775,10 +775,11 @@ fun TarjetaAvance(titulo: String, cifra: String, avance: Double, color: Color = 
     val f by animateFloatAsState(if (visto) min(1.0, max(0.0, avance)).toFloat() else 0f, spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessVeryLow), label = "avance")
     LaunchedEffect(Unit) { delay(150); visto = true }
     Column(Modifier.fillMaxWidth().tarjeta().padding(16.dp).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Texto(titulo, Estilo(17f, Peso.bold), C.texto)
+        // HStack(alignment: .firstTextBaseline)
+        Row {
+            Texto(titulo, Estilo(17f, Peso.bold), C.texto, Modifier.alignByBaseline())
             Spacer(Modifier.weight(1f))
-            Texto(cifra, Estilo.subheadFuerte, C.texto)
+            Texto(cifra, Estilo.subheadFuerte, C.texto, Modifier.alignByBaseline())
         }
         val pista = C.hundida
         Canvas(Modifier.fillMaxWidth().height(10.dp)) {
@@ -894,7 +895,7 @@ private fun BotonPortada(icono: String, etiqueta: String, insignia: Int = 0, hac
     Tocable(alTocar = hacer, descripcion = etiqueta) {
         Box(Modifier.size(40.dp)) {
             Box(Modifier.matchParentSize().clip(CircleShape).background(Color.Black.copy(alpha = 0.35f)), contentAlignment = Alignment.Center) {
-                Icono(icono, 18f, C.oro)
+                Icono(icono, 18f, C.oro, peso = Peso.semibold)
             }
             if (insignia > 0) Box(Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp)) { InsigniaRoja(n = insignia) }
         }
@@ -906,9 +907,10 @@ private fun BotonPortada(icono: String, etiqueta: String, insignia: Int = 0, hac
 fun CarteraVisual(props: List<Propiedad>, total: Int) {
     val estado = LocalEstado.current
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.weight(1f)) { TituloBloque(texto = "Tu cartera") }
-            Texto(if (total > 0) "Ver las $total" else "Ver todas", Estilo.footnoteFuerte, C.accion, Modifier.clickable { estado.pestana = Pestana.propiedades })
+        // HStack(alignment: .firstTextBaseline)
+        Row {
+            Box(Modifier.weight(1f).alignByBaseline()) { TituloBloque(texto = "Tu cartera") }
+            Texto(if (total > 0) "Ver las $total" else "Ver todas", Estilo.footnoteFuerte, C.accion, Modifier.alignByBaseline().clickable { estado.pestana = Pestana.propiedades })
         }
         Row(
             Modifier.sangrar(16.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -1008,7 +1010,7 @@ fun TodoCorredor() {
                             Tocable(alTocar = { estado.abrir(destino) }, modifier = Modifier.weight(1f)) {
                                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Box(Modifier.size(58.dp).sombraE1().clip(RoundedCornerShape(17.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
-                                        Icono(icono, 21f, C.accion)
+                                        Icono(icono, 21f, C.accion, peso = Peso.medium)
                                     }
                                     Texto(nombre, Estilo(12f, Peso.semibold), C.texto2, lineas = 1, escalaMinima = 0.8f)
                                 }

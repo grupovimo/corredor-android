@@ -259,7 +259,7 @@ fun LiquidarConsorcio(consorcio: String, pedido: String? = null) {
                                     val hecho = paso > n
                                     Row(Modifier.semantics(mergeDescendants = true) { selected = on }, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Box(Modifier.size(20.dp).clip(CircleShape).background(if (on || hecho) C.accion else C.hundida), contentAlignment = Alignment.Center) {
-                                            Texto(if (hecho) "✓" else "$n", Estilo(12f, Peso.bold), if (on || hecho) C.sobreAccion else C.texto2)
+                                            Texto(if (hecho) "✓" else "$n", Estilo(12f, Peso.bold, relativo = Relativo.caption), if (on || hecho) C.sobreAccion else C.texto2)
                                         }
                                         Texto(t, Estilo.footnoteFuerte, if (on) C.texto else C.texto2)
                                     }
@@ -316,7 +316,7 @@ fun LiquidarConsorcio(consorcio: String, pedido: String? = null) {
                             }
                             RenglonConsorcio {
                                 Texto("Total del período", Estilo.subheadFuerte, C.texto, Modifier.weight(1f))
-                                Texto(Formato.plata(total), Estilo(20f, Peso.bold), C.texto)
+                                Texto(Formato.plata(total), Estilo(20f, Peso.bold, relativo = Relativo.title3), C.texto)
                             }
                         }
                         if (sinComprobante.isNotEmpty()) {
@@ -494,7 +494,8 @@ fun HojaEmitirExpensas(
                 }
             }
         }
-        Interruptor("Revisé los gastos y el prorrateo", revisado, { revisado = it })
+        // `Toggle(…).estilo(.subheadFuerte).tint(C.accion)`.
+        Interruptor("Revisé los gastos y el prorrateo", revisado, { revisado = it }, estilo = Estilo.subheadFuerte, color = C.accion)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) { BotonHundido("Revisar de nuevo", { cerrar() }) }
             Box(Modifier.weight(1f)) {

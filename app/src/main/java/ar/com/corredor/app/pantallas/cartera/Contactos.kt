@@ -170,9 +170,9 @@ fun Contactos(libres: Boolean = false) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Avatar(c)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
-                            Texto(c.nombre, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false), lineas = 1)
-                            Texto(TextosContacto.rol(c.tipo), Estilo.footnote, C.texto3, lineas = 1)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Texto(c.nombre, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false).alignByBaseline(), lineas = 1)
+                            Texto(TextosContacto.rol(c.tipo), Estilo.footnote, C.texto3, Modifier.alignByBaseline(), lineas = 1)
                         }
                         Texto(detalle, Estilo.footnote, if (debe) C.errorTinta else C.texto2, lineas = 1)
                     }

@@ -229,9 +229,9 @@ fun PantallaPlan() {
                             if (ciclo == "anio") ahorro(plan)?.let { LineaTicket("2 meses de regalo", "−$it", tono = C.okTinta) }
                             LineaTicket("Total por $cada", precioTxt, fuerte = true)
                             Rayita()
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Texto("Hoy pagás", Estilo.headline, C.texto, Modifier.weight(1f))
-                                Texto(if (gratis != null) (prod?.formatear(0.0) ?: "0") else precioTxt, Estilo.montoMeta, C.texto, numeros = true)
+                            Row(Modifier.fillMaxWidth()) {
+                                Texto("Hoy pagás", Estilo.headline, C.texto, Modifier.weight(1f).alignByBaseline())
+                                Texto(if (gratis != null) (prod?.formatear(0.0) ?: "0") else precioTxt, Estilo.montoMeta, C.texto, Modifier.alignByBaseline(), numeros = true)
                             }
                             if (gratis != null) {
                                 Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(C.okFondo).padding(10.dp),
@@ -367,9 +367,9 @@ private fun TarjetaPlan(p: Suscripcion.Plan, s: Suscripcion, on: Boolean, ciclo:
                 if (actual) ChipPlan("Tu plan", Tono.verde) else if (p.destacado) ChipPlan("El más elegido", Tono.oro)
             }
             Texto(p.resumen, Estilo.footnote, C.texto2)
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Texto(precio, Estilo.montoMeta, C.texto, numeros = true)
-                Texto(if (ciclo == "anio") "/año" else "/mes", Estilo.footnote, C.texto3, Modifier.padding(bottom = 4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Texto(precio, Estilo.montoMeta, C.texto, Modifier.alignByBaseline(), numeros = true)
+                Texto(if (ciclo == "anio") "/año" else "/mes", Estilo.footnote, C.texto3, Modifier.alignByBaseline())
             }
             if (ciclo == "anio") {
                 Texto("Equivale a $porMes por mes${ahorro?.let { " · ahorrás $it" } ?: ""}", Estilo.caption, C.texto3)

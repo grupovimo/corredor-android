@@ -180,7 +180,7 @@ fun Portales() {
                 Texto(detalle, Estilo.footnote, C.texto2)
             }
             Box(Modifier.height(24.dp).clip(Capsula).background(tono.fondo).padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-                Texto(chip, Estilo(12f, Peso.bold), tono.tinta)
+                Texto(chip, Estilo(12f, Peso.bold, relativo = Relativo.caption), tono.tinta)
             }
         }
     }

@@ -2,6 +2,7 @@ package ar.com.corredor.app.pantallas.entrada
 
 import ar.com.corredor.app.nucleo.Fotos
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -166,11 +167,12 @@ fun AltaInmobiliaria(inicial: String? = null) {
             }
             else -> {}
         }
-        if (ok) {
-            refrescarAlta()
-            ir(siguiente)
-        }
-        guardando = false
+        try {
+            if (ok) {
+                refrescarAlta()
+                ir(siguiente)
+            }
+        } finally { guardando = false }
     }
 
     suspend fun frasePorIA() {
@@ -179,8 +181,7 @@ fun AltaInmobiliaria(inicial: String? = null) {
         try {
             val r: Reescrito = estado.api.enviar("POST", "/v1/web/reescribir", CuerpoReescribir(texto = base))
             marca = marca + ("frase" to JsonPrimitive(r.texto))
-        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) }
-        reescribiendo = false
+        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) } finally { reescribiendo = false }
     }
 
     /** «Publicar mi web»: publica el borrador (si hay) y da el alta por terminada. */
@@ -194,11 +195,14 @@ fun AltaInmobiliaria(inicial: String? = null) {
             Haptico.exito()
             estado.avisar("¡Tu web está publicada!")
             cerrar()
-        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) }
-        guardando = false
+        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) } finally { guardando = false }
     }
 
     LaunchedEffect(Unit) { cargar() }
+
+    // .interactiveDismissDisabled(!(minimoListo || alta?.minimoListo == true)): sin el logo y el WhatsApp, «atrás» no
+    // cierra el alta (sin ellos no se entra). Un BackHandler de la pantalla le gana al de PantallaCompleta (que cierra).
+    BackHandler(enabled = !(minimoListo || alta?.minimoListo == true)) {}
 
     @Composable
     fun CampoTexto(etiqueta: String, ejemplo: String, k: String, teclado: KeyboardType = KeyboardType.Text, valor: String? = null, alCambiar: ((String) -> Unit)? = null) {
@@ -229,7 +233,7 @@ fun AltaInmobiliaria(inicial: String? = null) {
                     Texto(titulo, Estilo.filaLista, C.texto)
                     Texto(texto, Estilo.footnote, C.texto2)
                 }
-                Icono("chevron.right", 13f, C.texto3)
+                Icono("chevron.right", 13f, C.texto3, peso = Peso.semibold)
             }
         }
     }

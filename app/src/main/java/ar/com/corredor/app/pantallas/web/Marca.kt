@@ -250,7 +250,7 @@ fun SubirImagenMarca(titulo: String, url: String?, ancha: Boolean = false, alSub
                 contentScale = ContentScale.Fit, loading = { Rueda() },
             )
         } else {
-            Icono(if (ancha) "photo.on.rectangle.angled" else "photo.badge.plus", 38f, C.accion)
+            Icono(if (ancha) "photo.on.rectangle.angled" else "photo.badge.plus", 38f, C.accion, peso = Peso.light)
         }
         Texto(if (subiendo) "Subiendo…" else (if (url == null) titulo else "Cambiar"), Estilo.filaLista, C.texto, alinear = TextAlign.Center)
         Texto(if (ancha) "Una foto horizontal y luminosa" else "JPG o PNG, con fondo transparente si tenés", Estilo.footnote, C.texto2, alinear = TextAlign.Center)

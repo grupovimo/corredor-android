@@ -193,7 +193,7 @@ fun HojaCuentaUnidad(c: ConsorcioAPI, u: UnidadAPI, editar: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Texto("Saldo hoy", Estilo.footnote, C.texto2)
-                Texto(Formato.plata(k.saldo + interes), Estilo(28f, Peso.bold, -0.02f), if (k.saldo > 0) C.errorTinta else C.texto)
+                Texto(Formato.plata(k.saldo + interes), Estilo(28f, Peso.bold, -0.02f, Relativo.title), if (k.saldo > 0) C.errorTinta else C.texto)
                 if (interes > 0) Texto("Incluye ${Formato.plata(interes)} de interés por mora.", Estilo.footnote, C.texto2)
             }
             Column(Modifier.fillMaxWidth().tarjeta()) {
@@ -348,7 +348,8 @@ fun HojaUnidadConsorcio(c: ConsorcioAPI, u: UnidadAPI?) {
                 CampoConsorcio("Celular (opcional)") { CampoTextoConsorcio(nuevoTelefono, { nuevoTelefono = it }, teclado = KeyboardType.Phone) }
             }
         }
-        SeccionConsorcio {
+        // Un `Section` sin filas no se ve en iOS: sin columnas, no va la tarjeta vacía.
+        if (!c.columnas.isNullOrEmpty()) SeccionConsorcio {
             (c.columnas ?: emptyList()).forEach { col ->
                 key(col.id) {
                     CampoConsorcio(if ((c.columnas?.size ?: 0) > 1) "Coeficiente · ${col.nombre} (%)" else "Coeficiente del reglamento (%)") {

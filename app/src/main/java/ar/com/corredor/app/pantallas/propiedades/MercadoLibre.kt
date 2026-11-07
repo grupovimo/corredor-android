@@ -261,8 +261,8 @@ fun PantallaMercadoLibre() {
                         Texto("«${q.texto}»${q.compradorApodo?.let { " · usuario $it" } ?: ""}", Estilo.subhead, C.texto, lineas = 3)
                     }
                     Column(Modifier.padding(start = 4.dp), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        q.creadaEn?.let { Texto(Formato.hace(it), Estilo(12f, Peso.regular), C.texto3) }
-                        Texto("Responder", Estilo(13f, Peso.bold), C.accion)
+                        q.creadaEn?.let { Texto(Formato.hace(it), Estilo(12f, Peso.regular, relativo = Relativo.caption), C.texto3) }
+                        Texto("Responder", Estilo(13f, Peso.bold, relativo = Relativo.footnote), C.accion)
                     }
                 }
             }
@@ -330,7 +330,7 @@ fun PantallaMercadoLibre() {
                     Texto(x.visitasSemana?.let { "${Formato.numero(it)} visitas esta semana" } ?: "${Formato.numero(x.visitas ?: 0)} visitas", Estilo.footnote, C.texto2)
                 }
                 Box(Modifier.height(24.dp).clip(Capsula).background(tono.fondo).padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-                    Texto(t, Estilo(12f, Peso.bold), tono.tinta)
+                    Texto(t, Estilo(12f, Peso.bold, relativo = Relativo.caption), tono.tinta)
                 }
                 val u = x.url
                 if (u != null) {

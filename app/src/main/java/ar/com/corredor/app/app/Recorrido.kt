@@ -5,6 +5,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -66,7 +68,11 @@ fun Recorrido(visible: Boolean, alCambiar: (Boolean) -> Unit) {
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.45f)).clickable(remember { MutableInteractionSource() }, null) { siguiente() })
-        AnimatedContent(paso, transitionSpec = { (slideInVertically(spring()) { it / 3 } + fadeIn()) togetherWith fadeOut() }, label = "recorrido") { i ->
+        AnimatedContent(paso, transitionSpec = {
+            // .transition(.move(edge: .bottom).combined(with: .opacity)) con .spring(duration: 0.3).
+            (slideInVertically(spring(dampingRatio = 1f, stiffness = 440f)) { it } + fadeIn(tween(300))) togetherWith
+                (slideOutVertically(spring(dampingRatio = 1f, stiffness = 440f)) { it } + fadeOut(tween(300)))
+        }, label = "recorrido") { i ->
             val p = pasosRecorrido[i]
             val forma = RoundedCornerShape(24.dp)
             Column(

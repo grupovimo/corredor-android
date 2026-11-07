@@ -179,10 +179,8 @@ fun CorredorEnTuIA() {
                     else if (duenio) "Prendela para que tu equipo pueda conectar su asistente." else "La prende el dueño o la dueña de la inmobiliaria.",
                 ), Estilo.footnote, C.texto2)
             }
-            Box(Modifier.semantics { contentDescription = "Habilitar Corredor en tu IA" }) {
-                Llave(habilitado, cambiar({ a, v -> a.copy(habilitado = v) }) { if (it) "Corredor en tu IA, habilitada" else "Corredor en tu IA, apagada" },
-                    habilitado = duenio)
-            }
+            Llave(habilitado, cambiar({ a, v -> a.copy(habilitado = v) }) { if (it) "Corredor en tu IA, habilitada" else "Corredor en tu IA, apagada" },
+                habilitado = duenio, descripcion = "Habilitar Corredor en tu IA")
         }
     }
 
@@ -206,7 +204,7 @@ fun CorredorEnTuIA() {
                 Texto(t, Estilo.filaLista, C.texto)
                 Texto(d, Estilo.footnote, C.texto2)
             }
-            Box(Modifier.semantics { contentDescription = t }) { Llave(prendido, alCambiar, habilitado = !bloqueado) }
+            Llave(prendido, alCambiar, habilitado = !bloqueado, descripcion = t)
         }
     }
 

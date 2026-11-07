@@ -910,9 +910,8 @@ private fun PasoPlazoAlta(s: AltaEstado) {
     }
     Etiquetado(if (s.d.alquiler) "Alquiler del primer mes" else "Monto de la venta") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(110.dp)) { Segmentado(listOf("ARS" to "ARS", "USD" to "USD"), s.d.moneda, { s.d = s.d.copy(moneda = it) }) }
-            CampoCobro(montoTextoAlta(s.d.monto), { v -> s.d = s.d.copy(monto = v.filter { it.isDigit() }.toDoubleOrNull()) }, "0", Modifier.weight(1f),
-                teclado = KeyboardType.Number)
+            Box(Modifier.width(110.dp)) { Segmentado(listOf("ARS" to "ARS", "USD" to "USD"), s.d.moneda, { s.d = s.d.copy(moneda = it) }, descripcion = "Moneda") }
+            CampoPlataAlta(s.d.monto, { s.d = s.d.copy(monto = it) }, Modifier.weight(1f))
         }
         s.errores["monto"]?.let { TextoErrorAlta(it) }
     }
@@ -1004,8 +1003,7 @@ private fun PasoCondicionesAlta(s: AltaEstado) {
             Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).clip(forma).background(C.superficie).border(BorderStroke(1.dp, C.linea2), forma).padding(horizontal = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Texto(d.moneda, Estilo.body, C.texto2)
-                CampoCobro(montoTextoAlta(d.deposito), { v -> s.d = s.d.copy(deposito = v.filter { it.isDigit() }.toDoubleOrNull()) }, "0", Modifier.weight(1f),
-                    teclado = KeyboardType.Number, marco = false)
+                CampoPlataAlta(d.deposito, { s.d = s.d.copy(deposito = it) }, Modifier.weight(1f), marco = false)
             }
             val m = d.monto
             if (m != null && m > 0 && d.deposito != m) {
@@ -1311,8 +1309,35 @@ private fun BuscadorAlta(q: String, alCambiar: (String) -> Unit, prompt: String)
     }
 }
 
-/** El monto de un TextField(value:format: .number): «150000» (vacío si no hay). */
-private fun montoTextoAlta(n: Double?): String = n?.let { if (Math.rint(it) == it) it.toLong().toString() else it.toString() } ?: ""
+/** El monto de un TextField(value:format: .number) en es-AR: «150000» o «150000,5» (vacío si no hay). */
+private fun montoTextoAlta(n: Double?): String =
+    n?.let { if (Math.rint(it) == it) it.toLong().toString() else java.math.BigDecimal.valueOf(it).stripTrailingZeros().toPlainString().replace(".", ",") } ?: ""
+
+/** Lo que lee `.number` en es-AR: la coma es el decimal y el punto agrupa miles («1.500,50» → 1500.5). Sin coma,
+ *  un único punto seguido de uno o dos dígitos al final también es decimal (el teclado que sólo trae punto). */
+internal fun leerPlataAlta(t: String): Double? {
+    val limpio = t.filter { it.isDigit() || it == ',' || it == '.' }
+    if (limpio.none { it.isDigit() }) return null
+    val normal = if (limpio.contains(',')) {
+        val i = limpio.lastIndexOf(',')
+        limpio.substring(0, i).filter { it.isDigit() } + "." + limpio.substring(i + 1).filter { it.isDigit() }
+    } else if (limpio.count { it == '.' } == 1 && limpio.substringAfter('.').length in 1..2) {
+        limpio
+    } else {
+        limpio.filter { it.isDigit() }
+    }
+    return normal.trimEnd('.').ifEmpty { null }?.toDoubleOrNull()
+}
+
+/** El campo de plata del alta (monto y depósito): acepta decimales con coma, como iOS. Guarda lo que se escribe
+ *  («1500,» a medio escribir) y sólo lo reescribe cuando el valor cambia por otro lado («Un mes de alquiler»,
+ *  la lectura del PDF, «Deshacer»). */
+@Composable
+private fun CampoPlataAlta(valor: Double?, alCambiar: (Double?) -> Unit, modifier: Modifier = Modifier, marco: Boolean = true) {
+    var t by remember { mutableStateOf(montoTextoAlta(valor)) }
+    LaunchedEffect(valor) { if (leerPlataAlta(t) != valor) t = montoTextoAlta(valor) }
+    CampoCobro(t, { v -> t = v; alCambiar(leerPlataAlta(v)) }, "0", modifier, teclado = KeyboardType.Decimal, marco = marco)
+}
 
 /** ByteCountFormatter(.file): «820 KB», «1,2 MB». */
 internal fun tamanoArchivoAlta(bytes: Long): String {
@@ -1333,9 +1358,12 @@ internal fun leerUriAlta(ctx: Context, u: Uri): Triple<ByteArray, String, String
     Triple(datos, nombre, if (pdf) "application/pdf" else "image/jpeg")
 }.getOrNull()
 
-/** UIImage(data:).jpegData(compressionQuality: 0.85). */
+/** UIImage(data:).jpegData(compressionQuality: 0.85): entera y derecha (UIImage respeta la orientación del EXIF;
+ *  BitmapFactory no, y el JPEG nuevo sale sin EXIF: se gira acá). */
 internal fun aJpegAlta(datos: ByteArray): ByteArray = runCatching {
-    val b = BitmapFactory.decodeByteArray(datos, 0, datos.size) ?: return datos
+    val crudo = BitmapFactory.decodeByteArray(datos, 0, datos.size) ?: return datos
+    val giro = runCatching { androidx.exifinterface.media.ExifInterface(java.io.ByteArrayInputStream(datos)).rotationDegrees }.getOrDefault(0)
+    val b = if (giro == 0) crudo else Bitmap.createBitmap(crudo, 0, 0, crudo.width, crudo.height, android.graphics.Matrix().apply { postRotate(giro.toFloat()) }, true)
     ByteArrayOutputStream().also { b.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
 }.getOrDefault(datos)
 

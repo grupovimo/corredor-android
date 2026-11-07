@@ -538,9 +538,9 @@ fun FichaOperacion(id: String) {
                 }
                 historial.forEach { n ->
                     key(n.id) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
-                            Texto(FichaContacto.diaMes(n.creadoEn), Estilo(12f, Peso.regular), C.texto3, Modifier.width(40.dp))
-                            Texto(n.frase(nombres = nombres), Estilo.subhead, if (n.tipo == "nota") C.texto else C.texto2, Modifier.weight(1f))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Texto(FichaContacto.diaMes(n.creadoEn), Estilo(12f, Peso.regular), C.texto3, Modifier.width(40.dp).alignByBaseline())
+                            Texto(n.frase(nombres = nombres), Estilo.subhead, if (n.tipo == "nota") C.texto else C.texto2, Modifier.weight(1f).alignByBaseline())
                         }
                     }
                 }

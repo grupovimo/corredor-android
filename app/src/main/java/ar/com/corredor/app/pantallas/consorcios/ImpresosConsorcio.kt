@@ -49,12 +49,7 @@ internal const val ALTO_A4 = 842
 private object PapelConsorcio {
 
     @Serializable
-    data class InmoPapel(val nombre: String? = null)
-
-    @Serializable
     data class ArchivoInfo(val nombre: String? = null, val tipo: String? = null)
-
-    suspend fun inmobiliaria(api: Api): InmoPapel? = api.opcional<InmoPapel>("/v1/inmobiliaria")
 }
 
     /** La liquidación de expensas del período: una hoja por unidad (`unidad`: sólo esa). */
@@ -63,7 +58,7 @@ private object PapelConsorcio {
         val base = "/v1/consorcios/$consorcio"
         val c: ConsorcioAPI = api.get(base)
         val p: PeriodoAPI = api.get("$base/periodos/$pid")
-        val inmo = PapelConsorcio.inmobiliaria(api)
+        val inmo = Documentos.inmobiliaria(api)
         val proveedores: List<ProveedorConsorcio> = runCatching { ProveedoresConsorcio.todos(api) }.getOrElse { if (it is CancellationException) throw it; emptyList() }
         val liqs = (p.liquidaciones ?: emptyList()).filter { unidad == null || it.unidadId == unidad }.sortedWith { a, b -> Cons.ordenUnidad.compare(a.unidad, b.unidad) }
         if (liqs.isEmpty()) {

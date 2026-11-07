@@ -182,7 +182,7 @@ fun HojaCompartir(
             }
             Tocable({ cerrar() }, descripcion = "Cerrar") {
                 Box(Modifier.size(32.dp).clip(CircleShape).background(C.superficie), contentAlignment = Alignment.Center) {
-                    Icono("xmark", 14f, C.texto2)
+                    Icono("xmark", 14f, C.texto2, peso = Peso.bold)
                 }
             }
         }
@@ -427,7 +427,7 @@ fun Galeria(id: String, indice: Int = 0) {
     Column(Modifier.fillMaxSize().background(Color.Black).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Tocable({ cerrar() }, descripcion = "Cerrar") {
-                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("xmark", 20f, Color.White) }
+                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("xmark", 20f, Color.White, peso = Peso.semibold) }
             }
             Spacer(Modifier.weight(1f))
             Texto(if (fotos.isEmpty()) "" else "${actual + 1} de ${fotos.size}", Estilo(16f, Peso.bold), Color.White)
@@ -441,8 +441,10 @@ fun Galeria(id: String, indice: Int = 0) {
         }
         HorizontalPager(paginas, Modifier.weight(1f).fillMaxWidth()) { i ->
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Rueda(Color.White)
-                AsyncImage(fotos[i], null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                // El ProgressView de iOS es el placeholder: se va cuando llega la foto.
+                var cargada by remember(fotos[i]) { mutableStateOf(false) }
+                if (!cargada) Rueda(Color.White)
+                AsyncImage(fotos[i], null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit, onSuccess = { cargada = true })
             }
         }
         LazyRow(

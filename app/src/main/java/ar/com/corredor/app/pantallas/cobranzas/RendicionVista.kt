@@ -89,7 +89,7 @@ data class RendicionAPI(
             mapOf("pendiente" to "Borrador para revisar", "liquidada" to "Emitida", "pagada" to "Transferida")[e ?: ""] ?: "Borrador"
 
         /** «0012». */
-        fun numeroTexto(n: Int?): String? = n?.let { String.format("%04d", it) }
+        fun numeroTexto(n: Int?): String? = n?.let { String.format(java.util.Locale.ROOT, "%04d", it) }
     }
 }
 
@@ -235,7 +235,7 @@ fun RendicionVista(
         sacados = sacados + it.id
         val pedido = CompletableDeferred<Boolean>()
         estado.tarea {
-            try { estado.api.hacer("DELETE", "$ruta/items/${it.id}"); pedido.complete(true) } catch (e: Exception) {
+            try { estado.api.hacer("DELETE", "$ruta/items/${it.id}"); pedido.complete(true) } catch (e: CancellationException) { pedido.complete(false); throw e } catch (e: Exception) {
                 sacados = sacados - it.id
                 estado.avisar("No se sacó · ${(e as? ErrorApi)?.detalle ?: ""}", ok = false)
                 pedido.complete(false)
@@ -430,9 +430,12 @@ fun RendicionVista(
                                             BotonLink("Sacar", Estilo.subheadFuerte, C.error) { comprobante = null }
                                         }
                                     } else {
-                                        MenuBoton(if (subiendo) emptyList() else opcionesAdjuntar("nuevo"), "El comprobante") {
-                                            Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.hundida), contentAlignment = Alignment.Center) {
-                                                Etiqueta(if (subiendo) "Subiendo…" else "El comprobante: tocá para elegir", "paperclip", Estilo.subhead, C.accion)
+                                        // .disabled(subiendo): gris y sin tocar mientras sube.
+                                        Box(Modifier.fillMaxWidth().deshabilitado(subiendo)) {
+                                            MenuBoton(opcionesAdjuntar("nuevo"), "El comprobante") {
+                                                Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.hundida), contentAlignment = Alignment.Center) {
+                                                    Etiqueta(if (subiendo) "Subiendo…" else "El comprobante: tocá para elegir", "paperclip", Estilo.subhead, C.accion)
+                                                }
                                             }
                                         }
                                     }

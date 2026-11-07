@@ -180,7 +180,7 @@ fun ListaGenerica(
                                     ListaGenerica.fecha(x)?.let { Texto(Formato.cuando(it), Estilo(12f, Peso.regular), C.texto3) }
                                     val a = acciones?.invoke(x)
                                     if (!a.isNullOrEmpty()) {
-                                        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             a.forEach { (t, h) -> Texto(t, Estilo.footnoteFuerte, C.accion, Modifier.clickable(onClick = h)) }
                                         }
                                     }

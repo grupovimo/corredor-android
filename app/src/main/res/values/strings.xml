@@ -10,4 +10,8 @@
     <string name="atajo_buscar">Buscar</string>
     <string name="atajo_mensajes">Consultas sin responder</string>
     <string name="atajo_mensajes_corto">Sin responder</string>
+    <string name="atajo_cobros">Cobros de hoy</string>
+    <string name="atajo_hoy">Qué tengo hoy</string>
+    <string name="atajo_cobrar">Cobrar un alquiler</string>
+    <string name="atajo_ficha">Mandar una ficha</string>
 </resources>

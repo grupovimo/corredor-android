@@ -290,7 +290,7 @@ fun AgendaRaiz(diaInicial: Instant? = null, apilada: Boolean = false) {
         }) {
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(f.tono.fondo).padding(horizontal = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icono(f.icono, 16f, f.tono.tinta)
+                Icono(f.icono, 16f, f.tono.tinta, peso = Peso.semibold)
                 Texto(f.largo ?: f.texto, Estilo.subheadFuerte, f.tono.tinta, Modifier.weight(1f))
                 Texto(f.accion, Estilo(13f, Peso.bold), f.tono.tinta)
             }
@@ -546,7 +546,7 @@ fun AgendaRaiz(diaInicial: Instant? = null, apilada: Boolean = false) {
                 Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 20.dp).size(58.dp).sombraE3(CircleShape).clip(CircleShape).background(C.accion)
                     .clickable { nueva = true }.semantics { contentDescription = "Agendar" },
                 contentAlignment = Alignment.Center,
-            ) { Icono("plus", 26f, C.sobreAccion) }
+            ) { Icono("plus", 26f, C.sobreAccion, peso = Peso.semibold) }
         }
     }
     Hoja(nueva, { nueva = false }) { NuevaCita(dia = Formato.instante(dia, 12)) }
@@ -662,8 +662,7 @@ private fun FormularioCita(propiedad: Propiedad?, contacto: Pair<String, String>
             if (calendario) sumarAlCalendario(tit)
             estado.version += 1
             cerrar()
-        } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
-        guardando = false
+        } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { guardando = false }
     }
 
     @Composable

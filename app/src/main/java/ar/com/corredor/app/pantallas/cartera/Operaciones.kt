@@ -73,7 +73,6 @@ fun Operaciones() {
     var senaValor by remember { mutableStateOf("") }
     var conflicto by remember { mutableStateOf<Operaciones.Conflicto?>(null) }
     var sinPermiso by remember { mutableStateOf<Operacion?>(null) }
-    var moviendo by remember { mutableStateOf<Operacion?>(null) }
 
     val puedeMover = estado.escribe
     val visibles: List<Operacion> = (ops ?: emptyList()).filter { agente.isEmpty() || (if (agente == "libre") it.agenteId == null else it.agenteId == agente) }
@@ -198,12 +197,19 @@ fun Operaciones() {
 
     LaunchedEffect(estado.version, tipo) { cargar() }
 
-    fun menuItems(o: Operacion): List<OpcionDeMenu> = listOf(
-        OpcionDeMenu("Abrir", "arrow.up.right") { estado.abrir(AFichaOperacion(id = o.id)) },
-        // Un submenú en iOS («Mover … a…»): acá abre la lista de etapas.
-        OpcionDeMenu("Mover ${o.nombre.split(",").firstOrNull() ?: ""} a…", "arrow.left.arrow.right") { moviendo = o },
-        OpcionDeMenu("Se cayó", "heart.slash", destructiva = true) { cayendo = o },
-    )
+    fun menuItems(o: Operacion): List<OpcionDeMenu> {
+        val col = Operacion.columna(o.etapa)
+        return listOf(
+            OpcionDeMenu("Abrir", "arrow.up.right") { estado.abrir(AFichaOperacion(id = o.id)) },
+            OpcionDeMenu(
+                "Mover ${o.nombre.split(",").firstOrNull() ?: ""} a…", "arrow.left.arrow.right",
+                submenu = Operacion.columnas.withIndex().filter { it.index != col }.map { (i, c) ->
+                    OpcionDeMenu(if (i == 0) "Volver a Nueva" else (if (i < col) "Volver a ${c.texto}" else c.texto), "") { alcance.launch { mover(o, i) } }
+                },
+            ),
+            OpcionDeMenu("Se cayó", "heart.slash", destructiva = true, separadorAntes = true) { cayendo = o },
+        )
+    }
 
     // MARK: Piezas
 
@@ -495,17 +501,6 @@ fun Operaciones() {
         }
     }
 
-    // «Mover … a…»: las otras etapas.
-    val mv = moviendo
-    Confirmacion(
-        visible = mv != null, titulo = "Mover ${mv?.nombre?.split(",")?.firstOrNull() ?: ""} a…", alCerrar = { moviendo = null },
-        opciones = if (mv == null) emptyList() else {
-            val col = Operacion.columna(mv.etapa)
-            Operacion.columnas.withIndex().filter { it.index != col }.map { (i, c) ->
-                OpcionConfirmacion(if (i == 0) "Volver a Nueva" else (if (i < col) "Volver a ${c.texto}" else c.texto)) { alcance.launch { mover(mv, i) } }
-            }
-        },
-    )
     Hoja(visible = nueva, alCerrar = { nueva = false }, alturas = listOf(Altura.grande)) { NuevaOperacion() }
     var ultimaCayendo by remember { mutableStateOf<Operacion?>(null) }
     if (cayendo != null) ultimaCayendo = cayendo

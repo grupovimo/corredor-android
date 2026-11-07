@@ -86,7 +86,7 @@ fun TarifasTemporada(propiedad: String) {
                 lista.forEachIndexed { i, t ->
                     key(t.id) {
                         if (i > 0) Separador()
-                        FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", "trash", C.error) {
+                        FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", color = C.error) {
                             alcance.launch { borrarTarifa(t, propiedad, estado); cargar() }
                         }) else emptyList()) {
                             Tocable({ editando = t }) {
@@ -194,8 +194,7 @@ fun HojaTarifasTemporada(casas: List<CasaTemporada>) {
             minimo = null
         } catch (e: CancellationException) { throw e } catch (e: ErrorConCampos) {
             errores = e.campos
-        } catch (e: Exception) { estado.avisar(e) }
-        enviando = false
+        } catch (e: Exception) { estado.avisar(e) } finally { enviando = false }
     }
 
     MarcoHoja("Tarifas por temporada", cancelar = null, confirmar = "Listo", alConfirmar = { estado.version += 1; cerrar() }) {
@@ -212,7 +211,7 @@ fun HojaTarifasTemporada(casas: List<CasaTemporada>) {
                     ts.forEachIndexed { i, t ->
                         key(t.id) {
                             if (i > 0) Separador()
-                            FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", "trash", C.error) {
+                            FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", color = C.error) {
                                 alcance.launch { borrarTarifa(t, c.id, estado); recargar(c.id) }
                             }) else emptyList()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {

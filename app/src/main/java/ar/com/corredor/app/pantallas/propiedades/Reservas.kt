@@ -145,7 +145,7 @@ data class ReservaAPI(
 
     companion object {
         /** «0001-00471». */
-        fun recibo(n: Int): String = String.format("0001-%05d", n)
+        fun recibo(n: Int): String = String.format(java.util.Locale.ROOT, "0001-%05d", n)
 
         /** «12/10». */
         fun corta(dia: String?): String {
@@ -354,7 +354,7 @@ fun PantallaReserva(id: String) {
         Column(modifier.tarjeta(radio = 14.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Texto(clave, Estilo.footnote, C.texto2)
             Texto(valor, Estilo.subheadFuerte, C.texto, lineas = 2, escalaMinima = 0.8f)
-            Texto(nota, Estilo(12f, Peso.regular), if (verde) C.okTinta else C.texto3, lineas = 2)
+            Texto(nota, Estilo(12f, Peso.regular, relativo = Relativo.caption), if (verde) C.okTinta else C.texto3, lineas = 2)
         }
     }
 
@@ -517,7 +517,7 @@ fun NuevaReservaVenta(propiedadId: String, titulo: String, moneda: String = "USD
                 "POST", "/v1/propiedades/$propiedadId/reservas",
                 CuerpoReserva(
                     interesadoNombre = nombre.trim(), interesadoTelefono = telefono.nonEmpty, sena = numero, senaMoneda = senaMoneda,
-                    venceEl = vence.toString(), venceHora = String.format("%02d:%02d", hora / 60, hora % 60),
+                    venceEl = vence.toString(), venceHora = String.format(java.util.Locale.ROOT, "%02d:%02d", hora / 60, hora % 60),
                 ),
                 envio = envio,
             )

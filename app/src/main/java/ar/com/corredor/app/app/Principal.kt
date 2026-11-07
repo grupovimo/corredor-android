@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -43,6 +44,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,6 +53,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -62,9 +69,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -107,6 +116,9 @@ class Barra {
     var oculta by mutableStateOf(false)
     /** `.navigationBarTitleDisplayMode(.large)`: el título va grande en la pantalla y no en la barra. */
     var grande by mutableStateOf(false)
+    /** Con `grande`, cuánto del título grande se escondió al desplazar (0 a 1): pasado el final, el título chico
+     *  aparece en la barra, como en iOS. */
+    var colapso by mutableFloatStateOf(0f)
 }
 
 val LocalBarra = staticCompositionLocalOf { Barra() }
@@ -136,11 +148,55 @@ fun PantallaApilada(
     Box(modifier.fillMaxSize()) {
         FondoApp()
         if (grande) {
-            Column(Modifier.fillMaxSize()) {
-                Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), lineas = 1)
-                Box(Modifier.weight(1f).fillMaxWidth(), content = contenido)
+            // El título grande se va con el desplazamiento y vuelve al llegar arriba (`.large` en iOS): lo que se corre
+            // para arriba primero lo esconde; para abajo, lo muestra sólo con el contenido ya arriba (o con el envión).
+            val b = LocalBarra.current
+            val tiron = remember { Tiron() }
+            val conexion = remember(b, tiron) { TituloQueSeAchica(b, tiron) }
+            CompositionLocalProvider(LocalTiron provides tiron) {
+                Column(Modifier.fillMaxSize().nestedScroll(conexion)) {
+                    Box(Modifier.fillMaxWidth().clipToBounds().layout { m, c ->
+                        val p = m.measure(c)
+                        conexion.alto = p.height.toFloat()
+                        val corrido = conexion.corrido.coerceIn(0f, p.height.toFloat()).roundToInt()
+                        layout(p.width, p.height - corrido) { p.place(0, -corrido) }
+                    }) {
+                        Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), lineas = 1)
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth(), content = contenido)
+                }
             }
         } else contenido()
+    }
+}
+
+/** El desplazamiento del título grande de [PantallaApilada]: `corrido` es cuánto se escondió (0 a `alto`) y
+ *  `posicion`, cuánto se corrió el contenido (0 arriba, negativo al bajar). Lo tirado de un [Refrescable] ([Tiron])
+ *  se recoge antes de esconder el título. */
+private class TituloQueSeAchica(private val barra: Barra, private val tiron: Tiron) : NestedScrollConnection {
+    var alto by mutableFloatStateOf(0f)
+    var corrido by mutableFloatStateOf(0f)
+    private var posicion = 0f
+
+    private fun correr(d: Float): Float {
+        val antes = corrido
+        corrido = (corrido - d).coerceIn(0f, alto)
+        barra.colapso = if (alto > 0f) corrido / alto else 0f
+        return antes - corrido
+    }
+
+    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+        val y = available.y
+        if (y < 0f && corrido < alto && tiron.tirado <= 0f) return Offset(0f, correr(y))
+        if (y > 0f && corrido > 0f && posicion >= -0.5f) return Offset(0f, correr(y))
+        return Offset.Zero
+    }
+
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+        posicion = minOf(0f, posicion + consumed.y)
+        // El envión que llegó arriba con lo que sobra muestra el título.
+        if (available.y > 0f && corrido > 0f) return Offset(0f, correr(available.y))
+        return Offset.Zero
     }
 }
 
@@ -153,11 +209,13 @@ fun BotonBarra(texto: String, fuerte: Boolean = false, habilitado: Boolean = tru
     }
 }
 
-/** Un botón con ícono de la barra (los ToolbarItem con Label o Image). */
+/** Un botón con ícono de la barra (los ToolbarItem con Label o Image). `habilitado = false` es `.disabled`. */
 @Composable
-fun BotonBarraIcono(simbolo: String, etiqueta: String, alTocar: () -> Unit) {
-    Box(Modifier.size(44.dp).clickable(onClick = alTocar).semantics { contentDescription = etiqueta }, contentAlignment = Alignment.Center) {
-        Icono(simbolo, 19f, C.accion)
+fun BotonBarraIcono(simbolo: String, etiqueta: String, habilitado: Boolean = true, alTocar: () -> Unit) {
+    // Apagado (`.disabled` en iOS): gris, no toca y TalkBack lo dice atenuado.
+    Box(Modifier.size(44.dp).clickable(enabled = habilitado, onClick = alTocar).semantics { contentDescription = etiqueta; if (!habilitado) disabled() },
+        contentAlignment = Alignment.Center) {
+        Icono(simbolo, 19f, if (habilitado) C.accion else C.texto3)
     }
 }
 
@@ -177,7 +235,9 @@ fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
                 }
             }
         }
-        b.titulo?.takeIf { !b.grande }?.let { Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center).widthIn(max = 200.dp), lineas = 1, alinear = TextAlign.Center) }
+        // Con el título grande, el chico aparece cuando aquel terminó de esconderse.
+        b.titulo?.let { Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center).widthIn(max = 200.dp)
+            .graphicsLayer { alpha = if (b.grande) ((b.colapso - 0.7f) / 0.3f).coerceIn(0f, 1f) else 1f }, lineas = 1, alinear = TextAlign.Center) }
         Row(Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) { b.acciones?.invoke(this) }
     }
 }
@@ -269,14 +329,16 @@ fun Principal() {
     LaunchedEffect(Unit) { Abrir.pendiente?.let { Abrir.pendiente = null; estado.ir(it) } }
 }
 
-/** fullScreenCover de iOS: sube desde abajo, tapa todo (también la barra) y «atrás» lo cierra. */
+/** fullScreenCover de iOS: sube desde abajo, tapa todo (también la barra) y «atrás» lo cierra (salvo `cerrable = false`). */
 @Composable
-fun PantallaCompleta(visible: Boolean, alCerrar: () -> Unit, contenido: @Composable () -> Unit) {
+fun PantallaCompleta(visible: Boolean, alCerrar: () -> Unit, cerrable: Boolean = true, contenido: @Composable () -> Unit) {
     AnimatedVisibility(visible, Modifier.zIndex(8f), enter = slideInVertically(tween(350)) { it }, exit = slideOutVertically(tween(300)) { it }) {
+        // Antes que el contenido: así un BackHandler de la pantalla (que se registra después) le gana a éste.
+        // `cerrable = false` es `.interactiveDismissDisabled()`: «atrás» no la cierra.
+        BackHandler(enabled = cerrable) { alCerrar() }
         CompositionLocalProvider(LocalCerrarHoja provides alCerrar) {
             Box(Modifier.fillMaxSize().background(C.fondo).clickable(remember { MutableInteractionSource() }, null) {}) { contenido() }
         }
-        BackHandler { alCerrar() }
     }
 }
 
@@ -337,7 +399,7 @@ fun BarraPestanas() {
     val fondo = tema(0xFAF8F2, 0x111314, alfa = 0.94f, alfaOscuro = 0.92f).actual
     Column(Modifier.fillMaxWidth().background(fondo)) {
         Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
-        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 4.dp).padding(top = 6.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 4.dp).padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             items.forEach { (p, nombre, icono) ->
                 val activa = estado.pestana == p
                 Tocable({
@@ -366,9 +428,15 @@ fun BarraPestanas() {
                         val color = if (activa) C.accion else C.texto3
                         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Box(Modifier.height(27.dp), contentAlignment = Alignment.Center) {
-                                Icono(if (activa) "$icono.fill" else icono, 22f, color)
+                                Icono(if (activa) "$icono.fill" else icono, 22f, color, peso = Peso.medium)
+                                // .overlay(alignment: .topTrailing) con .offset(x: 14, y: -4).
                                 val n = insignia(estado, p)
-                                if (n != null && n > 0) Box(Modifier.align(Alignment.Center).offset(x = 14.dp, y = (-8).dp)) { InsigniaRoja(n) }
+                                if (n != null && n > 0) Box(Modifier.matchParentSize(), contentAlignment = Alignment.TopEnd) {
+                                    Box(Modifier.layout { m, c ->
+                                        val q = m.measure(c.copy(minWidth = 0, minHeight = 0, maxWidth = Constraints.Infinity))
+                                        layout(0, 0) { q.place(-q.width + 14.dp.roundToPx(), (-4).dp.roundToPx()) }
+                                    }) { InsigniaRoja(n) }
+                                }
                             }
                             Texto(nombre, Estilo.tab, color, lineas = 1)
                         }
@@ -391,7 +459,13 @@ private fun insignia(estado: Estado, p: Pestana): Int? = when (p) {
 @Composable
 fun BotonMira(tam: androidx.compose.ui.unit.Dp = 58.dp, abierto: Boolean = false) {
     val giro by animateFloatAsState(if (abierto) 45f else 0f, spring(dampingRatio = 0.7f), label = "mira")
-    Box(Modifier.offset(y = (-18).dp).size(tam + 8.dp).sombra(CircleShape, hex(0x7A5200, 0.7f), 11.dp, y = 12.dp).clip(CircleShape).background(C.fondo).padding(4.dp)
+    // Como en iOS (frame tam, aro con padding(-4) y .padding(.top, -18)): ocupa tam de ancho y tam − 18 de alto, y el
+    // botón con su aro sube 18 por encima.
+    Box(Modifier.layout { m, _ ->
+        val lado = (tam + 8.dp).roundToPx()
+        val p = m.measure(Constraints.fixed(lado, lado))
+        layout(tam.roundToPx(), (tam - 18.dp).roundToPx()) { p.place(-4.dp.roundToPx(), -(22.dp).roundToPx()) }
+    }.sombra(CircleShape, hex(0x7A5200, 0.7f), 11.dp, y = 12.dp).clip(CircleShape).background(C.fondo).padding(4.dp)
         .clip(CircleShape).background(Brush.verticalGradient(0f to hex(0xF7CB73), 0.55f to hex(0xF2BB57), 1f to hex(0xE9AD44)))
         .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape), contentAlignment = Alignment.Center) {
         Icono("plus", 26f, C.verde800, Modifier.rotate(giro))
@@ -494,15 +568,19 @@ fun AccionesRapidas() {
             val t by animateFloatAsState(if (sale) 1f else 0f, spring(dampingRatio = 0.65f, stiffness = 300f), label = "accion$i")
             val destino = puntos[i]
             val x = origen.x + (destino.x - origen.x) * t; val y = origen.y + (destino.y - origen.y) * t
-            Box(Modifier.offset { IntOffset(((x - tamanoAccion.first / 2) * densidad).roundToInt(), ((y - 28) * densidad).roundToInt()) }
+            // .position(punto) centra la acción entera (círculo y nombre) en el punto.
+            Box(Modifier.offset { IntOffset(((x - tamanoAccion.first / 2) * densidad).roundToInt(), ((y - tamanoAccion.second / 2) * densidad).roundToInt()) }
                 .size(tamanoAccion.first.dp, tamanoAccion.second.dp).graphicsLayer { scaleX = 0.3f + 0.7f * t; scaleY = 0.3f + 0.7f * t; alpha = t }) {
                 Tocable({ Haptico.seleccion(); cerrar(); a.hacer() }, Modifier.fillMaxSize()) {
                     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Box(Modifier.size(56.dp).sombra(CircleShape, Color.Black.copy(alpha = 0.3f), 10.dp, y = 6.dp).clip(CircleShape)
                             .background(if (a.destacada) C.oro else C.superficie), contentAlignment = Alignment.Center) {
-                            Icono(a.icono, 21f, if (a.destacada) C.verde800 else C.accion)
+                            Icono(a.icono, 21f, if (a.destacada) C.verde800 else C.accion, peso = Peso.semibold)
                         }
-                        Texto(a.nombre, Estilo(12f, Peso.bold, relativo = Relativo.caption), Color.White, lineas = 1, modifier = Modifier.sombra(RoundedCornerShape(4.dp), Color.Black.copy(alpha = 0.5f), 3.dp))
+                        // .lineLimit(1).fixedSize(): el nombre entero aunque pase el ancho, con la sombra de la letra.
+                        androidx.compose.foundation.text.BasicText(a.nombre, Modifier.wrapContentWidth(unbounded = true),
+                            style = Estilo(12f, Peso.bold, relativo = Relativo.caption).ts().copy(color = Color.White,
+                                shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.5f), blurRadius = 3f * densidad)), maxLines = 1, softWrap = false)
                     }
                 }
             }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- «Hoy» (CorredorWidgets en iOS): chico (2×2) y mediano (4×2), como systemSmall y systemMedium. Cada 30 min (el
-     mínimo de Android); la app además lo recarga con cada cambio en vivo. -->
+<!-- «Hoy» (CorredorWidgets en iOS): chico (2×2) y mediano (4×2), como systemSmall y systemMedium. Esto es el respaldo
+     de cada 30 min (el mínimo de Android): Widgets.programar lo vuelve a pedir cada 15 (como el timeline de iOS), cada
+     minuto la hora antes de la visita y al terminar, y la app lo recarga con cada cambio (en vivo, avisos, la visita). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_hoy_descripcion"
     android:initialLayout="@layout/glance_default_loading_layout"

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -210,7 +211,8 @@ fun Objetivos() {
             Box(Modifier.fillMaxSize().clip(Capsula).background(if (sobreVerde) Color.White.copy(alpha = 0.25f) else C.hundida))
             Box(Modifier.width(ancho * (if (m.meta > 0) min(1.0, m.avance / m.meta) else 0.0).toFloat()).fillMaxHeight().clip(Capsula)
                 .background(if (sobreVerde) C.oro else (if (bien(m)) C.verde700 else C.oro)))
-            Box(Modifier.offset(x = ancho * ritmo.esperado.toFloat() - 1.dp).width(2.dp).height(alto + 6.dp)
+            // La raya sobresale 3 arriba y 3 abajo de la barra (frame(height: alto + 6) en un ZStack de `alto`).
+            Box(Modifier.offset(x = ancho * ritmo.esperado.toFloat() - 1.dp).width(2.dp).requiredHeight(alto + 6.dp)
                 .background(if (sobreVerde) Color.White else C.texto))
         }
     }
@@ -235,9 +237,10 @@ fun Objetivos() {
         val a = ayuda(yo)
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(C.verde700).padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Texto("${peor.texto} · ${if (e == "atrás") "vas atrás" else e}".uppercase(Formato.argentina), Estilo(12f, Peso.bold, 0.5f / 12f), C.oro)
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Texto(Formato.numero(peor.avance.toInt()), Estilo.montoMeta, Color.White, numeros = true)
-                Texto("de ${Formato.numero(peor.meta.toInt())}", Estilo.subhead, Color.White.copy(alpha = 0.8f), Modifier.padding(bottom = 4.dp))
+            // HStack(alignment: .firstTextBaseline, spacing: 6).
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Texto(Formato.numero(peor.avance.toInt()), Estilo.montoMeta, Color.White, Modifier.alignByBaseline(), numeros = true)
+                Texto("de ${Formato.numero(peor.meta.toInt())}", Estilo.subhead, Color.White.copy(alpha = 0.8f), Modifier.alignByBaseline())
             }
             barra(peor, alto = 10.dp, sobreVerde = true)
             Texto((if (falta > 0) "Te falta ${Formato.numero(falta)} para ir al día." else "¡Vas bien!") + (a?.let { " ${it.first}." } ?: ""), Estilo.subhead, Color.White)

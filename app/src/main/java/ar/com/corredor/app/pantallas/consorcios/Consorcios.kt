@@ -128,10 +128,9 @@ fun Consorcios() {
 
     LaunchedEffect(estado.version) { cargar() }
 
-    PantallaApilada("Consorcios", acciones = if (estado.escribe) ({ BotonBarraIcono("plus", "Nuevo consorcio") { nuevo = true } }) else null) {
+    PantallaApilada("Consorcios", grande = true, acciones = if (estado.escribe) ({ BotonBarraIcono("plus", "Nuevo consorcio") { nuevo = true } }) else null) {
         Refrescable({ cargar() }, Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Texto("Consorcios", Estilo.tituloGrande, C.texto)
                 val l = lista
                 val e = error
                 if (l != null) {

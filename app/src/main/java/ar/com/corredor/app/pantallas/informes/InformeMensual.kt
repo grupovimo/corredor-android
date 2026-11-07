@@ -15,6 +15,8 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.TextUtils
 import android.text.style.StyleSpan
+import androidx.core.content.res.ResourcesCompat
+import ar.com.corredor.app.R
 import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.pantallas.mensajes.Charla
 import ar.com.corredor.app.tema.*
@@ -236,6 +238,10 @@ object InformeMensualPDF {
         try {
             val carpeta = File(ctx.cacheDir, "compartir").apply { mkdirs() }
             val archivo = File(carpeta, "Informe de ${TextosInforme.nombreMes(d.m.mes)} ${d.m.mes.take(4)}.pdf")
+            // Los íconos (Image(systemName:)) se dibujan con la misma letra de símbolos que usa `Icono`.
+            letrasSimbolos = runCatching {
+                (ResourcesCompat.getFont(ctx, R.font.simbolos_contorno) ?: Typeface.DEFAULT) to (ResourcesCompat.getFont(ctx, R.font.simbolos_relleno) ?: Typeface.DEFAULT)
+            }.getOrNull()
             val doc = PdfDocument()
             val paginas: List<(Canvas) -> Unit> = listOf({ portadaInforme(it, d) }, { resumenInforme(it, d) }, { equipoInforme(it, d) }, { plataInforme(it, d) })
             paginas.forEachIndexed { i, dibujar ->
@@ -301,6 +307,29 @@ private fun Canvas.textoAjustado(s: String, tam: Float, peso: Int, color: Int, x
 
 private fun Canvas.caja(x: Float, y: Float, w: Float, h: Float, radio: Float, color: Int) {
     drawRoundRect(RectF(x, y, x + w, y + h), radio, radio, Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color })
+}
+
+/** Las dos letras de símbolos (contorno, relleno); las carga `pdf` antes de dibujar. */
+private var letrasSimbolos: Pair<Typeface, Typeface>? = null
+
+/** Un ícono por su nombre de SF Symbol, como `Icono` (mismo mapa y misma escala): «.fill» elige la variante rellena.
+ *  Lo dibuja arriba a la izquierda en (x, y) y devuelve su ancho. `tam` es el tamaño de iOS (sin `.font`, 17). */
+private fun Canvas.simbolo(nombre: String, tam: Float, color: Int, x: Float, y: Float): Float {
+    val letras = letrasSimbolos ?: return 0f
+    val partes = nombre.split('.')
+    val relleno = "fill" in partes
+    val base = partes.filter { it != "fill" }.joinToString(".")
+    val c = Simbolos.mapa[base] ?: Simbolos.mapa[nombre] ?: Simbolos.mapa[base.substringBeforeLast('.')] ?: return 0f
+    val p = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = tam * 1.18f
+        this.color = color
+        typeface = if (relleno) letras.second else letras.first
+    }
+    val lado = tam * 1.18f
+    // La letra de símbolos tiene el glifo en el cuadro de 1 em: se centra en un cuadrado de `lado`.
+    val fm = p.fontMetrics
+    drawText(c.toString(), x, y + (lado - (fm.descent + fm.ascent)) / 2, p)
+    return p.measureText(c.toString())
 }
 
 /** Texto en negrita + texto normal (Text(…).bold() + Text(…)). */
@@ -457,11 +486,13 @@ private fun resumenInforme(c: Canvas, d: DatosInforme) {
     // El consejo para el mes que viene.
     if (consejo != null) {
         val texto = rico("Para ${TextosInforme.nombreMes(TextosInforme.siguiente(d.m.mes))}:", " $consejo")
-        val l = armar(texto, pintura(11f, color = tinta), ancho - 24f - 22f)
-        val alto = max(l.height.toFloat(), 14f) + 24f
+        // HStack(alignment: .top, spacing: 8): el foco (17 de iOS, sin .font) y la frase de 11.
+        val lado = 17f * 1.18f
+        val l = armar(texto, pintura(11f, color = tinta), ancho - 24f - lado - 8f)
+        val alto = max(l.height.toFloat(), lado) + 24f
         c.caja(m, y, ancho, alto, 10f, hexA4(0xFBEFD5))
-        c.texto("💡", pintura(12f, color = hexA4(0x7A5200)), m + 12f, y + 12f, 16f, lineas = 1)
-        c.texto(l, m + 12f + 22f, y + 12f)
+        val w = c.simbolo("lightbulb.fill", 17f, hexA4(0x7A5200), m + 12f, y + 12f).takeIf { it > 0f } ?: lado
+        c.texto(l, m + 12f + w + 8f, y + 12f)
     }
 }
 
@@ -490,7 +521,8 @@ private fun equipoInforme(c: Canvas, d: DatosInforme) {
     c.clipPath(forma)
     filas.forEach { (celdas, encabezado, par) ->
         val color = if (encabezado) gris else tinta
-        val nombre = armar(celdas[0], pintura(11f, if (encabezado) 700 else 600, color), anchoNombre, lineas = 1)
+        // Text(a).fontWeight(.semibold) pisa el peso del .font de la fila: el nombre va en 600 también en el encabezado.
+        val nombre = armar(celdas[0], pintura(11f, 600, color), anchoNombre, lineas = 1)
         val alto = nombre.height + 18f
         c.drawRect(m, y, m + ancho, y + alto, Paint().apply { this.color = if (par) hexA4(0xF8F5EE) else (if (encabezado) hexA4(0xF5F1E8) else blanco) })
         c.texto(nombre, m + 12f, y + 9f)
@@ -574,12 +606,19 @@ private fun plataInforme(c: Canvas, d: DatosInforme) {
     y += c.texto("Contratos en $proximo", pintura(12f, 700, tinta), m, y, ancho) + 8f
     val ajusta = rico(if (d.ajustan > 0) Formato.cantidad(d.ajustan, "ajusta", "ajustan") else "Ninguno ajusta",
         d.suba?.let { " · el alquiler promedio sube ${Formato.porcentaje(Math.round(it * 10) / 10.0)}" } ?: "")
-    c.texto("📈", pintura(11f, color = hexA4(0x7A5200)), m, y, 18f, lineas = 1)
-    y += c.texto(ajusta, pintura(11f, color = tinta), m + 22f, y, ancho - 22f) + 8f
+    // HStack(spacing: 8), centrado: el ícono (17 de iOS, sin .font) y la frase de 11.
+    val lado = 17f * 1.18f
+    val lAjusta = armar(ajusta, pintura(11f, color = tinta), ancho - lado - 8f)
+    val altoAjusta = max(lado, lAjusta.height.toFloat())
+    val wA = c.simbolo("chart.line.uptrend.xyaxis", 17f, hexA4(0x7A5200), m, y + (altoAjusta - lado) / 2).takeIf { it > 0f } ?: lado
+    c.texto(lAjusta, m + wA + 8f, y + (altoAjusta - lAjusta.height) / 2)
+    y += altoAjusta + 8f
     val vence = rico(if (d.vencen > 0) Formato.cantidad(d.vencen, "vence", "vencen") else "Ninguno vence",
         " antes de ${TextosInforme.nombreMes(d.limite)}${if (d.vencen > 0) " · preguntar si renuevan" else ""}")
-    c.texto("📅", pintura(11f, color = gris), m, y, 18f, lineas = 1)
-    c.texto(vence, pintura(11f, color = tinta), m + 22f, y, ancho - 22f)
+    val lVence = armar(vence, pintura(11f, color = tinta), ancho - lado - 8f)
+    val altoVence = max(lado, lVence.height.toFloat())
+    val wV = c.simbolo("calendar.badge.exclamationmark", 17f, gris, m, y + (altoVence - lado) / 2).takeIf { it > 0f } ?: lado
+    c.texto(lVence, m + wV + 8f, y + (altoVence - lVence.height) / 2)
     // Abajo: el QR al informe interactivo.
     val pie = armar("Escaneá para abrir el informe interactivo en Corredor, con el detalle de cada número.", pintura(10f, color = gris), ancho - (if (d.qr != null) 68f else 0f))
     val altoPie = max(if (d.qr != null) 56f else 0f, pie.height.toFloat())

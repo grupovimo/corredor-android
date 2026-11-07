@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -146,15 +147,20 @@ private fun pdfTarjeta(ctx: Context, estado: Estado, d: TarjetaAgente.Datos): Fi
         c.drawText(recortar(d.inmobiliaria.uppercase(), p, ancho - x - 24f - 10f), x + 18f, 19.5f, p)
         p.letterSpacing = 0f
         // El nombre y la línea.
-        p.color = 0xFF18201D.toInt(); p.textSize = 13f; p.typeface = Typeface.DEFAULT_BOLD
+        p.color = 0xFF18201D.toInt(); p.typeface = Typeface.DEFAULT_BOLD
+        achicar(d.nombre, p, 13f, ancho - x - 10f) // minimumScaleFactor(0.7)
         c.drawText(recortar(d.nombre, p, ancho - x - 10f), x, 66f, p)
         p.color = 0xFF6B6457.toInt(); p.textSize = 7.5f; p.typeface = Typeface.DEFAULT
         c.drawText(recortar(d.linea, p, ancho - x - 10f), x, 78f, p)
         // Cómo encontrarlo.
-        p.color = 0xFF18201D.toInt(); p.textSize = 7f; p.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        // .medium, con minimumScaleFactor(0.7).
+        p.color = 0xFF18201D.toInt()
+        p.typeface = if (android.os.Build.VERSION.SDK_INT >= 28) Typeface.create(Typeface.DEFAULT, 500, false) else Typeface.DEFAULT
         var y = 112f
-        d.telefono?.let { c.drawText(recortar(it, p, ancho - x - 10f), x, y, p); y += 9f }
+        d.telefono?.let { achicar(it, p, 7f, ancho - x - 10f); c.drawText(recortar(it, p, ancho - x - 10f), x, y, p); y += 9f }
+        achicar(d.email, p, 7f, ancho - x - 10f)
         c.drawText(recortar(d.email, p, ancho - x - 10f), x, y, p)
+        p.typeface = Typeface.DEFAULT
         // «Hecha con Corredor».
         simbolo(ctx)?.let { s ->
             p.alpha = (0.6f * 255).toInt()
@@ -173,6 +179,12 @@ private fun pdfTarjeta(ctx: Context, estado: Estado, d: TarjetaAgente.Datos): Fi
         estado.avisar("No pudimos armar la tarjeta.", ok = false)
         null
     }
+}
+
+/** Achica la letra hasta el 70 % para que `t` entre en `ancho` (minimumScaleFactor(0.7)). */
+private fun achicar(t: String, p: Paint, tam: Float, ancho: Float) {
+    p.textSize = tam
+    while (p.textSize > tam * 0.7f && p.measureText(t) > ancho) p.textSize -= 0.25f
 }
 
 /** Corta el texto con «…» para que entre en `ancho` (lineLimit(1)). */
@@ -250,15 +262,17 @@ fun TarjetaAgente(usuario: String) {
 @Composable
 fun TarjetaImpresa(d: TarjetaAgente.Datos) {
     val ctx = LocalContext.current
+    // .font(.system(size:)) no sigue el tamaño de letra del sistema: las medidas van en puntos fijos.
+    val escalaLetra = LocalDensity.current.fontScale
     BoxWithConstraints(Modifier.fillMaxSize().background(Color.White)) {
         val e = this@BoxWithConstraints.maxWidth.value / 241f
         @Composable
         fun t(texto: String, tam: Float, color: Color, peso: FontWeight = FontWeight.Normal, lineas: Int = 1, tracking: Float = 0f, escala: Boolean = false, m: Modifier = Modifier) {
             BasicText(
                 texto, m,
-                style = TextStyle(fontSize = tam.sp, fontWeight = peso, color = color, letterSpacing = tracking.sp),
+                style = TextStyle(fontSize = (tam / escalaLetra).sp, fontWeight = peso, color = color, letterSpacing = (tracking / escalaLetra).sp),
                 maxLines = lineas, overflow = TextOverflow.Ellipsis,
-                autoSize = if (escala) TextAutoSize.StepBased((tam * 0.7f).sp, tam.sp, 0.5.sp) else null,
+                autoSize = if (escala) TextAutoSize.StepBased((tam * 0.7f / escalaLetra).sp, (tam / escalaLetra).sp, 0.5.sp) else null,
             )
         }
         Row(Modifier.fillMaxSize()) {

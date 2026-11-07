@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +30,12 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+/** Cuánto está tirado el [Refrescable] de adentro: el título grande de `PantallaApilada` no se esconde mientras tanto
+ *  (primero se recoge lo tirado). */
+class Tiron { var tirado by mutableFloatStateOf(0f) }
+
+val LocalTiron = staticCompositionLocalOf<Tiron?> { null }
+
 /** Tirar hacia abajo para volver a pedir (`.refreshable` en iOS), sin Material: envuelve una lista con scroll vertical
  *  (verticalScroll o LazyColumn). Mientras se tira baja el contenido y aparece la flecha; pasado el umbral, al soltar
  *  corre [alRefrescar] con el pulso arriba hasta que termina. */
@@ -37,6 +46,8 @@ fun Refrescable(alRefrescar: suspend () -> Unit, modifier: Modifier = Modifier, 
     var tirado by remember { mutableFloatStateOf(0f) }
     var refrescando by remember { mutableStateOf(false) }
     val umbral = with(LocalDensity.current) { 72.dp.toPx() }
+    val tiron = LocalTiron.current
+    LaunchedEffect(tiron) { if (tiron != null) snapshotFlow { tirado }.collect { tiron.tirado = it } }
     val conexion = remember(umbral) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {

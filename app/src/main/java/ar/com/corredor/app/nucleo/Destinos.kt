@@ -197,7 +197,8 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
             }
         }
 
-        private fun decodificar(s: String): String = runCatching { URLDecoder.decode(s, "UTF-8") }.getOrDefault(s)
+        /** Como los queryItems de URLComponents: decodifica los %XX y deja el «+» como está (URLDecoder lo hace espacio). */
+        private fun decodificar(s: String): String = runCatching { URLDecoder.decode(s.replace("+", "%2B"), "UTF-8") }.getOrDefault(s)
     }
 }
 

@@ -5,7 +5,6 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -39,6 +38,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,7 +80,10 @@ import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.pantallas.mensajes.AudioMensaje
 import ar.com.corredor.app.pantallas.propiedades.Propiedad
 import ar.com.corredor.app.tema.*
+import android.net.Uri
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -338,17 +341,25 @@ fun Inventario(
 
     LaunchedEffect(estado.version) { cargar() }
 
+    // loadTransferable + jpegData(0.8): la foto entera (derecha según el EXIF) en JPEG al 80 %.
     val fototeca = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         val id = fotoDe
         if (uri != null && id != null) alcance.launch {
-            val d = jpegDe(ctx, uri)
-            if (d != null) sumarFoto(d, id)
+            val d = withContext(Dispatchers.IO) { Fotos.achicar(ctx, uri, lado = LADO_FOTO_RECORRIDA, calidad = 80) }
+            if (d != null) sumarFoto(d, id) else estado.avisar("No se pudo leer la foto.", ok = false)
         }
     }
-    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { b ->
-        val id = camaraPara
-        camaraPara = null
-        if (b != null && id != null) alcance.launch { sumarFoto(jpegDe(b), id) }
+    // Camara (UIImagePickerController .camera): la foto en resolución completa, a un archivo de cache/.
+    var fotoCamara by rememberSaveable { mutableStateOf<String?>(null) }
+    var camaraDe by rememberSaveable { mutableStateOf<String?>(null) }
+    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val id = camaraDe ?: camaraPara
+        val u = fotoCamara?.let { Uri.parse(it) }
+        camaraPara = null; camaraDe = null; fotoCamara = null
+        if (ok && u != null && id != null) alcance.launch {
+            val d = withContext(Dispatchers.IO) { Fotos.achicar(ctx, u, lado = LADO_FOTO_RECORRIDA, calidad = 80) }
+            if (d != null) sumarFoto(d, id) else estado.avisar("No se pudo leer la foto.", ok = false)
+        }
     }
 
     val alApretar by rememberUpdatedState {
@@ -438,7 +449,14 @@ fun Inventario(
                                     alElegir = { elegido = it.id },
                                     alSacarFoto = {
                                         elegido = it.id; camaraPara = it.id
-                                        alcance.launch { if (estado.alPedirPermiso("camara")) camara.launch(null) else camaraPara = null }
+                                        alcance.launch {
+                                            val listo = estado.alPedirPermiso("camara") && runCatching {
+                                                val (_, u) = Fotos.archivoCamara(ctx)
+                                                fotoCamara = u.toString(); camaraDe = it.id
+                                                camara.launch(u)
+                                            }.isSuccess
+                                            if (!listo) camaraPara = null
+                                        }
                                     },
                                     alElegirFoto = {
                                         elegido = it.id; fotoDe = it.id
@@ -456,7 +474,10 @@ fun Inventario(
                             if (s != null) {
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     if (s == "ambiente") CampoCobro(nuevoAmbiente, { nuevoAmbiente = it }, "Ambiente nuevo (Baño de servicio)", Modifier.fillMaxWidth())
-                                    CampoCobro(nuevoItem, { nuevoItem = it }, "Ítem (Alacena superior)", Modifier.fillMaxWidth())
+                                    // .submitLabel(.done) + .onSubmit: «Listo» en el teclado suma el ítem.
+                                    CampoCobro(nuevoItem, { nuevoItem = it }, "Ítem (Alacena superior)", Modifier.fillMaxWidth(), alListo = {
+                                        alcance.launch { sumar(ambienteNuevo = s == "ambiente") }
+                                    })
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         BotonAccion(if (enviando) "Sumando…" else "Sumar", { alcance.launch { sumar(ambienteNuevo = s == "ambiente") } }, Modifier.weight(1f),
                                             habilitado = !(enviando || nuevoItem.isBlank() || (s == "ambiente" && nuevoAmbiente.isBlank())))
@@ -545,6 +566,9 @@ fun Inventario(
     }
 }
 
+/** El lado mayor de la foto de la recorrida: la de la cámara entera (12 MP y más caben). */
+private const val LADO_FOTO_RECORRIDA = 8192
+
 @Serializable private data class CuerpoItem(val ambiente: String, val descripcion: String, val cantidad: Int, val estado: String, val notas: String? = null, val fotos: List<String>)
 @Serializable private data class GrabacionNota(val transcripcion: String, val audioId: String, val audioSegundos: Int)
 @Serializable private data class NuevoItem(val ambiente: String, val descripcion: String, val estado: String = "bueno")
@@ -599,7 +623,7 @@ private fun FilaItemInventario(
                             .clickable(enabled = escribe) { alPoner(k) }.semantics { selected = on },
                         horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if (on) Icono("checkmark", 11f, tinta)
+                        if (on) Icono("checkmark", 11f, tinta, peso = Peso.bold)
                         Texto(n, Estilo(14f, if (on) Peso.bold else Peso.medium), tinta)
                     }
                 }
@@ -718,7 +742,7 @@ fun Firmas(
             val dir = prop?.direccion ?: prop?.nombre ?: ""
             val n = Inv.primerNombre(p.nombre)
             val texto = "Hola $n, te escribo de $inmoNombre. El acta de ${if (acta?.tipo == "entrada") "entrega" else "devolución"} de $dir está lista: falta tu firma. La podés firmar desde el celular acá: ${l.url ?: ""}"
-            WhatsAppCorredor.waMe(p.telefono, texto)?.let { abrirUrl(ctx, it) }
+            Afuera.whatsapp(p.telefono, texto = texto)
             val todos: List<LinkFirma> = estado.api.opcional("/v1/propiedades/$propiedad/actas/$actaId/links") ?: emptyList()
             links = todos.filter { it.estado == "vigente" }
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
@@ -1176,7 +1200,7 @@ fun FichasMandadas(propiedad: String) {
                     lista.forEachIndexed { i, e ->
                         if (i > 0) LineaFila(16.dp)
                         FilaDeslizable(
-                            derecha = if (estado.escribe) listOf(AccionFila("Quitar", "trash", C.error) {
+                            derecha = if (estado.escribe) listOf(AccionFila("Quitar", color = C.error) {
                                 alcance.launch {
                                     runCatching { estado.api.hacer("DELETE", "/v1/propiedades/$propiedad/envios/${e.id}") }
                                     cargar()

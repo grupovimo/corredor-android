@@ -197,6 +197,8 @@ class ServicioPush : FirebaseMessagingService() {
         Push.mostrar(applicationContext, d)
         // Con la app abierta, el aviso se ve igual y las listas se refrescan (willPresent en iOS).
         EnPrimerPlano.alAviso?.invoke()
+        // Lo sin responder del widget cambió (una consulta, un WhatsApp).
+        Widgets.actualizar(applicationContext)
     }
 }
 

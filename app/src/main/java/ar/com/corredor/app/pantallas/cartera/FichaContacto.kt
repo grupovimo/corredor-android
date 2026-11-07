@@ -18,7 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.*
@@ -642,6 +647,54 @@ fun FichaContacto(id: String) {
 /** Un campo de número con su etiqueta, para los formularios (`TextField(value:format: .number)`). */
 private fun numeroDe(t: String): Double? = t.filter { it.isDigit() }.toDoubleOrNull()
 
+/** Los dígitos con el separador de miles de es-AR («150.000») mientras se escriben, como el
+ *  `TextField(value:format: .number)` de iOS; el estado guarda sólo los dígitos (lo que va a la API). */
+private object MilesAR : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val crudo = text.text
+        val visto = crudo.toLongOrNull()?.let { Formato.numero(it) } ?: crudo
+        val mapa = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                var digitos = 0
+                visto.forEachIndexed { i, ch ->
+                    if (digitos == offset) return i
+                    if (ch.isDigit()) digitos++
+                }
+                return visto.length
+            }
+            override fun transformedToOriginal(offset: Int): Int =
+                visto.take(offset.coerceIn(0, visto.length)).count { it.isDigit() }.coerceAtMost(crudo.length)
+        }
+        return TransformedText(AnnotatedString(visto), mapa)
+    }
+}
+
+/** Un CampoCorredor de números con miles (Desde / Hasta de «Qué busca»). */
+@Composable
+private fun CampoMiles(valor: String, alCambiar: (String) -> Unit, placeholder: String) {
+    val estilo = Estilo.body
+    val color = C.texto
+    val gris = C.texto3
+    BasicTextField(
+        value = valor, onValueChange = { t ->
+            // Sin ceros adelante: así los dígitos guardados son los mismos que se ven (y el cursor no se corre).
+            val d = t.filter { it.isDigit() }.take(14)
+            alCambiar(if (d.length > 1) d.trimStart('0').ifEmpty { "0" } else d)
+        },
+        textStyle = estilo.ts().copy(color = color), cursorBrush = SolidColor(C.accion), singleLine = true,
+        visualTransformation = MilesAR, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier.fillMaxWidth(),
+        decorationBox = { campo ->
+            Row(Modifier.fillMaxWidth().campoCorredor().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                    if (valor.isEmpty()) Texto(placeholder, estilo, gris, lineas = 1)
+                    campo()
+                }
+            }
+        },
+    )
+}
+
 /** Alta o edición de un contacto (también lo trae de la agenda del teléfono). Al editar, el PUT lleva
  *  el contacto entero con lo cambiado encima (si no, la API borra lo que esta pantalla no muestra).
  *  `soloBusca`: sólo «Qué busca» (la tarjeta de la ficha). */
@@ -788,8 +841,8 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
                     )
                 }
                 Segmentado(opciones = listOf("USD" to "USD", "ARS" to "ARS"), elegido = c.buscaMoneda ?: "USD", alElegir = { c = c.copy(buscaMoneda = it) })
-                CampoCorredor(desdeTexto, { desdeTexto = it.filter { ch -> ch.isDigit() } }, placeholder = "Desde", teclado = KeyboardType.Number)
-                CampoCorredor(hastaTexto, { hastaTexto = it.filter { ch -> ch.isDigit() } }, placeholder = "Hasta", teclado = KeyboardType.Number)
+                CampoMiles(desdeTexto, { desdeTexto = it }, placeholder = "Desde")
+                CampoMiles(hastaTexto, { hastaTexto = it }, placeholder = "Hasta")
                 // Stepper("Ambientes: …", in: 0...10)
                 Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
                     Texto("Ambientes: ${c.buscaAmbientes?.toString() ?: "—"}", Estilo.body, C.texto, Modifier.weight(1f))

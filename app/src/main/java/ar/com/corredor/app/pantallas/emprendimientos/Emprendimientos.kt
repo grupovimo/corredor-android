@@ -564,7 +564,7 @@ fun FichaEmprendimiento(id: String) {
                                     }, "Emprendimientos") {
                                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                                             Texto("Emprendimientos · ${lista.size}", Estilo.footnoteFuerte, C.accion)
-                                            Icono("chevron.up.chevron.down", 11f, C.accion)
+                                            Icono("chevron.up.chevron.down", 11f, C.accion, peso = Peso.bold)
                                         }
                                     }
                                 }
@@ -664,7 +664,7 @@ private fun Leyenda(unidades: List<UnidadEmp>, cuenta: Map<String, Int>, e: Empr
 private fun Cuadro(vista: String, tam: Float) {
     val forma = RoundedCornerShape(3.dp)
     when (vista) {
-        "vendido" -> Box(Modifier.size(tam.dp).clip(forma).background(C.texto2), contentAlignment = Alignment.Center) { Icono("checkmark", tam * 0.6f, Color.White) }
+        "vendido" -> Box(Modifier.size(tam.dp).clip(forma).background(C.texto2), contentAlignment = Alignment.Center) { Icono("checkmark", tam * 0.6f, Color.White, peso = Peso.bold) }
         "reservado" -> Box(Modifier.size(tam.dp).clip(forma).border(1.5.dp, C.oro, forma)) { Rayado(Modifier.fillMaxSize(), paso = 2f) }
         else -> Box(Modifier.size(tam.dp).clip(forma).background(C.okFondo).border(1.dp, C.okTinta.copy(alpha = 0.5f), forma))
     }
@@ -721,7 +721,7 @@ private fun BotonUnidad(u: UnidadEmp, texto: String, elegidaId: String?, ver: St
             if (v == "reservado") Rayado(Modifier.fillMaxSize(), paso = 3f)
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 Texto(texto, Estilo(12f, Peso.bold), if (v == "vendido") Color.White else C.texto, lineas = 1, escalaMinima = 0.7f)
-                if (v == "vendido") Icono("checkmark", 9f, Color.White)
+                if (v == "vendido") Icono("checkmark", 9f, Color.White, peso = Peso.bold)
             }
         }
     }

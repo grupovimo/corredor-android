@@ -254,14 +254,14 @@ fun Indices() {
                 Box(Modifier.weight(1f)) {
                     Etiquetado("Desde") {
                         Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
-                            SelectorMenu(meses.map { it to etiquetaMes(it) }, desde, { desde = it }, "Desde")
+                            SelectorMenu(meses.map { it to etiquetaMes(it) }, desde, { desde = it }, "Desde", color = C.texto)
                         }
                     }
                 }
                 Box(Modifier.weight(1f)) {
                     Etiquetado("Índice") {
                         Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
-                            SelectorMenu(listOf("icl" to "ICL", "ipc" to "IPC", "uva" to "UVA"), indice, { indice = it }, "Índice")
+                            SelectorMenu(listOf("icl" to "ICL", "ipc" to "IPC", "uva" to "UVA"), indice, { indice = it }, "Índice", color = C.texto)
                         }
                     }
                 }

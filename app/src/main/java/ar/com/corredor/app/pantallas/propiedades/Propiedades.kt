@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -184,8 +185,6 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
     var nombreVista by remember { mutableStateOf("") }
     var masAbierto by remember { mutableStateOf(false) }
     var exportando by remember { mutableStateOf<File?>(null) }
-    /** El «Borrar la vista» (el contextMenu del chip de una vista guardada). */
-    var borrarDe by remember { mutableStateOf<VistaGuardada?>(null) }
 
     val esDuenioOAdmin = estado.rol == "duenio" || estado.rol == "admin"
 
@@ -456,7 +455,11 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
                 ChipFiltro("Fijadas · ${resumen.destacadas}", filtros.destacada) { filtros = filtros.copy(destacada = !filtros.destacada) }
             }
             guardadas.forEach { g ->
-                ChipFiltro(g.nombre, filtros == g.filtros, alMantener = { borrarDe = g }) { filtros = g.filtros; busqueda = g.filtros.q }
+                // El .contextMenu del chip: «Borrar la vista» en el menú flotante (no un diálogo).
+                MenuContextual(
+                    listOf(OpcionDeMenu("Borrar la vista", "trash", destructiva = true) { borrarVista(g) }),
+                    alTocar = { Haptico.seleccion(); filtros = g.filtros; busqueda = g.filtros.q },
+                ) { ChipVista(g.nombre, filtros == g.filtros) }
             }
             ChipFiltro("Filtros", false) { hojaFiltros = true }
         }
@@ -472,7 +475,7 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
                         horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Texto(t, Estilo(13f, Peso.semibold), C.sobreAccion, lineas = 1)
-                        Icono("xmark", 11f, C.sobreAccion)
+                        Icono("xmark", 11f, C.sobreAccion, peso = Peso.bold)
                     }
                 }
             }
@@ -784,12 +787,21 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
         },
         alCerrar = { masAbierto = false }, volver = "Cancelar", verTitulo = false,
     )
-    val borrarG = borrarDe
-    Confirmacion(
-        visible = borrarG != null, titulo = borrarG?.nombre ?: "",
-        opciones = listOf(OpcionConfirmacion("Borrar la vista", destructiva = true) { borrarG?.let { borrarVista(it) } }),
-        alCerrar = { borrarDe = null }, volver = "Cancelar", verTitulo = false,
-    )
+}
+
+/** El aspecto de ChipFiltro sin su toque propio, para que el MenuContextual reciba el toque y el mantener apretado. */
+@Composable
+private fun ChipVista(texto: String, activo: Boolean) {
+    Box(
+        Modifier.height(36.dp)
+            .sombra(Capsula, if (activo) Color.Transparent else C.sombra.copy(alpha = 0.08f), 1.dp, y = 1.dp)
+            .clip(Capsula).background(if (activo) C.accion else C.superficie)
+            .padding(horizontal = 14.dp)
+            .semantics { if (activo) selected = true },
+        contentAlignment = Alignment.Center,
+    ) {
+        Texto(texto, Estilo(14f, Peso.semibold), if (activo) C.sobreAccion else C.texto, lineas = 1)
+    }
 }
 
 /** «Fijadas»: lo que pasa en cada una (`PropiedadesRaiz.fijada` en iOS). */
@@ -825,7 +837,7 @@ fun FilaCartera(p: Propiedad, s: Senal? = null, agente: String? = null, marcada:
             Foto(p.miniatura, Modifier.fillMaxSize())
             if (marcada != null) {
                 Box(Modifier.padding(6.dp).clip(CircleShape).background(Color.Black.copy(alpha = if (marcada) 0f else 0.25f))) {
-                    Icono(if (marcada) "checkmark.circle.fill" else "circle", 24f, if (marcada) C.accion else Color.White)
+                    Icono(if (marcada) "checkmark.circle.fill" else "circle", 24f, if (marcada) C.accion else Color.White, peso = Peso.semibold)
                 }
             }
         }
@@ -899,7 +911,7 @@ fun HojaFiltrosCartera(filtros: FiltrosCartera, alCambiar: (FiltrosCartera) -> U
         Tocable(hacer, hundir = false) {
             Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Texto(texto, Estilo.body, C.texto, Modifier.weight(1f))
-                if (puesta) Icono("checkmark", 17f, C.accion)
+                if (puesta) Icono("checkmark", 17f, C.accion, peso = Peso.semibold)
             }
         }
     }

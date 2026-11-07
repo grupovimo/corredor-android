@@ -3,7 +3,9 @@ package ar.com.corredor.app.pantallas.consorcios
 import ar.com.corredor.app.nucleo.Fotos
 
 import ar.com.corredor.app.app.PantallaApilada
-import ar.com.corredor.app.nucleo.compartirTexto
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -257,7 +259,7 @@ fun FichaTrabajoConsorcio(consorcio: String, id: String) {
                             Tocable({ alcance.launch { cambiar(p.first) } }, Modifier.weight(1f).semantics { selected = on }, habilitado = estado.escribe) {
                                 Box(Modifier.fillMaxWidth().heightIn(min = 36.dp).clip(CircleShape).background(if (on) C.accion else if (hecho) C.okFondo else C.hundida),
                                     contentAlignment = Alignment.Center) {
-                                    Texto(p.second, Estilo(13f, Peso.semibold), if (on) C.sobreAccion else if (hecho) C.okTinta else C.texto2, lineas = 1, escalaMinima = 0.8f)
+                                    Texto(p.second, Estilo(13f, Peso.semibold, relativo = Relativo.footnote), if (on) C.sobreAccion else if (hecho) C.okTinta else C.texto2, lineas = 1, escalaMinima = 0.8f)
                                 }
                             }
                         }
@@ -467,7 +469,6 @@ private data class AvisoNovedad(val tipo: String = "aviso", val estado: String =
 @Composable
 fun HojaAvisoVecinos(c: ConsorcioAPI, t: TrabajoAPI) {
     val estado = LocalEstado.current
-    val ctx = LocalContext.current
     val cerrar = LocalCerrarHoja.current
     val alcance = rememberCoroutineScope()
 
@@ -480,6 +481,8 @@ fun HojaAvisoVecinos(c: ConsorcioAPI, t: TrabajoAPI) {
     }
     var texto by remember { mutableStateOf(textoAviso) }
     var guardando by remember { mutableStateOf(false) }
+    // La hoja de compartir del sistema: como en iOS, la hoja del aviso se cierra recién cuando la persona vuelve.
+    val compartir = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { cerrar() }
 
     suspend fun anotar() {
         guardando = true
@@ -488,9 +491,8 @@ fun HojaAvisoVecinos(c: ConsorcioAPI, t: TrabajoAPI) {
             estado.api.hacer("POST", "/v1/consorcios/${c.id}/novedades", AvisoNovedad(titulo = x.take(200), descripcion = if (x.length > 200) x else null, unidadId = t.unidadId))
             estado.avisar("Aviso anotado en el libro de novedades.")
             estado.version += 1
-            // La hoja de compartir del sistema; al volver, se cierra (como el sheet de iOS).
-            compartirTexto(ctx, x)
-            cerrar()
+            val envio = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, x)
+            try { compartir.launch(Intent.createChooser(envio, null)) } catch (e: Exception) { cerrar() }
         } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
         guardando = false
     }

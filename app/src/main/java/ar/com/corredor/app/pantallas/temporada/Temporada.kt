@@ -54,6 +54,7 @@ import ar.com.corredor.app.nucleo.nonEmpty
 import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.nucleo.subir
 import ar.com.corredor.app.pantallas.propiedades.AReservaTemporada
+import ar.com.corredor.app.pantallas.propiedades.Camara
 import ar.com.corredor.app.pantallas.propiedades.ErrorConCampos
 import ar.com.corredor.app.pantallas.propiedades.Propiedad
 import ar.com.corredor.app.pantallas.propiedades.conCamposComo
@@ -616,8 +617,7 @@ fun NuevaReservaTemporada(casas: List<CasaTemporada>, casaInicial: String, entra
             }
         } catch (e: CancellationException) { throw e } catch (e: ErrorConCampos) {
             errores = e.campos
-        } catch (e: Exception) { estado.avisar(e) }
-        enviando = false
+        } catch (e: Exception) { estado.avisar(e) } finally { enviando = false }
     }
 
     @Composable
@@ -762,8 +762,7 @@ fun CheckinTemporada(id: String) {
                 ids.add(estado.api.subir(jpg, "dni-${System.currentTimeMillis() / 1000}.jpg", "image/jpeg", "documento").id)
             }
             guardar(dni = (r?.checkin?.dni ?: emptyList()) + ids)
-        } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
-        subiendo = false
+        } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { subiendo = false }
     }
 
     suspend fun liberar(x: ReservaTemporada) {
@@ -809,12 +808,9 @@ fun CheckinTemporada(id: String) {
         if (x.entrada.drop(5).take(2) == x.salida.drop(5).take(2)) "${x.entrada.drop(8).toIntOrNull() ?: 0} al ${TempFechas.corto(x.salida)}"
         else "${TempFechas.corto(x.entrada)} al ${TempFechas.corto(x.salida)}"
 
-    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { b ->
-        if (b != null) {
-            val d = ByteArrayOutputStream().also { b.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
-            alcance.launch { subirDNI(listOf(d)) }
-        }
-    }
+    // La cámara de pantalla completa (`Camara` de Alta, como en iOS): la foto entera, no la miniatura.
+    var camara by remember { mutableStateOf(false) }
+    Camara(camara, { camara = false }) { d -> alcance.launch { subirDNI(listOf(d)) } }
     val fototeca = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(10)) { uris ->
         if (uris.isNotEmpty()) alcance.launch {
             val datos = mutableListOf<ByteArray>()
@@ -894,7 +890,7 @@ fun CheckinTemporada(id: String) {
                                     }
                                     Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
                                     MenuBoton(listOf(
-                                        OpcionDeMenu("Sacar la foto", "camera") { runCatching { camara.launch(null) } },
+                                        OpcionDeMenu("Sacar la foto", "camera") { camara = true },
                                         OpcionDeMenu("Elegir de Fotos", "photo.on.rectangle") { fototeca.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                                     ), "DNI") {
                                         FilaTilde(dniListo, "DNI ${personas?.let { "de los $it" } ?: "de los huéspedes"}${if (l.dni.isEmpty()) "" else " · ${Formato.cantidad(l.dni.size, "foto", "fotos")}"}",
@@ -947,7 +943,7 @@ private fun Caja(on: Boolean) {
         Modifier.size(26.dp).clip(RoundedCornerShape(7.dp)).background(if (on) C.accion else Color.Transparent)
             .border(1.5.dp, if (on) Color.Transparent else C.linea2, RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center,
-    ) { if (on) Icono("checkmark", 14f, C.sobreAccion) }
+    ) { if (on) Icono("checkmark", 14f, C.sobreAccion, peso = Peso.bold) }
 }
 
 @Composable

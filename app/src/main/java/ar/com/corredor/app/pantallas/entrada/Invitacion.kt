@@ -75,14 +75,8 @@ private fun BarraInvitacion(titulo: String, enHoja: Boolean, izquierda: Pair<Str
         BarraDe(titulo, izquierda = izquierda?.let { (t, f) -> { BotonBarraTexto(t, f) } })
         return
     }
-    Box(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp)) {
-        izquierda?.let { (t, f) ->
-            Box(Modifier.align(Alignment.CenterStart).heightIn(min = 44.dp).clickable(onClick = f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                Texto(t, Estilo.body, C.accion)
-            }
-        }
-        Texto(titulo, Estilo.headline, C.texto, Modifier.align(Alignment.Center))
-    }
+    // La barra de las hojas (tema/Hojas.kt).
+    BarraHoja(titulo, izquierda = izquierda?.let { (t, f) -> { BotonHoja(t, alTocar = f) } })
 }
 
 @Composable
@@ -142,8 +136,7 @@ fun VerInvitacion(token: String, enHoja: Boolean = LocalEstado.current.invitacio
                 error = e.detalle.ifEmpty { e.titulo }
             } catch (e: Exception) {
                 error = "Algo salió mal. Probá de nuevo."
-            }
-            enviando = false
+            } finally { enviando = false }
         }
     }
 

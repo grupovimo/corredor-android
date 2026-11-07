@@ -377,8 +377,8 @@ data class EnvioMailExpensas(val encolados: Int, val sinEmail: List<String>? = n
 /** Un cuerpo vacío (`[String: String]()` en iOS: `{}`). */
 internal val vacioConsorcio: Map<String, String> = emptyMap()
 
-/** `.nonEmpty` de iOS: el texto, o null si está vacío. */
-internal fun String?.noVacio(): String? = this?.takeIf { it.isNotEmpty() }
+/** `.nonEmpty` de iOS: el texto, o null si está vacío o en blanco. */
+internal fun String?.noVacio(): String? = this?.takeIf { it.isNotBlank() }
 
 // MARK: - Cuentas chicas (comun.ts)
 
@@ -632,7 +632,7 @@ internal suspend inline fun <reified T> todasConsorcio(api: Api, ruta: String, q
 @Composable
 fun ChipConsorcio(texto: String, tono: Tono) {
     Box(Modifier.height(24.dp).clip(CircleShape).background(tono.fondo).padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-        Texto(texto, Estilo(12f, Peso.bold), tono.tinta, lineas = 1)
+        Texto(texto, Estilo(12f, Peso.bold, relativo = Relativo.caption), tono.tinta, lineas = 1)
     }
 }
 
@@ -837,9 +837,9 @@ fun ElegirArchivoConsorcio(
                 uris.mapIndexedNotNull { i, u ->
                     runCatching {
                         if (fotos) {
-                            val d = ctx.contentResolver.openInputStream(u)?.use { it.readBytes() } ?: return@runCatching null
-                            val bmp = BitmapFactory.decodeByteArray(d, 0, d.size)
-                            val jpg = bmp?.let { b -> ByteArrayOutputStream().also { b.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray() } ?: d
+                            // `jpegData(compressionQuality: 0.85)` de iOS: la foto entera, derecha, en JPEG.
+                            val jpg = Fotos.achicar(ctx, u, lado = LADO_FOTO_CONSORCIO, calidad = 85)
+                                ?: ctx.contentResolver.openInputStream(u)?.use { it.readBytes() } ?: return@runCatching null
                             ArchivoElegidoConsorcio(jpg, "foto-${i + 1}.jpg", "image/jpeg")
                         } else {
                             val d = ctx.contentResolver.openInputStream(u)?.use { it.readBytes() } ?: return@runCatching null
@@ -856,10 +856,13 @@ fun ElegirArchivoConsorcio(
         }
     }
 
-    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { b ->
-        if (b != null) {
-            val jpg = ByteArrayOutputStream().also { b.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
-            elegir(listOf(ArchivoElegidoConsorcio(jpg, "foto-${System.currentTimeMillis() / 1000}.jpg", "image/jpeg")))
+    // La cámara del sistema con la foto en tamaño real (el `Camara` de iOS devuelve la imagen original).
+    var fotoCamara by remember { mutableStateOf<Uri?>(null) }
+    val camara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val u = fotoCamara
+        if (ok && u != null) alcance.launch {
+            val jpg = withContext(Dispatchers.IO) { Fotos.achicar(ctx, u, lado = LADO_FOTO_CONSORCIO, calidad = 85) }
+            if (jpg != null) elegir(listOf(ArchivoElegidoConsorcio(jpg, "foto-${System.currentTimeMillis() / 1000}.jpg", "image/jpeg")))
         }
     }
     val unaFoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { u -> if (u != null) leer(listOf(u), true) }
@@ -870,7 +873,9 @@ fun ElegirArchivoConsorcio(
     Confirmacion(
         visible = abierto, titulo = "Sumar", verTitulo = false, volver = "Cancelar", alCerrar = alCerrar,
         opciones = listOf(
-            OpcionConfirmacion("Sacar una foto") { runCatching { camara.launch(null) } },
+            OpcionConfirmacion("Sacar una foto") {
+                runCatching { val (_, u) = Fotos.archivoCamara(ctx); fotoCamara = u; camara.launch(u) }
+            },
             OpcionConfirmacion("Elegir de Fotos") {
                 val pedido = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                 if (multiple) variasFotos.launch(pedido) else unaFoto.launch(pedido)
@@ -896,6 +901,9 @@ object ProveedoresConsorcio {
 
 /** Para mostrar un monto entero sin decimales en los recibos de la tabla (`Int(n.rounded())`). */
 internal fun redondoEntero(n: Double): Long = if (n < 0) -(-n).roundToLong() else n.roundToLong()
+
+/** El lado mayor de las fotos que se suben (iOS no las achica: sólo un tope para no quedarse sin memoria). */
+private const val LADO_FOTO_CONSORCIO = 4096
 
 /** El ancho del ícono de las cifras en las tarjetas. */
 internal val anchoUnidad: Dp = 44.dp

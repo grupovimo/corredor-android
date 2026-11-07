@@ -125,8 +125,9 @@ private suspend fun Estado.avisarMovida(id: String) {
     val en = e.creadoEn ?: return
     if (e.tipo != "etapa" || autor == usuario?.id || Duration.between(en, Instant.now()).seconds > 60) return
     val op = api.opcional<OpMovida>("/v1/operaciones/$id") ?: return
-    val quien = (e.autorNombre ?: "").split(" ").firstOrNull() ?: ""
-    val que = (op.propiedadTitulo ?: op.titulo ?: "").split(",").firstOrNull() ?: ""
+    // split(separator:) de Swift deja afuera los pedazos vacíos.
+    val quien = (e.autorNombre ?: "").split(" ").firstOrNull { it.isNotEmpty() } ?: ""
+    val que = (op.propiedadTitulo ?: op.titulo ?: "").split(",").firstOrNull { it.isNotEmpty() } ?: ""
     sugerir("$quien pasó $que a ${Operacion.etapaTexto(hasta)} · recién", "Ver", AFichaOperacion(id))
 }
 

@@ -45,7 +45,8 @@ import kotlin.math.roundToInt
 // Clon de Tema/FilaDeslizable.swift.
 
 /** Una acción de swipe (84 de ancho, ícono 20 y texto 13/600 en blanco). */
-data class AccionFila(val texto: String, val simbolo: String, val color: Color, val accion: () -> Unit)
+/** Una acción de deslizar. Sin `simbolo` va sólo el texto (`.swipeActions { Button("Borrar") }` sin Label en iOS). */
+data class AccionFila(val texto: String, val simbolo: String? = null, val color: Color, val accion: () -> Unit)
 
 /** Fila con swipe dentro de una tarjeta (3a): a la izquierda muestra `derecha` (la última es la principal y se ejecuta
  *  al deslizar hasta el final); a la derecha, `izquierda`. Las mismas acciones quedan como acciones de TalkBack. */
@@ -152,7 +153,10 @@ fun FilaDeslizable(
 private fun BotonAccionFila(a: AccionFila, modifier: Modifier, alTocar: () -> Unit) {
     Column(modifier.background(a.color).clickable(onClick = alTocar), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
-        Icono(a.simbolo, 18f, Color.White)
-        Texto(a.texto, Estilo.footnoteFuerte, Color.White, lineas = 1)
+        val s = a.simbolo
+        if (s != null) {
+            Icono(s, 18f, Color.White, peso = Peso.semibold)
+            Texto(a.texto, Estilo.footnoteFuerte, Color.White, lineas = 1)
+        } else Texto(a.texto, Estilo.subheadFuerte, Color.White, lineas = 1)
     }
 }

@@ -366,8 +366,9 @@ class MarcaResumen(marca: JsonElement?, nombre: String) {
     init {
         fun texto(o: JsonElement?, claves: List<String>): String? {
             for (k in claves) {
-                val t = ((o as? JsonObject)?.get(k) as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim()
-                if (!t.isNullOrEmpty()) return t
+                // nonEmpty de iOS: descarta lo que es sólo espacios, pero devuelve el texto tal cual.
+                val t = ((o as? JsonObject)?.get(k) as? JsonPrimitive)?.takeIf { it.isString }?.content
+                if (t != null && t.isNotBlank()) return t
             }
             return null
         }

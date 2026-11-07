@@ -173,7 +173,7 @@ fun DocumentosLista(de: String, id: String) {
             if (lista.isNotEmpty()) Column(Modifier.fillMaxWidth().tarjeta()) {
                 lista.forEachIndexed { i, d ->
                     if (i > 0) Separador(inset = 56.dp)
-                    FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Sacar", "trash", C.error) { estado.tarea { sacar(d) } }) else emptyList()) {
+                    FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Sacar", color = C.error) { estado.tarea { sacar(d) } }) else emptyList()) {
                         Tocable({ estado.tarea { abrir(d) } }) { _ ->
                             Row(
                                 Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 10.dp),
@@ -182,7 +182,7 @@ fun DocumentosLista(de: String, id: String) {
                                 Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) {
                                     Icono(if (d.tipo?.contains("pdf") == true) "doc.richtext" else "photo", 17f, C.azulTinta)
                                 }
-                                Column {
+                                Column(Modifier.weight(1f)) {
                                     Texto(d.nombre, Estilo.filaLista, C.texto)
                                     Texto(
                                         listOfNotNull(d.subidoPor, d.creadoEn?.let { Formato.cuando(it) }, d.bytes?.let { android.text.format.Formatter.formatShortFileSize(ctx, it.toLong()) })

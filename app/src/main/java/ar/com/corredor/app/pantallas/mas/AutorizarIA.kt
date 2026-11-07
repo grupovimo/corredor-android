@@ -171,11 +171,9 @@ fun AutorizarIA(solicitud: String) {
                     Texto(p.detalle, Estilo.footnote, C.texto2)
                 }
                 if (p.permiso == "leer") {
-                    Box(Modifier.semantics { contentDescription = "Siempre" }) { Llave(true, {}, habilitado = false) }
+                    Llave(true, {}, habilitado = false, descripcion = "Siempre")
                 } else {
-                    Box(Modifier.semantics { contentDescription = p.titulo }) {
-                        Llave(p.permiso in elegidos, { v -> elegidos = if (v) elegidos + p.permiso else elegidos - p.permiso })
-                    }
+                    Llave(p.permiso in elegidos, { v -> elegidos = if (v) elegidos + p.permiso else elegidos - p.permiso }, descripcion = p.titulo)
                 }
             }
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))

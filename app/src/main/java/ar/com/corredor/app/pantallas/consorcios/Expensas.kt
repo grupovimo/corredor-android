@@ -164,11 +164,11 @@ fun PestanaExpensasConsorcio(c: ConsorcioAPI, periodos: List<PeriodoAPI>) {
                                 Texto(Cons.cifra(l.total), Estilo.footnoteFuerte, C.texto)
                                 if (estado.escribe) {
                                     Box(Modifier.size(34.dp).clickable { alcance.launch { link(l) } }.semantics { contentDescription = "Copiar el link del recibo de ${l.unidad}" },
-                                        contentAlignment = Alignment.Center) { Icono("link", 17f, C.accion) }
+                                        contentAlignment = Alignment.Center) { Icono("link", Estilo.footnoteFuerte.tamano, C.accion) }
                                 }
                                 Box(Modifier.size(34.dp).clickable { alcance.launch { imprimir(f, l.unidadId) } }.semantics { contentDescription = "Imprimir el recibo de ${l.unidad}" },
                                     contentAlignment = Alignment.Center) {
-                                    if (imprimiendo == l.unidadId) Rueda() else Icono("printer", 17f, C.accion)
+                                    if (imprimiendo == l.unidadId) Rueda() else Icono("printer", Estilo.footnoteFuerte.tamano, C.accion)
                                 }
                             }
                         }

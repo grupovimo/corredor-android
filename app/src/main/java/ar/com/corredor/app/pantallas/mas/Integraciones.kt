@@ -192,7 +192,8 @@ fun Integraciones() {
 
     val c = abierta
     Hoja(c != null, { abierta = null }, alturas = listOf(Altura.media, Altura.grande)) {
-        if (c != null) {
+        // .sheet(item:): cada integración abre su hoja nueva (sin lo que quedó de la anterior).
+        if (c != null) androidx.compose.runtime.key(c) {
             HojaIntegracion(c, filas.firstOrNull { it.clave == c }, numero, ml, erroresML, feeds.firstOrNull { it.portal == c.name },
                 alCambiar = { cargar() }, alCerrar = { abierta = null })
         }
@@ -339,7 +340,7 @@ fun HojaIntegracion(
                 SeccionLista {
                     FilaLista { Texto("Token de verificación del webhook (se muestra una sola vez):", Estilo.footnote, C.texto2) }
                     Separador()
-                    FilaLista { Texto(v, Estilo.footnote, C.texto, monoespaciado = true) }
+                    FilaLista { androidx.compose.foundation.text.selection.SelectionContainer { Texto(v, Estilo.footnote, C.texto, monoespaciado = true) } }
                     Separador()
                     FilaLista({ copiar(ctx, v); estado.avisar("Copiado") }) { ConIcono("Copiar", "doc.on.doc") }
                 }
@@ -470,7 +471,7 @@ fun ConectarWhatsApp(alCerrar: () -> Unit) {
                     Separador()
                     FilaLista { Texto("Token de verificación del webhook (se muestra una sola vez):", Estilo.footnote, C.texto2) }
                     Separador()
-                    FilaLista { Texto(v, Estilo.footnote, C.texto, monoespaciado = true) }
+                    FilaLista { androidx.compose.foundation.text.selection.SelectionContainer { Texto(v, Estilo.footnote, C.texto, monoespaciado = true) } }
                 }
             } else {
                 FormWhatsApp { n ->

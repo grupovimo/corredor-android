@@ -90,7 +90,8 @@ private fun num(v: JsonElement?): String = v.numero?.let { Formato.numero(it.toI
 @Composable
 private fun FilaValor(titulo: String, valor: String, alTocar: (() -> Unit)? = null) {
     FilaLista(alTocar) {
-        Texto(titulo, Estilo.body16, C.texto, Modifier.weight(1f))
+        // Dentro de un Button de Form, el título va con el color de acción.
+        Texto(titulo, Estilo.body16, if (alTocar != null) C.accion else C.texto, Modifier.weight(1f))
         Texto(valor, Estilo.body16, C.texto2, Modifier.weight(1f, fill = false), alinear = TextAlign.End, lineas = 1)
     }
 }
@@ -100,7 +101,7 @@ private fun FilaValor(titulo: String, valor: String, alTocar: (() -> Unit)? = nu
 private fun FilaInterruptor(titulo: String, prendido: Boolean, habilitado: Boolean = true, alCambiar: (Boolean) -> Unit) {
     FilaLista(habilitado = habilitado) {
         Texto(titulo, Estilo.body16, C.texto, Modifier.weight(1f))
-        Llave(prendido, alCambiar, color = C.accion, habilitado = habilitado)
+        Llave(prendido, alCambiar, color = C.accion, habilitado = habilitado, descripcion = titulo)
     }
 }
 
@@ -149,8 +150,6 @@ fun MiWeb() {
     val pasado = remember { mutableStateListOf<Map<String, JsonElement>>() }
     val futuro = remember { mutableStateListOf<Map<String, JsonElement>>() }
     var ultimoPaso by remember { mutableStateOf(Instant.EPOCH) }
-    /** «Sumar sección acá» del menú de una sección (el submenú de iOS). */
-    var sumarDespuesDe by remember { mutableStateOf<Int?>(null) }
 
     val puede = estado.esDuenio
 
@@ -489,8 +488,8 @@ fun MiWeb() {
     }
 
     PantallaApilada("Mi web", acciones = if (estado.esDuenio) ({
-        Box(Modifier.alpha(if (pasado.isEmpty()) 0.4f else 1f)) { BotonBarraIcono("arrow.uturn.backward", "Deshacer") { if (pasado.isNotEmpty()) deshacer() } }
-        Box(Modifier.alpha(if (futuro.isEmpty()) 0.4f else 1f)) { BotonBarraIcono("arrow.uturn.forward", "Rehacer") { if (futuro.isNotEmpty()) rehacer() } }
+        BotonBarraIcono("arrow.uturn.backward", "Deshacer", habilitado = pasado.isNotEmpty()) { deshacer() }
+        BotonBarraIcono("arrow.uturn.forward", "Rehacer", habilitado = futuro.isNotEmpty()) { rehacer() }
     }) else null) {
         Column(Modifier.fillMaxSize()) {
             ListaAgrupada(Modifier.weight(1f)) {
@@ -547,12 +546,13 @@ fun MiWeb() {
                         if (i > 0) Separador()
                         val tipo = x["tipo"].texto
                         val acciones = buildList {
-                            if (tipo == "texto") add(AccionFila("Duplicar", "plus.square.on.square", C.accion) { duplicarSeccion(i) })
-                            if (tipo != "portada") add(AccionFila("Quitar", "trash", C.error) { quitarSeccion(i) })
+                            if (tipo == "texto") add(AccionFila("Duplicar", color = C.accion) { duplicarSeccion(i) })
+                            if (tipo != "portada") add(AccionFila("Quitar", color = C.error) { quitarSeccion(i) })
                         }
                         val menu = buildList {
                             if (tipo == "texto") add(OpcionDeMenu("Duplicar", "plus.square.on.square") { duplicarSeccion(i) })
-                            add(OpcionDeMenu("Sumar sección acá", "plus.rectangle.on.rectangle") { sumarDespuesDe = i })
+                            add(OpcionDeMenu("Sumar sección acá", "plus.rectangle.on.rectangle",
+                                submenu = EditorWeb.tiposParaSumar(secciones).map { t -> OpcionDeMenu(MiWeb.nombreSeccion(t), "") { sumarSeccion(t, despuesDe = i) } }))
                             if (tipo != "portada") add(OpcionDeMenu("Quitar", "trash", destructiva = true) { quitarSeccion(i) })
                         }
                         FilaDeslizable(derecha = if (puede) acciones else emptyList()) {
@@ -568,7 +568,8 @@ fun MiWeb() {
                                         }
                                     } else Box(Modifier.width(24.dp))
                                     Texto(MiWeb.nombreSeccion(tipo), Estilo.body16, C.texto, Modifier.weight(1f))
-                                    Llave(x["oculta"].bool != true, { on -> ocultar(i, !on) }, color = C.accion, habilitado = puede && tipo != "portada")
+                                    Llave(x["oculta"].bool != true, { on -> ocultar(i, !on) }, color = C.accion, habilitado = puede && tipo != "portada",
+                                        descripcion = MiWeb.nombreSeccion(tipo))
                                 }
                             }
                         }
@@ -623,7 +624,7 @@ fun MiWeb() {
                     paginas.forEachIndexed { i, x ->
                         if (i > 0) Separador()
                         val id = x["id"].texto ?: ""
-                        FilaDeslizable(derecha = if (id.startsWith("p-") && puede) listOf(AccionFila("Quitar", "trash", C.error) { quitarPagina(i) }) else emptyList()) {
+                        FilaDeslizable(derecha = if (id.startsWith("p-") && puede) listOf(AccionFila("Quitar", color = C.error) { quitarPagina(i) }) else emptyList()) {
                             FilaInterruptor(MiWeb.nombrePagina(x), x["oculta"].bool != true, puede && id != "inicio" && id != "propiedades") { on -> ocultarPagina(i, !on) }
                         }
                         if (id.startsWith("p-")) {
@@ -676,7 +677,7 @@ fun MiWeb() {
                                         val e = Estilo(13f, Peso.regular)
                                         Texto(r["tipo"].texto ?: "", e, C.accion, Modifier.width(56.dp), monoespaciado = true)
                                         Texto(r["nombre"].texto ?: "", e, C.accion, Modifier.width(60.dp), monoespaciado = true)
-                                        Texto(r["valor"].texto ?: "", e, C.accion, Modifier.weight(1f), lineas = 1, monoespaciado = true)
+                                        Texto(r["valor"].texto ?: "", e, C.accion, Modifier.weight(1f), lineas = 1, monoespaciado = true, cortarAlMedio = true)
                                         Icono("doc.on.doc", 13f, C.accion)
                                     }
                                 }
@@ -731,6 +732,7 @@ fun MiWeb() {
                     color("Color principal", "colorPrimario", 0x16443B)
                     // «Lo oscurecimos un poco…» si el color no llega a contraste AA con el blanco.
                     Colores.rgb(marca["colorPrimario"])?.let { p ->
+                        Separador()
                         FilaLista {
                             if (Colores.contraste(p, 0xFFFFFF) < 4.5) {
                                 ConIcono("Lo oscurecimos un poco para que botones y textos lleguen a contraste AA", "slider.horizontal.3", Estilo.footnote, C.avisoTinta)
@@ -745,6 +747,7 @@ fun MiWeb() {
                     color("Fondo", "colorFondo", 0xFAF8F3)
                     Colores.rgb(marca["colorFondo"])?.let { f ->
                         if (Colores.contraste(f, 0x18201D) < 7) {
+                            Separador()
                             FilaLista { ConIcono("El fondo tiene que ser claro para que el texto se lea: usamos el papel", "slider.horizontal.3", Estilo.footnote, C.avisoTinta) }
                         }
                     }
@@ -774,7 +777,7 @@ fun MiWeb() {
                             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Texto(b.nombre, Estilo.filaLista, C.texto)
                                 Entrada(b.texto ?: "", { t -> barrios[i] = b.copy(texto = t.take(600)) }, "Cómo es vivir en ${b.nombre}: plazas, transporte, colegios.",
-                                    estilo = Estilo.body16, lineasMaximas = 8, habilitado = puede,
+                                    estilo = Estilo.body16, lineasMaximas = Int.MAX_VALUE, habilitado = puede,
                                     alEnfocar = { f ->
                                         if (f) barrioFoco = b.nombre
                                         else if (barrioFoco == b.nombre) {
@@ -839,12 +842,6 @@ fun MiWeb() {
             }) { editandoSeccion = null }
         }
     }
-    // El submenú «Sumar sección acá» del menú de una sección.
-    ar.com.corredor.app.tema.Confirmacion(
-        visible = sumarDespuesDe != null, titulo = "Sumar sección acá",
-        opciones = EditorWeb.tiposParaSumar(secciones).map { t -> OpcionConfirmacion(MiWeb.nombreSeccion(t)) { sumarDespuesDe?.let { sumarSeccion(t, despuesDe = it) } } },
-        alCerrar = { sumarDespuesDe = null },
-    )
 }
 
 /** Editar una sección de texto o de testimonios del inicio de la web (con «Reescribir con IA»). */
@@ -878,14 +875,14 @@ fun EditorSeccionWeb(seccion: JsonElement, guardar: (JsonElement) -> Unit, cerra
             }
         })
         ListaAgrupada {
+            // En iOS el Form no tiene Section: el título y lo demás van en el mismo grupo.
             SeccionLista {
                 FilaLista { Entrada(titulo, { titulo = it }, "Título", Modifier.weight(1f), estilo = Estilo.body16) }
-            }
-            if (testimonios) {
-                SeccionLista {
+                Separador()
+                if (testimonios) {
                     items.forEachIndexed { i, it ->
                         if (i > 0) Separador()
-                        FilaDeslizable(derecha = listOf(AccionFila("Eliminar", "trash", C.error) { items.removeAt(i) })) {
+                        FilaDeslizable(derecha = listOf(AccionFila("Eliminar", color = C.error) { items.removeAt(i) })) {
                             Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Entrada(it.first, { t -> items[i] = t to items[i].second }, "Lo que dijo", estilo = Estilo.body16, lineasMaximas = 6)
                                 Entrada(it.second, { t -> items[i] = items[i].first to t }, "Quién", estilo = Estilo.body16)
@@ -895,9 +892,7 @@ fun EditorSeccionWeb(seccion: JsonElement, guardar: (JsonElement) -> Unit, cerra
                     if (items.isNotEmpty()) Separador()
                     FilaLista({ items.add("" to "") }, habilitado = items.size < 6) { ConIcono("Sumar testimonio", "plus") }
                     if (items.size >= 6) { Separador(); FilaLista { Texto("Hasta 6 testimonios.", Estilo.footnote, C.texto2) } }
-                }
-            } else {
-                SeccionLista {
+                } else {
                     FilaLista { Entrada(texto, { texto = it }, "Texto", Modifier.weight(1f), estilo = Estilo.body16, lineas = 4, lineasMaximas = 14) }
                     Separador()
                     FilaLista({

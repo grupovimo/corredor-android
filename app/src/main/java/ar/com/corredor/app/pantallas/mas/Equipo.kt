@@ -264,9 +264,11 @@ private fun FilaMiembro(m: Miembro, rol: String, yo: String, estado: Estado, alC
                     add(OpcionDeMenu(t, if (rol == k) "checkmark" else "") { alCambiarRol(k) })
                 }
             }
-            if (m.rol != "lector") add(OpcionDeMenu("Tarjeta para imprimir", "person.text.rectangle") { estado.abrir(ASeccion("tarjeta-agente", m.usuarioId)) })
-            m.telefono?.let { t -> add(OpcionDeMenu("WhatsApp", "message") { Afuera.whatsapp(t) }) }
-            if (estado.esDuenio && m.usuarioId != yo) add(OpcionDeMenu("Sacar del equipo…", "person.badge.minus", destructiva = true) { alSacar() })
+            // El Picker de iOS dentro del Menu va en su propio grupo: lo que sigue arranca con un separador.
+            val conRol = isNotEmpty()
+            if (m.rol != "lector") add(OpcionDeMenu("Tarjeta para imprimir", "person.text.rectangle", separadorAntes = conRol) { estado.abrir(ASeccion("tarjeta-agente", m.usuarioId)) })
+            m.telefono?.let { t -> add(OpcionDeMenu("WhatsApp", "message", separadorAntes = conRol && m.rol == "lector") { Afuera.whatsapp(t) }) }
+            if (estado.esDuenio && m.usuarioId != yo) add(OpcionDeMenu("Sacar del equipo…", "person.badge.minus", destructiva = true, separadorAntes = true) { alSacar() })
         }
         MenuBoton(opciones, "Más acciones de ${EquipoTipos.nombre(m)}") {
             Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("ellipsis.circle", 20f, C.accion) }
@@ -348,7 +350,7 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
                 SeccionLista {
                     FilaLista { ConIcono("Invitación lista. El link vale 7 días.", "checkmark.circle.fill", color = C.okTinta) }
                     Separador()
-                    FilaLista { Texto(l, Estilo.footnote, C.texto, monoespaciado = true) }
+                    FilaLista { androidx.compose.foundation.text.selection.SelectionContainer { Texto(l, Estilo.footnote, C.texto, monoespaciado = true) } }
                     Separador()
                     FilaLista({ copiar(ctx, l); estado.avisar("Link copiado. Mandalo por WhatsApp.") }) { ConIcono("Copiar", "doc.on.doc") }
                     Separador()

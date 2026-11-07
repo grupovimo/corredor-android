@@ -1049,7 +1049,7 @@ fun AltaPropiedad(
                                 }
                                 Tocable({ sacarFoto(i) }, Modifier.align(Alignment.TopEnd).padding(6.dp), descripcion = "Sacar esta foto") {
                                     Box(Modifier.size(22.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
-                                        Icono("xmark", 11f, Color.White)
+                                        Icono("xmark", 11f, Color.White, peso = Peso.bold)
                                     }
                                 }
                                 if (i == 0) {
@@ -1289,7 +1289,12 @@ private fun FilaCampoAlta(l: String, v: String, primera: Boolean = false, hacer:
 /** Los `TextField(value:format: .number)` de «Más datos». */
 @Composable
 private fun CampoNumeroAlta(l: String, valor: Double?, entero: Boolean, alCambiar: (Double?) -> Unit) {
-    var texto by remember { mutableStateOf(valor?.let { if (entero) Formato.numero(it.toInt()) else numeroCorto(it) } ?: "") }
+    fun mostrar(v: Double?) = v?.let { if (entero) Formato.numero(it.toInt()) else numeroCorto(it) } ?: ""
+    fun leer(t: String): Double? = t.replace(".", "").replace(",", ".").trim().toDoubleOrNull()?.let { if (entero) it.toInt().toDouble() else it }
+    var texto by remember { mutableStateOf(mostrar(valor)) }
+    // El TextField(value:) de iOS sigue al Binding: si el valor cambia de afuera (seguir un borrador, «Deshacer»),
+    // se muestra el nuevo; mientras se escribe («12,» → 12) no se pisa lo tecleado.
+    LaunchedEffect(valor) { if (leer(texto) != valor) texto = mostrar(valor) }
     Column {
         Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
         Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1297,8 +1302,7 @@ private fun CampoNumeroAlta(l: String, valor: Double?, entero: Boolean, alCambia
             Entrada(
                 texto, { t ->
                     texto = t
-                    val n = t.replace(".", "").replace(",", ".").trim().toDoubleOrNull()
-                    alCambiar(if (entero) n?.toInt()?.toDouble() else n)
+                    alCambiar(leer(t))
                 },
                 "—", Modifier.width(if (entero) 90.dp else 110.dp), estilo = Estilo.body16,
                 teclado = if (entero) KeyboardType.Number else KeyboardType.Decimal, alinear = TextAlign.End,

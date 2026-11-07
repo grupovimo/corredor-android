@@ -186,7 +186,7 @@ private fun FinUrgente(
         c != null -> Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
             if (estado.escribe) {
                 Tocable(alTocar = { recordar(c) }, descripcion = "Recordar") {
-                    Box(Modifier.size(40.dp, 44.dp), contentAlignment = Alignment.Center) { Icono("bubble.left", 17f, C.accion) }
+                    Box(Modifier.size(40.dp, 44.dp), contentAlignment = Alignment.Center) { Icono("bubble.left", 17f, C.accion, peso = Peso.semibold) }
                 }
                 PastillaUrgente("Registrar cobro") { cobrar(c) }
             } else {
@@ -197,8 +197,9 @@ private fun FinUrgente(
             if (personas != null && estado.esDuenio) {
                 // Menu { Section("Asignar a") { … } }
                 MenuBoton(
-                    opciones = personas.map { p -> OpcionDeMenu(p.second, "person") { asignar(u, p) } },
-                    descripcion = "Asignar a",
+                    opciones = listOf(OpcionDeMenu("Asignar a", "", encabezado = true)) +
+                        personas.map { p -> OpcionDeMenu(p.second, "person") { asignar(u, p) } },
+                    descripcion = "Asignar",
                 ) { EtiquetaPastilla("Asignar") }
             } else {
                 PastillaUrgente("Tomarla") { asignar(u, null) }
@@ -338,9 +339,10 @@ fun AgendaHoyInicio(titulo: String, citas: List<Cita>) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.weight(1f)) { TituloBloque(texto = titulo) }
-            Texto("Ver agenda", Estilo.footnoteFuerte, C.accion, Modifier.clickable { estado.abrir(AAgendaDia()) })
+        // HStack(alignment: .firstTextBaseline)
+        Row {
+            Box(Modifier.weight(1f).alignByBaseline()) { TituloBloque(texto = titulo) }
+            Texto("Ver agenda", Estilo.footnoteFuerte, C.accion, Modifier.alignByBaseline().clickable { estado.abrir(AAgendaDia()) })
         }
         Column(Modifier.fillMaxWidth().tarjeta()) {
             citas.forEachIndexed { i, c ->
@@ -466,7 +468,7 @@ private fun BotonesProximaVisita(p: ProximaVisita, noche: Boolean, quien: String
                     Modifier.size(46.dp).clip(RoundedCornerShape(13.dp)).background(Color.White.copy(alpha = 0.12f))
                         .border(1.dp, Color.White.copy(alpha = 0.22f), RoundedCornerShape(13.dp)),
                     contentAlignment = Alignment.Center,
-                ) { Icono("phone.fill", 18f, Color.White) }
+                ) { Icono("phone.fill", 18f, Color.White, peso = Peso.semibold) }
             }
         }
     }
@@ -503,7 +505,7 @@ fun SugerenciasInicio(sugerencias: List<SugerenciaInicio>, aplicar: (SugerenciaI
                     Row(verticalAlignment = Alignment.Top) {
                         TextoRico(frase(s), Estilo(16f, Peso.regular), C.texto, Modifier.weight(1f))
                         Tocable(alTocar = { descartar(s) }, descripcion = "Descartar") {
-                            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) { Icono("xmark", 14f, C.texto2) }
+                            Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) { Icono("xmark", 14f, C.texto2, peso = Peso.bold) }
                         }
                     }
                     Tocable(alTocar = { aplicar(s) }) {
@@ -539,17 +541,17 @@ fun ComoVieneInicio(ritmos: List<RitmoInicio>, cerradas: Int) {
     fun cifra(r: RitmoInicio): String = r.moneda?.let { Formato.plata(r.avance, it) } ?: Formato.numero(r.avance.toInt())
     val habiles = CuentasInicio.diasHabilesRestantes()
     Column(Modifier.fillMaxWidth().tarjeta().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Texto("Cómo viene ${Formato.mesDe(Instant.now())}", Estilo(17f, Peso.bold), C.texto)
+        Row {
+            Texto("Cómo viene ${Formato.mesDe(Instant.now())}", Estilo(17f, Peso.bold), C.texto, Modifier.alignByBaseline())
             Spacer(Modifier.weight(1f))
-            Texto("quedan ${Formato.cantidad(habiles, "día hábil", "días hábiles")}", Estilo.footnote, C.texto2)
+            Texto("quedan ${Formato.cantidad(habiles, "día hábil", "días hábiles")}", Estilo.footnote, C.texto2, Modifier.alignByBaseline())
         }
         if (ritmos.isEmpty()) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Texto("Cierres", Estilo.subheadFuerte, C.texto)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Texto("Cierres", Estilo.subheadFuerte, C.texto, Modifier.alignByBaseline())
                 Spacer(Modifier.weight(1f))
-                Texto(Formato.numero(cerradas), Estilo(20f, Peso.bold), C.texto)
-                Texto("este mes", Estilo.footnote, C.texto2)
+                Texto(Formato.numero(cerradas), Estilo(20f, Peso.bold), C.texto, Modifier.alignByBaseline())
+                Texto("este mes", Estilo.footnote, C.texto2, Modifier.alignByBaseline())
             }
         }
         ritmos.forEachIndexed { i, r -> key(r.id) { FilaRitmo(r, primera = i == 0, cifra = cifra(r)) } }
@@ -561,11 +563,11 @@ fun ComoVieneInicio(ritmos: List<RitmoInicio>, cerradas: Int) {
 @Composable
 private fun FilaRitmo(r: RitmoInicio, primera: Boolean, cifra: String) {
     Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Texto(r.nombre, Estilo.subheadFuerte, C.texto)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Texto(r.nombre, Estilo.subheadFuerte, C.texto, Modifier.alignByBaseline())
             Spacer(Modifier.weight(1f))
-            Texto(cifra, Estilo(17f, Peso.bold), C.texto)
-            Texto("de ${Formato.numero(r.meta.toInt())}", Estilo.footnote, C.texto2)
+            Texto(cifra, Estilo(17f, Peso.bold), C.texto, Modifier.alignByBaseline())
+            Texto("de ${Formato.numero(r.meta.toInt())}", Estilo.footnote, C.texto2, Modifier.alignByBaseline())
         }
         val pista = C.hundida
         val relleno = if (!r.adelante && r.moneda == null) C.errorTinta else C.accion
@@ -613,9 +615,9 @@ fun CobranzasMesInicio(cobradas: List<CobranzaInicio>, pendientes: List<Cobranza
         Tocable(alTocar = { estado.abrir(ACobranzas()) }) {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Texto("Cobranzas de ${Formato.mesDe(Instant.now())}", Estilo(17f, Peso.bold), C.texto)
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Texto(Formato.plata(cobrado, moneda), Estilo(22f, Peso.extrabold), C.texto)
-                    Texto("cobrado de ${Formato.numero(total.toInt())}", Estilo.footnote, C.texto2)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Texto(Formato.plata(cobrado, moneda), Estilo(22f, Peso.extrabold), C.texto, Modifier.alignByBaseline())
+                    Texto("cobrado de ${Formato.numero(total.toInt())}", Estilo.footnote, C.texto2, Modifier.alignByBaseline())
                 }
                 val verde = hex(0x2F9E6F)
                 val rojo = C.errorTinta
@@ -627,7 +629,8 @@ fun CobranzasMesInicio(cobradas: List<CobranzaInicio>, pendientes: List<Cobranza
                     if (a > 0) drawRoundRect(verde, size = androidx.compose.ui.geometry.Size(a, size.height), cornerRadius = r)
                     if (deben > 0) {
                         val b = if (total > 0) (size.width * deben / total).toFloat() else 0f
-                        val x = if (a > 0) a + 2.dp.toPx() else 0f
+                        // HStack(spacing: 2): el espacio va aunque la parte cobrada mida cero.
+                        val x = a + 2.dp.toPx()
                         if (b > 0) drawRoundRect(rojo, Offset(x, 0f), androidx.compose.ui.geometry.Size(b, size.height), r)
                     }
                 }
@@ -879,7 +882,7 @@ fun AccionesInicio(acciones: List<AccionInicio>, hacer: (String) -> Unit) {
                                 Box(
                                     Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(if (a.clave == "captar") C.oro else C.hundida),
                                     contentAlignment = Alignment.Center,
-                                ) { Icono(a.icono, 21f, if (a.clave == "captar") hex(0x1A1405) else C.accion) }
+                                ) { Icono(a.icono, 21f, if (a.clave == "captar") hex(0x1A1405) else C.accion, peso = Peso.medium) }
                                 Texto(a.texto, Estilo(12f, Peso.semibold), C.texto, Modifier.padding(horizontal = 4.dp), lineas = 2, alinear = TextAlign.Center, escalaMinima = 0.85f)
                             }
                         }
@@ -917,7 +920,7 @@ fun CompartirWebInicio(web: String, nombre: String, alAbrir: () -> Unit) {
                 )
             }
             Tocable(alTocar = { verQR = !verQR }, descripcion = "Ver el código QR") {
-                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("qrcode", 22f, C.accion) }
+                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("qrcode", 22f, C.accion, peso = Peso.medium) }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -929,7 +932,7 @@ fun CompartirWebInicio(web: String, nombre: String, alAbrir: () -> Unit) {
             BotonHundido("WhatsApp", { Afuera.whatsapp(null, texto = mensaje) }, Modifier.weight(1f), simbolo = "bubble.left")
             Tocable(alTocar = { estado.compartirTexto("Mirá las propiedades de $nombre $web", asunto = nombre) }, descripcion = "Compartir") {
                 Box(Modifier.size(48.dp, 44.dp).clip(RoundedCornerShape(12.dp)).background(C.hundida), contentAlignment = Alignment.Center) {
-                    Icono("square.and.arrow.up", 17f, C.texto)
+                    Icono("square.and.arrow.up", 17f, C.texto, peso = Peso.semibold)
                 }
             }
         }

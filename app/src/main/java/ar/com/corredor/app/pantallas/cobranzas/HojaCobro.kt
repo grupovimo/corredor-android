@@ -319,7 +319,7 @@ fun ReciboPapel(cobro: Cobro, nombre: String?, propiedad: String?, inmobiliaria:
             }
             Texto(inmobiliaria, Estilo(15f, Peso.bold), hex(0x1E3A5F))
             Relleno()
-            cobro.numero?.let { Texto(String.format("0001-%05d", it), Estilo(12f, Peso.regular), gris) }
+            cobro.numero?.let { Texto(String.format(java.util.Locale.ROOT, "0001-%05d", it), Estilo(12f, Peso.regular), gris) }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(linea))
         Texto("Recibí de ${nombre ?: ""}", Estilo.footnote, gris)

@@ -170,8 +170,7 @@ fun AltaRapidaCita(
             Haptico.exito()
             estado.version += 1
             cerrar()
-        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) }
-        guardando = false
+        } catch (x: CancellationException) { throw x } catch (x: Exception) { estado.avisar(x) } finally { guardando = false }
     }
 
     LaunchedEffect(Unit) { cargarOpciones() }
@@ -301,8 +300,7 @@ fun LicenciasAgenda() {
             }
             estado.version += 1
             cerrar()
-        } catch (x: CancellationException) { throw x } catch (x: Exception) { error = Estado.texto(x) }
-        guardando = false
+        } catch (x: CancellationException) { throw x } catch (x: Exception) { error = Estado.texto(x) } finally { guardando = false }
     }
 
     suspend fun quitar(l: Licencia) {

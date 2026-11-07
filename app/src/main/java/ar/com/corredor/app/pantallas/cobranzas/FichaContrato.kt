@@ -194,7 +194,7 @@ fun FichaContrato(
         val k = s.k ?: return
         val m = s.meses.firstOrNull { it.periodo.startsWith(periodo) }
         val importe = m?.esperado ?: s.ajuste?.vigente ?: k.monto ?: 0.0
-        val vence = m?.vence ?: "$periodo-${"%02d".format(k.diaVencimiento ?: 1)}"
+        val vence = m?.vence ?: "$periodo-${"%02d".format(java.util.Locale.ROOT, k.diaVencimiento ?: 1)}"
         val moneda = s.moneda
         s.mensaje = PedidoMensaje(
             titulo = "Recordarle a ${if (s.nInq.isEmpty()) "el inquilino" else s.nInq}",
@@ -465,7 +465,7 @@ private fun TarjetaAjusteFicha(s: FichaEstado, k: ContratoAPI, a: AjusteContrato
                 Texto("Hoy", Estilo.caption, claro)
                 Texto(Formato.plata(vigente, moneda), Estilo.subheadFuerte, Color.White)
             }
-            Icono("arrow.right", 20f, C.oro)
+            Icono("arrow.right", 20f, C.oro, peso = Peso.bold)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Texto("Desde ${TextosCobro.nombreMes(p.fecha)}", Estilo.caption, claro)
                 Texto(p.monto?.let { Formato.plata(it, moneda) } ?: "a calcular", Estilo.titulo3, C.oro)
@@ -803,7 +803,7 @@ private fun FilaDocumentoFicha(d: DocumentoContrato, escribe: Boolean, abrir: (D
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f).clickable { abrir(d) }, horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono(if (d.tipo?.contains("pdf") == true) "doc.richtext" else "photo", 17f, C.azulTinta) }
-            Column(Modifier.weight(1f).padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Texto(d.nombre, Estilo.filaLista, C.texto, lineas = 1)
                 Texto(listOfNotNull(Fecha.iso(d.creadoEn)?.let { Formato.cuando(it) }, d.bytes?.let { tamanoArchivoAlta(it.toLong()) }).joinToString(" · "), Estilo.footnote, C.texto2)
             }
@@ -858,12 +858,12 @@ object FichaContrato {
     /** «15/03» (de un instante RFC 3339). */
     fun cortita(f: String): String {
         val d = Fecha.iso(f)?.atZone(Formato.zona)?.toLocalDate() ?: return ""
-        return "%02d/%02d".format(d.dayOfMonth, d.monthValue)
+        return "%02d/%02d".format(java.util.Locale.ROOT, d.dayOfMonth, d.monthValue)
     }
 
     /** «1,25» con los decimales justos. */
     fun dec(n: Double, d: Int = 2): String {
-        val patron = if (d <= 0) "0" else "0." + "0".repeat(d)
+        val patron = if (d <= 0) "#,##0" else "#,##0." + "0".repeat(d)
         return DecimalFormat(patron, DecimalFormatSymbols(Formato.argentina)).format(n)
     }
 

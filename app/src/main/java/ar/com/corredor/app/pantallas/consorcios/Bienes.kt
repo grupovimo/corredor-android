@@ -87,7 +87,7 @@ fun BienesConsorcio(consorcio: String) {
                 lista.forEachIndexed { i, b ->
                     key(b.id) {
                         if (i > 0) Separador()
-                        FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", "trash", C.error) {
+                        FilaDeslizable(derecha = if (estado.escribe) listOf(AccionFila("Borrar", color = C.error) {
                             alcance.launch {
                                 try { estado.api.hacer("DELETE", "/v1/consorcios/$consorcio/bienes/${b.id}"); cargar() } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
                             }
@@ -100,7 +100,7 @@ fun BienesConsorcio(consorcio: String) {
                                     }
                                     val t: Tono = if (b.estado == "vencido") Tono.rojo else if (b.estado == "a_revisar") Tono.oro else if (b.estado == "baja") Tono.neutro else Tono.verde
                                     Box(Modifier.height(24.dp).clip(CircleShape).background(t.fondo).padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-                                        Texto(BienAPI.estados.firstOrNull { it.first == b.estado }?.second ?: "En orden", Estilo(12f, Peso.bold), t.tinta)
+                                        Texto(BienAPI.estados.firstOrNull { it.first == b.estado }?.second ?: "En orden", Estilo(12f, Peso.bold, relativo = Relativo.caption), t.tinta)
                                     }
                                 }
                             }

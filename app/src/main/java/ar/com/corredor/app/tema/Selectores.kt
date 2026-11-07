@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -87,16 +88,20 @@ data class OpcionDeMenu(
     val separadorAntes: Boolean = false,
     val habilitado: Boolean = true,
     val submenu: List<OpcionDeMenu> = emptyList(),
+    /** El título de una sección del menú (`Section("Asignar a")` dentro de un `Menu`): gris, chico y sin tocar. */
+    val encabezado: Boolean = false,
     val accion: () -> Unit = {},
 )
 
 /** Las filas de un menú flotante (MenuBoton y MenuContextual): separadores de grupo, opciones apagadas y submenús. */
 @Composable
 private fun FilasDeMenu(opciones: List<OpcionDeMenu>, cerrar: () -> Unit) {
-    var abierto by remember(opciones) { mutableStateOf<OpcionDeMenu?>(null) }
-    val sub = abierto
+    // El submenú abierto, por su lugar en la lista: las opciones se arman de nuevo en cada recomposición (las acciones
+    // son lambdas nuevas) y con `remember(opciones)` el submenú se cerraba solo.
+    var abiertoEn by remember { mutableStateOf<Int?>(null) }
+    val sub = abiertoEn?.let { opciones.getOrNull(it) }?.takeIf { it.submenu.isNotEmpty() }
     if (sub != null) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { abierto = null }.padding(horizontal = 16.dp)
+        Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { abiertoEn = null }.padding(horizontal = 16.dp)
             .semantics { contentDescription = "Volver" }, verticalAlignment = Alignment.CenterVertically) {
             Icono("chevron.left", 14f, C.texto2)
             Box(Modifier.width(8.dp))
@@ -104,12 +109,18 @@ private fun FilasDeMenu(opciones: List<OpcionDeMenu>, cerrar: () -> Unit) {
         }
         Box(Modifier.fillMaxWidth().height(8.dp).background(C.linea))
     }
-    (sub?.submenu ?: opciones).forEachIndexed { i, o ->
-        if (i > 0) Box(Modifier.fillMaxWidth().height(if (o.separadorAntes) 8.dp else 1.dp).background(C.linea))
+    val filas = sub?.submenu ?: opciones
+    filas.forEachIndexed { i, o ->
+        // Una sección empieza con la franja de grupo; debajo de su título no va raya.
+        if (i > 0 && !filas[i - 1].encabezado) Box(Modifier.fillMaxWidth().height(if (o.separadorAntes || o.encabezado) 8.dp else 1.dp).background(C.linea))
+        if (o.encabezado) {
+            Texto(o.titulo, Estilo(13f, Peso.regular), C.texto3, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 4.dp).semantics { heading() })
+            return@forEachIndexed
+        }
         val tinta = when { !o.habilitado -> C.texto3; o.destructiva -> C.error; else -> C.texto }
         Row(
             Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                .clickable(enabled = o.habilitado) { if (o.submenu.isNotEmpty()) abierto = o else { cerrar(); o.accion() } }
+                .clickable(enabled = o.habilitado) { if (o.submenu.isNotEmpty()) abiertoEn = opciones.indexOf(o).takeIf { it >= 0 } else { cerrar(); o.accion() } }
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -193,14 +204,15 @@ fun SelectorHora(minutos: Int, alCambiar: (Int) -> Unit, paso: Int = 5) {
     }
 }
 
-/** Un Picker de iOS en un renglón: la opción elegida en Acción con ⌃⌄ y un menú para cambiarla. */
+/** Un Picker de iOS en un renglón: la opción elegida en Acción con ⌃⌄ y un menú para cambiarla. `color`: el de la
+ *  opción y las flechas (`.tint(C.texto)` en iOS). */
 @Composable
-fun <T> SelectorMenu(opciones: List<Pair<T, String>>, elegido: T, alElegir: (T) -> Unit, descripcion: String = "") {
+fun <T> SelectorMenu(opciones: List<Pair<T, String>>, elegido: T, alElegir: (T) -> Unit, descripcion: String = "", color: Color = C.primarioTexto) {
     val actual = opciones.firstOrNull { it.first == elegido }?.second ?: ""
     MenuBoton(opciones.map { (v, t) -> OpcionDeMenu(t, if (v == elegido) "checkmark" else "circle") { alElegir(v) } }, descripcion.ifEmpty { actual }) {
         Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Texto(actual, Estilo(16f, Peso.regular), C.primarioTexto, lineas = 1)
-            Icono("chevron.up.chevron.down", 12f, C.primarioTexto)
+            Texto(actual, Estilo(16f, Peso.regular), color, lineas = 1)
+            Icono("chevron.up.chevron.down", 12f, color)
         }
     }
 }

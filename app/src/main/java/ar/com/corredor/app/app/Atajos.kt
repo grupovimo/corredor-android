@@ -1,5 +1,6 @@
 package ar.com.corredor.app.app
 
+import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
 import androidx.core.app.NotificationCompat
@@ -15,6 +16,7 @@ import ar.com.corredor.app.nucleo.Preferencias
 import ar.com.corredor.app.nucleo.Pestana
 import ar.com.corredor.app.nucleo.Ruta
 import ar.com.corredor.app.nucleo.intentar
+import ar.com.corredor.app.widgets.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,9 +86,12 @@ object ActividadVisita {
         val c = cita
         val ahora = Instant.now()
         if (c == null || c.empiezaEn.epochSecond - ahora.epochSecond >= 3600 || !c.terminaEn.isAfter(ahora) || c.estado == "cancelada") {
-            actual?.let { terminar(ctx, it) }
+            terminarTodas(ctx)
             return
         }
+        // Como Activity.request en iOS: la arma la app con los datos de la cita (dónde, con quién, cuándo empieza y
+        // termina). Si había otra visita en curso, se termina.
+        terminarTodas(ctx, menos = c.id)
         mostrar(ctx, c.id, c.donde, c.contactoNombre, c.empiezaEn, c.terminaEn)
         if (c.id !in registradas) alcance.launch {
             val token = Push.token(ctx) ?: return@launch
@@ -95,12 +100,14 @@ object ActividadVisita {
     }
 
     /** Lo que manda el servidor por FCM (actividades.go › datosActividad): {tipo: «actividad», cita, empieza (RFC 3339),
-     *  estado, terminar: «1»|«0»}. El lugar, con quién y la duración no vienen: son los de la última vez que se mostró esa
-     *  cita (los guarda `mostrar`, también con la app cerrada). */
+     *  estado, terminar: «1»|«0»}. Como el push de una Live Activity en iOS, sólo mueve (o termina) la que la app ya
+     *  arrancó para esa cita: no arma una nueva. El lugar, con quién y la duración son los que puso la app al arrancarla
+     *  (los atributos fijos de la actividad; los guarda `mostrar`, para cuando el push llega con la app cerrada). */
     fun desdePush(ctx: Context, d: Map<String, String>) {
         val cita = d["cita"] ?: return
         val estado = d["estado"].orEmpty()
         if (d["terminar"] == "1" || estado == "cancelada" || estado == "hecha") { terminar(ctx, cita); return }
+        if (!enCurso(ctx, cita)) return
         val empieza = Fecha.iso(d["empieza"]) ?: return
         Preferencias.contexto = Preferencias.contexto ?: ctx.applicationContext
         val donde = Preferencias.texto("visita.$cita.donde") ?: "Visita"
@@ -137,12 +144,29 @@ object ActividadVisita {
             .addAction(0, "Estoy llegando", Push.abrir(ctx, "$ruta?llegando=1", AVISO + 2))
             // Android 16: pedirla como Live Update (EXTRA_REQUEST_PROMOTED_ONGOING); antes se ignora.
             .addExtras(Bundle().apply { putBoolean("android.requestPromotedOngoing", true) })
-        runCatching { NotificationManagerCompat.from(ctx).notify(AVISO, b.build()) }
+        // La etiqueta es la cita: así se sabe cuál está a la vista aunque el proceso sea otro (un push con la app cerrada).
+        runCatching { NotificationManagerCompat.from(ctx).notify(cita, AVISO, b.build()) }
+        Widgets.actualizar(ctx)
     }
 
+    /** Las citas con la visita en curso a la vista. */
+    private fun mostradas(ctx: Context): List<String> = runCatching {
+        ctx.getSystemService(NotificationManager::class.java).activeNotifications.filter { it.id == AVISO }.mapNotNull { it.tag }
+    }.getOrDefault(listOfNotNull(actual))
+
+    private fun enCurso(ctx: Context, cita: String) = cita in mostradas(ctx)
+
+    /** Termina la de esa cita (la que mueve el servidor: hecha, cancelada o ya pasó). */
     fun terminar(ctx: Context, cita: String) {
-        if (actual != null && actual != cita) return
-        actual = null
-        NotificationManagerCompat.from(ctx).cancel(AVISO)
+        if (actual == cita) actual = null
+        NotificationManagerCompat.from(ctx).cancel(cita, AVISO)
+        Widgets.actualizar(ctx)
+    }
+
+    /** Termina todas (o todas menos `menos`): Activity.end de las que había. */
+    private fun terminarTodas(ctx: Context, menos: String? = null) {
+        val nm = NotificationManagerCompat.from(ctx)
+        (mostradas(ctx) + listOfNotNull(actual)).distinct().filter { it != menos }.forEach { nm.cancel(it, AVISO) }
+        if (actual != menos) actual = null
     }
 }

@@ -1,5 +1,9 @@
 package ar.com.corredor.app.widgets
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -39,7 +43,9 @@ import ar.com.corredor.app.compartido.Hoy
 import ar.com.corredor.app.nucleo.Formato
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
@@ -49,9 +55,51 @@ import java.time.Instant
 
 object Widgets {
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var pendiente: Job? = null
+    /** Cambiaron los datos: la próxima vuelta pide a la API aunque lo guardado sea reciente. */
+    @Volatile internal var forzar = false
 
-    /** Vuelve a dibujar los widgets (WidgetCenter.reloadAllTimelines en iOS). */
-    fun actualizar(ctx: Context) { alcance.launch { runCatching { WidgetHoy().updateAll(ctx.applicationContext) } } }
+    /** Vuelve a dibujar los widgets con lo último de la API (WidgetCenter.reloadAllTimelines en iOS). Junta los pedidos
+     *  seguidos (un lote de cambios en vivo, varios avisos) en una sola vuelta. */
+    fun actualizar(ctx: Context) {
+        val app = ctx.applicationContext
+        forzar = true
+        pendiente?.cancel()
+        pendiente = alcance.launch {
+            delay(1500)
+            runCatching { WidgetHoy().updateAll(app) }
+        }
+    }
+
+    /** La próxima vuelta sola (el timeline de iOS: `.after(15 min)` y una entrada cuando termina la visita). Con la
+     *  visita a menos de una hora, cada minuto, para la cuenta («en 25 min»: el `Text(style: .relative)` de iOS), y otra
+     *  al empezar («Visita en curso»). Es una alarma que no despierta el teléfono. */
+    internal fun programar(ctx: Context, h: Hoy) {
+        val ahora = System.currentTimeMillis()
+        var proxima = ahora + 15 * 60_000L
+        h.visita?.let { v ->
+            val empieza = v.empieza.toEpochMilli()
+            val fin = empieza + 3_600_000L
+            if (empieza > ahora) {
+                proxima = minOf(proxima, empieza)
+                if (empieza - ahora <= 3_600_000L) proxima = minOf(proxima, ahora + 60_000L)
+            }
+            if (fin > ahora) proxima = minOf(proxima, fin)
+        }
+        runCatching { ctx.getSystemService(AlarmManager::class.java).set(AlarmManager.RTC, proxima, vuelta(ctx)) }
+    }
+
+    /** Sin widgets en la pantalla, no se programa nada más. */
+    internal fun olvidar(ctx: Context) {
+        runCatching { ctx.getSystemService(AlarmManager::class.java).cancel(vuelta(ctx)) }
+    }
+
+    private fun vuelta(ctx: Context): PendingIntent {
+        val ids = AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, WidgetHoyReceiver::class.java))
+        val i = Intent(ctx, WidgetHoyReceiver::class.java).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        return PendingIntent.getBroadcast(ctx, 7201, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    }
 }
 
 private val verde = Color(15 / 255f, 53 / 255f, 48 / 255f)
@@ -71,7 +119,12 @@ class WidgetHoy : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(CHICO, MEDIANO))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val h = runCatching { Hoy.traer(context) }.getOrElse { Hoy.leer(context) }
+        // Lo guardado si es de hace menos de un minuto y nada cambió (las vueltas de la cuenta regresiva); si no, la API.
+        val guardado = Hoy.leer(context)
+        val reciente = Duration.between(guardado.actualizado, Instant.now()).seconds in 0..59
+        val h = if (reciente && !Widgets.forzar) guardado else runCatching { Hoy.traer(context) }.getOrElse { guardado }
+        Widgets.forzar = false
+        Widgets.programar(context, h)
         provideContent { Vista(context, h) }
     }
 
@@ -98,7 +151,8 @@ class WidgetHoy : GlanceAppWidget() {
                     }
                 }
             } else {
-                Visita(ctx, h)
+                // Sin widgetURL, tocarlo abre la app (en Glance hace falta decirlo).
+                Box(GlanceModifier.fillMaxSize().clickable(abrir(ctx, "inicio"))) { Visita(ctx, h) }
             }
         }
     }
@@ -138,4 +192,9 @@ class WidgetHoy : GlanceAppWidget() {
 
 class WidgetHoyReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = WidgetHoy()
+
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        Widgets.olvidar(context)
+    }
 }

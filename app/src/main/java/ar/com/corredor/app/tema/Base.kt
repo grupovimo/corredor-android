@@ -29,7 +29,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -85,8 +93,40 @@ fun TextoRico(
     alinear: TextAlign = TextAlign.Start,
     numeros: Boolean = false,
     escalaMinima: Float? = null,
+    /** El color del subrayado de las partes con `TextDecoration.Underline` (el `.underline(color:)` de iOS, el dorado del
+     *  resaltado de búsqueda). Sin él, el subrayado va del color del texto. */
+    subrayado: Color? = null,
 ) {
-    BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+    if (subrayado == null) {
+        BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+            autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
+        return
+    }
+    // Las partes subrayadas se dibujan sin el subrayado del texto y con una raya propia del color pedido.
+    val rangos = remember(texto) { texto.spanStyles.filter { it.item.textDecoration?.contains(TextDecoration.Underline) == true }.map { it.start until it.end } }
+    val limpio = remember(texto) {
+        AnnotatedString(texto.text, texto.spanStyles.map { r ->
+            if (r.item.textDecoration?.contains(TextDecoration.Underline) == true) AnnotatedString.Range(r.item.copy(textDecoration = TextDecoration.None), r.start, r.end) else r
+        }, texto.paragraphStyles)
+    }
+    var disposicion by remember { mutableStateOf<TextLayoutResult?>(null) }
+    BasicText(limpio, modifier.drawBehind {
+        val d = disposicion ?: return@drawBehind
+        val grosor = 1.dp.toPx()
+        rangos.forEach { r ->
+            if (r.isEmpty() || r.first >= d.layoutInput.text.length) return@forEach
+            val fin = minOf(r.last + 1, d.layoutInput.text.length)
+            val l0 = d.getLineForOffset(r.first); val l1 = d.getLineForOffset(fin - 1)
+            for (l in l0..l1) {
+                if (l >= d.lineCount) break
+                val x0 = if (l == l0) d.getHorizontalPosition(r.first, true) else d.getLineLeft(l)
+                val x1 = if (l == l1) d.getHorizontalPosition(fin, true) else d.getLineRight(l)
+                val y = d.getLineBaseline(l) + 2.dp.toPx()
+                drawLine(subrayado, Offset(minOf(x0, x1), y), Offset(maxOf(x0, x1), y), grosor)
+            }
+        }
+    }, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+        onTextLayout = { disposicion = it },
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
 }
 
@@ -96,17 +136,22 @@ private val simbolosRelleno = FontFamily(Font(R.font.simbolos_relleno))
 /** Un ícono por su nombre de SF Symbol (Image(systemName:) en iOS). «.fill» elige la variante rellena. `tam` es el
  *  .font(.system(size:)) de iOS. */
 @Composable
-fun Icono(simbolo: String, tam: Float = 17f, color: Color = C.texto, modifier: Modifier = Modifier, descripcion: String? = null) {
+fun Icono(simbolo: String, tam: Float = 17f, color: Color = C.texto, modifier: Modifier = Modifier, descripcion: String? = null, peso: Peso = Peso.regular) {
     val partes = simbolo.split('.')
     val relleno = "fill" in partes
     val nombre = partes.filter { it != "fill" }.joinToString(".")
     val c = Simbolos.mapa[nombre] ?: Simbolos.mapa[simbolo] ?: Simbolos.mapa[nombre.substringBeforeLast('.')] ?: ' '
     // Los símbolos de Material son un poco más chicos que los de SF a igual tamaño de letra.
-    BasicText(
-        c.toString(),
-        modifier.then(if (descripcion != null) Modifier.semantics { contentDescription = descripcion } else Modifier),
-        style = TextStyle(fontFamily = if (relleno) simbolosRelleno else simbolosContorno, fontSize = (tam * 1.18f).sp, color = color, lineHeight = (tam * 1.18f).sp),
-    )
+    val base = TextStyle(fontFamily = if (relleno) simbolosRelleno else simbolosContorno, fontSize = (tam * 1.18f).sp, color = color, lineHeight = (tam * 1.18f).sp)
+    val m = modifier.then(if (descripcion != null) Modifier.semantics { contentDescription = descripcion } else Modifier)
+    // La letra de los símbolos tiene un solo peso: el `.font(.system(size:, weight:))` de iOS se hace con un trazo encima
+    // del mismo color, más grueso cuanto más pesado (light queda como regular: la letra no tiene un trazo más fino).
+    val trazo = when (peso) { Peso.light, Peso.regular -> 0f; Peso.medium -> 0.035f; Peso.semibold -> 0.05f; Peso.bold -> 0.07f; Peso.extrabold -> 0.09f }
+    if (trazo == 0f) { BasicText(c.toString(), m, style = base); return }
+    androidx.compose.foundation.layout.Box(m) {
+        BasicText(c.toString(), style = base)
+        BasicText(c.toString(), style = base.copy(drawStyle = Stroke(width = with(LocalDensity.current) { (tam * trazo).dp.toPx() }, join = StrokeJoin.Round)))
+    }
 }
 
 /** Una imagen de la app (Image("Simbolo") en iOS): los drawables que vienen de Assets.xcassets. */

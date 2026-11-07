@@ -1,6 +1,7 @@
 package ar.com.corredor.app.pantallas.web
 
 import ar.com.corredor.app.pantallas.propiedades.FichaImpresa
+import ar.com.corredor.app.pantallas.propiedades.Propiedad
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -272,20 +273,13 @@ fun NuevaPaginaWeb(paginas: List<JsonElement>, web: String?, crear: (String) -> 
     }
 }
 
-/** Lo que se lee de cada propiedad para elegir la foto (los campos de `Propiedad` que usa esta hoja). */
-@Serializable
-private data class PropiedadFoto(val id: String, val titulo: String? = null, val direccion: String? = null, val fotosUrl: List<String>? = null) {
-    val nombre: String get() = titulo?.trim()?.ifEmpty { null } ?: direccion ?: "Propiedad"
-    val miniatura: String? get() = fotosUrl?.firstOrNull()?.let { it + (if (it.contains("?")) "&" else "?") + "tam=chica" }
-}
-
 /** La foto de portada sacada de una propiedad publicada. */
 @Composable
 fun ElegirFotoPortada(elegir: (String) -> Unit, cerrar: () -> Unit) {
     val estado = LocalEstado.current
-    var props by remember { mutableStateOf<List<PropiedadFoto>?>(null) }
+    var props by remember { mutableStateOf<List<Propiedad>?>(null) }
     LaunchedEffect(Unit) {
-        props = estado.api.opcional<List<PropiedadFoto>>("/v1/propiedades", listOf("publicada" to "si", "limite" to "24")) ?: emptyList()
+        props = estado.api.opcional<List<Propiedad>>("/v1/propiedades", listOf("publicada" to "si", "limite" to "24")) ?: emptyList()
     }
     Column(Modifier.fillMaxSize()) {
         BarraHoja("Foto de una propiedad", izquierda = { BotonHoja("Cancelar") { cerrar() } })
@@ -302,8 +296,7 @@ fun ElegirFotoPortada(elegir: (String) -> Unit, cerrar: () -> Unit) {
                             fila.forEach { x ->
                                 Tocable({ x.fotosUrl?.firstOrNull()?.let { elegir(it); cerrar() } }, Modifier.weight(1f)) {
                                     Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(12.dp))) {
-                                        Rayado(Modifier.matchParentSize())
-                                        AsyncImage(x.miniatura, null, Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+                                        Foto(x.miniatura, Modifier.matchParentSize())
                                         Texto(x.direccion ?: x.nombre, Estilo(11f, Peso.bold), Color.White,
                                             Modifier.align(Alignment.BottomStart).padding(6.dp).clip(Capsula).background(Color.Black.copy(alpha = 0.45f)).padding(6.dp), lineas = 1)
                                     }

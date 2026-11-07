@@ -66,7 +66,7 @@ fun EstadoVacio(
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = 32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Box(Modifier.size(72.dp).clip(CircleShape).background(C.hundida), contentAlignment = Alignment.Center) {
-            Icono(icono, 30f, C.accion)
+            Icono(icono, 30f, C.accion, peso = Peso.semibold)
         }
         Texto(titulo, Estilo.titulo3, C.texto, alinear = TextAlign.Center)
         if (texto != null) Texto(Formato.sinViudas(texto), Estilo.subhead, C.texto2, alinear = TextAlign.Center)
@@ -93,7 +93,7 @@ fun BannerSinConexion(guardado: Instant) {
             .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icono("wifi.slash", 14f, C.bannerTinta)
+        Icono("wifi.slash", 14f, C.bannerTinta, peso = Peso.semibold)
         Texto("Sin conexión. Ves lo guardado ${Formato.cuando(guardado)}.", Estilo.texto14, C.bannerTinta, Modifier.weight(1f))
     }
 }
@@ -147,7 +147,7 @@ fun VistaAviso(aviso: Aviso, cerrar: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(22.dp).clip(CircleShape).background(if (aviso.ok) hex(0x1E5749) else C.error), contentAlignment = Alignment.Center) {
-            Icono(if (aviso.ok) "checkmark" else "exclamationmark", 11f, Color.White)
+            Icono(if (aviso.ok) "checkmark" else "exclamationmark", 11f, Color.White, peso = Peso.extrabold)
         }
         Texto(aviso.texto, Estilo.subhead, hex(0xE8EFE9), Modifier.weight(1f).padding(vertical = 8.dp), lineas = 2)
         // Con las dos (p. ej. «Cobro registrado» con «Mandar recibo»), la acción y al lado «Deshacer».

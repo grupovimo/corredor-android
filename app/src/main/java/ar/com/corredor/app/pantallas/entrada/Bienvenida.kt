@@ -99,7 +99,11 @@ fun Bienvenida() {
     }
 
     suspend fun avisos() {
-        if (pedido && !NotificationManagerCompat.from(ctx).areNotificationsEnabled()) {
+        // El «.denied» de iOS: apagados y sin cartel del sistema que pedir (antes de Android 13 no hay; con el permiso dado
+        // los apagó en los ajustes; o ya se lo pedimos y dijo que no).
+        val sinCartel = android.os.Build.VERSION.SDK_INT < 33 ||
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if ((pedido || sinCartel) && !NotificationManagerCompat.from(ctx).areNotificationsEnabled()) {
             // Ya dijo que no: sólo se cambia en los ajustes del teléfono.
             val i = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, ctx.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             runCatching { ctx.startActivity(i) }
@@ -135,8 +139,7 @@ fun Bienvenida() {
                     urlFoto = a.url
                     Haptico.exito()
                 }
-            } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
-            subiendo = false
+            } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { subiendo = false }
         }
     }
 
@@ -163,7 +166,7 @@ fun Bienvenida() {
                     Texto(titulo, Estilo.filaLista, C.texto)
                     Texto(detalle, Estilo.footnote, C.texto2)
                 }
-                Icono("chevron.right", 13f, C.texto3)
+                Icono("chevron.right", 13f, C.texto3, peso = Peso.semibold)
             }
         }
     }
@@ -201,7 +204,7 @@ fun Bienvenida() {
                             Texto(if (subiendo) "Subiendo…" else "Tu foto", Estilo.filaLista, C.texto)
                             Texto("Sale en la web y en las fichas que mandás", Estilo.footnote, C.texto2)
                         }
-                        Icono("chevron.right", 13f, C.texto3)
+                        Icono("chevron.right", 13f, C.texto3, peso = Peso.semibold)
                     }
                 }
                 Column(Modifier.fillMaxWidth().tarjeta().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

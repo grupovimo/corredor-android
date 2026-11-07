@@ -68,9 +68,10 @@ fun FirmaYSesiones() {
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Texto("Firma en mensajes", Estilo.body16, C.texto)
-                            Spacer(Modifier.weight(1f).width(8.dp))
+                            // Spacer(minLength: 8): la firma ocupa todo lo que sobra, pegada a la derecha.
+                            Spacer(Modifier.width(8.dp))
                             Texto(if (f.activa) (f.texto?.takeIf { it.isNotBlank() } ?: "Sin firma") else "Sin firma", Estilo.texto14,
-                                if (f.activa) C.texto2 else C.texto3, Modifier.weight(1f, fill = false), lineas = 1)
+                                if (f.activa) C.texto2 else C.texto3, Modifier.weight(1f), lineas = 1, alinear = androidx.compose.ui.text.style.TextAlign.End)
                             Chevron()
                         }
                     }

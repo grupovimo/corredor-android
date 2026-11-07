@@ -396,7 +396,7 @@ fun Cobranzas(
         }
         MenuBoton(buildList {
             if (estado.escribe) add(OpcionDeMenu("Registrar cobro", "dollarsign.circle") { elegir = true })
-            add(OpcionDeMenu("Excel", "square.and.arrow.down") { if (!bajandoExcel) alcance.launch { bajarExcel() } })
+            add(OpcionDeMenu("Excel", "square.and.arrow.down", habilitado = !bajandoExcel) { alcance.launch { bajarExcel() } })
         }, "Más") {
             Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("ellipsis.circle", 19f, C.accion, descripcion = "Más") }
         }

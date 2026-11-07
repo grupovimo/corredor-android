@@ -315,7 +315,7 @@ fun MiPerfil() {
                                 val fondo = C.fondo
                                 Box(Modifier.align(Alignment.BottomEnd).size(30.dp).clip(CircleShape).background(fondo).padding(2.dp).clip(CircleShape).background(C.accion),
                                     contentAlignment = Alignment.Center) {
-                                    Icono(if (subiendo) "arrow.triangle.2.circlepath" else "camera.fill", 12f, C.sobreAccion)
+                                    Icono(if (subiendo) "arrow.triangle.2.circlepath" else "camera.fill", 12f, C.sobreAccion, peso = Peso.bold)
                                 }
                             }
                         }
@@ -417,14 +417,16 @@ fun MiPerfil() {
                         }
                     }
                     // Ajustes
-                    // En iOS van arriba el consejo de Siri y el botón de Atajos: en Android no hay Siri ni Atajos de
-                    // Apple (los atajos de la app salen solos al mantener apretado el ícono).
+                    // En iOS van arriba el consejo de Siri y el botón de Atajos: el consejo va igual (habla de los
+                    // atajos del ícono y el widget); el ShortcutsLink de Apple no tiene par en Android.
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ar.com.corredor.app.app.VistaConsejo(ar.com.corredor.app.app.ConsejoSiri())
                     Column(Modifier.fillMaxWidth().tarjeta()) {
                         Row(Modifier.fillMaxWidth().heightIn(min = 54.dp).clickable { faceID = !faceID; estado.ponerFaceID(faceID) }.padding(horizontal = 14.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Icono("faceid", 17f, C.accion)
                             Texto("Desbloquear con tu huella o tu cara", Estilo.body16, C.texto, Modifier.weight(1f))
-                            Llave(faceID, { faceID = it; estado.ponerFaceID(it) }, color = hex(0x2F9E6F))
+                            Llave(faceID, { faceID = it; estado.ponerFaceID(it) }, color = hex(0x2F9E6F), descripcion = "Desbloquear con tu huella o tu cara")
                         }
                         Linea()
                         Row(Modifier.fillMaxWidth().heightIn(min = 50.dp).padding(horizontal = 14.dp),
@@ -437,6 +439,7 @@ fun MiPerfil() {
                             Linea()
                             FilaIconoPerfil(icono, texto) { estado.abrir(destino) }
                         }
+                    }
                     }
                     // Salir
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -620,7 +623,7 @@ private fun InterruptorConDetalle(titulo: String, detalle: String, prendido: Boo
             Texto(titulo, Estilo.filaLista, C.texto)
             Texto(detalle, Estilo.footnote, C.texto2)
         }
-        Llave(prendido, alCambiar, color = C.ok)
+        Llave(prendido, alCambiar, color = C.ok, descripcion = titulo)
     }
 }
 

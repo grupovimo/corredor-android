@@ -76,7 +76,7 @@ fun RendicionesListas() {
                     lista.forEachIndexed { i, r ->
                         if (i > 0) LineaFila(16.dp)
                         FilaDeslizable(
-                            derecha = if (estado.escribe) listOf(AccionFila("Armar", "", C.accion) { alcance.launch { armar(r) } }) else emptyList(),
+                            derecha = if (estado.escribe) listOf(AccionFila("Armar", color = C.accion) { alcance.launch { armar(r) } }) else emptyList(),
                         ) {
                             FilaToque(Modifier.background(C.superficie), habilitado = armando == null, alTocar = { estado.abrir(AFichaContrato(id = r.contratoId)) }) {
                                 Column(Modifier.weight(1f)) {

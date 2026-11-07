@@ -183,13 +183,13 @@ fun MasRaiz() {
             Modifier.fillMaxWidth().heightIn(min = 50.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono(icono, 18f, C.accion) }
-            Texto(it.nombre, Estilo.filaLista, C.texto, Modifier.weight(1f, fill = false))
-            Spacer(Modifier.weight(1f))
+            Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono(icono, 18f, C.accion, peso = Peso.medium) }
+            // Text + Spacer(minLength: 0): el nombre usa todo lo que sobra (no la mitad).
+            Texto(it.nombre, Estilo.filaLista, C.texto, Modifier.weight(1f))
             estados[it.clave]?.let { (t, tono) ->
                 Texto(t, Estilo(13f, Peso.semibold), if (tono == Tono.neutro) C.texto3 else tono.tinta, lineas = 1)
             }
-            Icono("chevron.right", 13f, C.texto3)
+            Icono("chevron.right", 13f, C.texto3, peso = Peso.semibold)
         }
     }
 
@@ -235,7 +235,7 @@ fun MasRaiz() {
                     Texto("Tu inmobiliaria al ${a.completo} %", Estilo.filaLista, C.texto)
                     Texto(Formato.sinViudas("Completala y tu web queda lista"), Estilo.footnote, C.texto2)
                 }
-                Icono("chevron.right", 14f, C.texto3)
+                Icono("chevron.right", 14f, C.texto3, peso = Peso.semibold)
             }
         }
     }
@@ -296,9 +296,9 @@ fun MasRaiz() {
                 .heightIn(min = 50.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono("globe", 18f, C.accion) }
+            Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono("globe", 18f, C.accion, peso = Peso.medium) }
             Texto("Ver la web", Estilo.filaLista, C.texto, Modifier.weight(1f))
-            Icono("arrow.up.right.square", 15f, C.texto3)
+            Icono("arrow.up.right.square", 15f, C.texto3, peso = Peso.semibold)
         }
     }
 
@@ -355,12 +355,9 @@ fun MasRaiz() {
                     }
                 }
                 if (estado.estructura?.escondido == true || todas) {
+                    // Toggle(isOn:) { etiqueta }: cambia el interruptor (tocar el texto no hace nada, como en iOS).
                     Row(
-                        m.fillMaxWidth().tarjeta().clickable {
-                            todas = !todas
-                            Preferencias.ponerBool("todasLasSecciones", todas)
-                            alcance.launch { estado.cargarEstructura() }
-                        }.padding(14.dp),
+                        m.fillMaxWidth().tarjeta().padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -371,7 +368,7 @@ fun MasRaiz() {
                             todas = v
                             Preferencias.ponerBool("todasLasSecciones", v)
                             alcance.launch { estado.cargarEstructura() }
-                        }, color = C.accion)
+                        }, color = C.accion, descripcion = "Mostrar todas las secciones")
                     }
                 }
                 web?.let { u -> Box(m) { verLaWeb(u) } }

@@ -237,7 +237,7 @@ fun HojaReciboSueldo(c: ConsorcioAPI, r: ReciboSueldoAPI) {
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Texto("Neto a cobrar", Estilo.subheadFuerte, C.texto, Modifier.weight(1f))
-            Texto(Formato.plata(r.neto ?: 0.0), Estilo(20f, Peso.bold), C.texto)
+            Texto(Formato.plata(r.neto ?: 0.0), Estilo(20f, Peso.bold, relativo = Relativo.title3), C.texto)
         }
         Texto("Provisión de aguinaldo del mes: ${Formato.plata(r.sac ?: 0.0)}.", Estilo.footnote, C.texto2)
     }

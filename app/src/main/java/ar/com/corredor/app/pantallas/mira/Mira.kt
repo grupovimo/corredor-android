@@ -533,23 +533,20 @@ fun MiraRaiz() {
     }
     LaunchedEffect(cola.abrir) { abrirPedida() }
     // .sensoryFeedback(.success, trigger: fase == .revisar)
-    LaunchedEffect(fase == Fase.revisar) { if (fase == Fase.revisar) Haptico.exito() }
+    // (suena cuando cambia el valor: al entrar a la revisión y al salir de ella, como en iOS)
+    val enRevision = fase == Fase.revisar
+    var revisionAntes by remember { mutableStateOf(enRevision) }
+    LaunchedEffect(enRevision) { if (enRevision != revisionAntes) { revisionAntes = enRevision; Haptico.exito() } }
 
     // Captadas, apilada sobre la cámara (navigationDestination(isPresented:) del NavigationStack de MIRA).
     // La raíz de MIRA no tiene título: el «‹» vuelve sin nombre y la barra muestra el título de Captadas
     // (.pantallaApilada("Captadas")), como la barra nativa de la pila.
     val barraCaptadas = remember { Barra() }
+    androidx.activity.compose.BackHandler(captadas) { captadas = false }
     if (captadas) {
         CompositionLocalProvider(LocalBarra provides barraCaptadas, LocalCerrarHoja provides { captadas = false }) {
             Column(Modifier.fillMaxSize().background(C.fondo)) {
-                Box(Modifier.fillMaxWidth().background(tema(0xF3EFE6, 0x0E1714).actual).statusBarsPadding().height(44.dp)) {
-                    Tocable({ captadas = false }, Modifier.align(Alignment.CenterStart).padding(start = 4.dp), descripcion = "Atrás") { _ ->
-                        Box(Modifier.heightIn(min = 44.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) { Icono("chevron.left", 19f, C.accion) }
-                    }
-                    barraCaptadas.titulo?.let {
-                        Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center), lineas = 1, alinear = TextAlign.Center)
-                    }
-                }
+                BarraNavegacion(barraCaptadas, atras = null) { captadas = false }
                 Box(Modifier.weight(1f)) { Captadas() }
             }
         }
@@ -649,10 +646,10 @@ private fun VisorMira(leyendo: Boolean) {
                 cornerRadius = CornerRadius(24.dp.toPx()), blendMode = BlendMode.Clear,
             )
         }
-        Box(Modifier.offset(33.dp, 207.dp).size(ancho + 6.dp, alto + 6.dp)) { Visor(color = C.oro, grosor = 6.dp) }
+        Box(Modifier.offset(33.dp, 207.dp).size(ancho + 6.dp, alto + 6.dp)) { Visor(Modifier.fillMaxSize(), color = C.oro, grosor = 6.dp) }
         if (leyendo) {
             val t = rememberInfiniteTransition(label = "barrido")
-            val y by t.animateFloat(6f, 282f, infiniteRepeatable(tween(1700, easing = androidx.compose.animation.core.FastOutSlowInEasing), RepeatMode.Reverse), label = "y")
+            val y by t.animateFloat(6f, 282f, infiniteRepeatable(tween(1700, easing = androidx.compose.animation.core.CubicBezierEasing(0.42f, 0f, 0.58f, 1f)), RepeatMode.Reverse), label = "y")
             Box(
                 Modifier.offset(50.dp, 208.dp + y.dp).size(ancho - 28.dp, 4.dp)
                     .shadow(15.dp, Capsula, ambientColor = C.oro.copy(alpha = 0.55f), spotColor = C.oro.copy(alpha = 0.55f))
@@ -672,8 +669,8 @@ private fun Arriba(flash: Boolean, alCerrar: () -> Unit, alFlash: () -> Unit) {
                 Modifier.height(36.dp).clip(Capsula).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(Modifier.size(16.dp)) { Visor(color = C.oro, grosor = 2.dp) }
-                Texto("MIRA", Estilo(15f, Peso.bold, 0.9f / 15f), Color.White)
+                Visor(Modifier.size(16.dp), color = C.oro, grosor = 2.dp)
+                Texto("MIRA", Estilo(15f, Peso.bold, 0.9f / 15f, Relativo.subheadline), Color.White)
             }
             Spacer(Modifier.weight(1f))
             BotonRedondoMira(if (flash) "bolt.fill" else "bolt.slash", if (flash) "Apagar el flash" else "Prender el flash", alFlash)
@@ -693,7 +690,7 @@ private fun Pista(leyendo: Boolean, recortarSiempre: Boolean, alTocar: () -> Uni
                 val (t, i) = if (leyendo) "Leyendo el cartel…" to "sparkles"
                 else if (recortarSiempre) "Vas a elegir el recorte del cartel" to "crop" else "Fotografiá sólo el cartel, sin personas" to "person.crop.circle.badge.xmark"
                 Icono(i, 14f, Color.White)
-                Texto(t, Estilo(14f, Peso.semibold), Color.White, lineas = 1)
+                Texto(t, Estilo(14f, Peso.semibold, relativo = Relativo.footnote), Color.White, lineas = 1)
             }
         }
         if (leyendo) contenido() else Tocable(alTocar, Modifier.semantics { selected = recortarSiempre }) { _ -> contenido() }
@@ -721,7 +718,7 @@ private fun Controles(enCola: Int, leyendo: Boolean, galeria: () -> Unit, dispar
                     Box(Modifier.fillMaxSize().clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) { Icono("tray.full", 22f, Color.White) }
                     if (enCola > 0) {
                         Box(Modifier.align(Alignment.TopEnd).offset(2.dp, (-2).dp).size(20.dp).clip(CircleShape).background(C.oro), contentAlignment = Alignment.Center) {
-                            Texto("$enCola", Estilo(11f, Peso.bold), tinta)
+                            Texto("$enCola", Estilo(11f, Peso.bold, relativo = Relativo.caption2), tinta)
                         }
                     }
                 }
@@ -766,7 +763,7 @@ private fun Revision(
     val precioTexto = f.precio?.let { Formato.plata(it, f.moneda) } ?: if (alternativas.isNotEmpty()) alternativas.joinToString(" o ") { Formato.plata(it, f.moneda) } else null
     val tipoTexto = f.tipo?.let { t -> listOfNotNull(Propiedad.tipos.firstOrNull { it.first == t }?.second ?: t, f.ambientes?.let { "$it amb." }).joinToString(" · ") }
     val direccionTexto = listOfNotNull(f.direccion.trim().ifEmpty { null }, f.barrio).joinToString(", ")
-    val titulo = Estilo(22f, Peso.bold, -0.02f)
+    val titulo = Estilo(22f, Peso.bold, -0.02f, Relativo.title2)
     Column(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.25f))) {
         Spacer(Modifier.weight(1f))
         Column(
@@ -811,7 +808,7 @@ private fun Revision(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (captando) Rueda(C.sobreAccion) else Icono("house.badge.plus", 17f, C.sobreAccion)
-                    Texto(if (nolee) "Captar con lo que hay" else if (dudaPrecio) "Elegí el precio para captar" else "Captar", Estilo(17f, Peso.bold), C.sobreAccion)
+                    Texto(if (nolee) "Captar con lo que hay" else if (dudaPrecio) "Elegí el precio para captar" else "Captar", Estilo(17f, Peso.bold, relativo = Relativo.headline), C.sobreAccion)
                 }
             }
             Tocable(repetir, Modifier.fillMaxWidth()) { _ ->
@@ -836,14 +833,14 @@ private fun FilaRevision(k: String, v: String, duda: Boolean, nota: String? = nu
                 Texto(v, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f), lineas = 1, cortarAlMedio = true)
                 if (nota != null) {
                     Box(Modifier.height(24.dp).clip(Capsula).background(if (duda) C.avisoFondo else C.superficie).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                        Texto(nota, Estilo(12f, Peso.bold), if (duda) C.avisoTinta else C.texto2)
+                        Texto(nota, Estilo(12f, Peso.bold, relativo = Relativo.caption), if (duda) C.avisoTinta else C.texto2)
                     }
                 } else if (duda) {
                     Box(Modifier.height(24.dp).clip(Capsula).background(C.avisoFondo).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                        Texto("Revisá", Estilo(12f, Peso.bold), C.avisoTinta)
+                        Texto("Revisá", Estilo(12f, Peso.bold, relativo = Relativo.caption), C.avisoTinta)
                     }
                 }
-                Icono("pencil", 15f, C.texto3)
+                Icono("pencil", 17f, C.texto3)
             }
         }
     }
@@ -857,7 +854,7 @@ private fun PantallaCaptada(p: Propiedad, contacto: String?, imagen: Bitmap?, f:
         FondoApp()
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(96.dp).clip(CircleShape).background(C.oro), contentAlignment = Alignment.Center) { Icono("house.badge.plus", 38f, tinta) }
+                Box(Modifier.size(96.dp).clip(CircleShape).background(C.oro), contentAlignment = Alignment.Center) { Icono("house.badge.plus", 38f, tinta, peso = Peso.semibold) }
                 Texto("${p.direccion ?: "La propiedad"} quedó captada", Estilo.titulo3, C.texto, alinear = TextAlign.Center)
                 Texto(
                     Formato.sinViudas("Está como borrador en tu cartera, no se publica hasta que la completes.${if (contacto != null) " El dueño directo quedó cargado como contacto." else ""}"),
@@ -878,7 +875,7 @@ private fun PantallaCaptada(p: Propiedad, contacto: String?, imagen: Bitmap?, f:
                     Box(
                         Modifier.height(22.dp).drawWithDash(linea2).padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center,
-                    ) { Texto("Borrador", Estilo(12f, Peso.bold), C.texto2) }
+                    ) { Texto("Borrador", Estilo(12f, Peso.bold, relativo = Relativo.caption), C.texto2) }
                 }
             }
             val t = f.telefono
@@ -911,7 +908,7 @@ private fun AvisoMira(icono: String, tono: Tono, titulo: String, texto: String, 
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconoTono(icono, tono, tam = 44.dp)
-                Texto(titulo, Estilo(18f, Peso.bold), C.texto)
+                Texto(titulo, Estilo(18f, Peso.bold, relativo = Relativo.headline), C.texto)
             }
             Texto(texto, Estilo.subhead, C.texto2)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -934,7 +931,7 @@ private fun SinPermiso(elegirFoto: () -> Unit, cargarAMano: () -> Unit, cerrar: 
             Box(Modifier.size(84.dp).clip(RoundedCornerShape(26.dp)).background(C.oro.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
                 Icono("camera.badge.ellipsis", 38f, C.oro)
             }
-            Texto("MIRA necesita la cámara", Estilo(24f, Peso.bold, -0.02f), Color.White, alinear = TextAlign.Center)
+            Texto("MIRA necesita la cámara", Estilo(24f, Peso.bold, -0.02f, Relativo.title2), Color.White, alinear = TextAlign.Center)
             // En iOS: «Ajustes › Corredor › Cámara»; en Android el permiso está en la ficha de la app.
             Texto("Activala en Ajustes › Apps › Corredor › Permisos › Cámara. Sólo la usamos para leer carteles.", Estilo.body16, claroVerde, alinear = TextAlign.Center)
             Tocable({
@@ -943,7 +940,7 @@ private fun SinPermiso(elegirFoto: () -> Unit, cargarAMano: () -> Unit, cerrar: 
                 }
             }, Modifier.padding(top = 8.dp)) { _ ->
                 Box(Modifier.height(52.dp).clip(RoundedCornerShape(14.dp)).background(C.oro).padding(horizontal = 26.dp), contentAlignment = Alignment.Center) {
-                    Texto("Abrir Ajustes", Estilo(17f, Peso.bold), tinta)
+                    Texto("Abrir Ajustes", Estilo(17f, Peso.bold, relativo = Relativo.headline), tinta)
                 }
             }
             Tocable(elegirFoto) { _ -> Box(Modifier.height(44.dp), contentAlignment = Alignment.Center) { Texto("Elegir una foto", Estilo.subheadFuerte, claroVerde) } }
@@ -956,7 +953,7 @@ private fun SinPermiso(elegirFoto: () -> Unit, cargarAMano: () -> Unit, cerrar: 
 @Composable
 private fun BotonRedondoMira(icono: String, etiqueta: String, hacer: () -> Unit) {
     Tocable(hacer, descripcion = etiqueta) { _ ->
-        Box(Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) { Icono(icono, 20f, Color.White) }
+        Box(Modifier.size(44.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.45f)), contentAlignment = Alignment.Center) { Icono(icono, 20f, Color.White, peso = Peso.semibold) }
     }
 }
 
@@ -998,7 +995,7 @@ fun VistaRecorte(imagen: Bitmap, recorte: Recorte, alCambiar: (Recorte) -> Unit)
                     .semantics { contentDescription = "Recuadro del cartel: arrastralo para moverlo" },
             ) {
                 Box(Modifier.padding(6.dp).height(20.dp).clip(Capsula).background(oro).padding(horizontal = 6.dp), contentAlignment = Alignment.Center) {
-                    Texto("Sólo esto se envía", Estilo(11f, Peso.bold), tinta, lineas = 1)
+                    Texto("Sólo esto se envía", Estilo(11f, Peso.bold, relativo = Relativo.caption2), tinta, lineas = 1)
                 }
                 Box(
                     Modifier.align(Alignment.BottomEnd).offset(10.dp, 10.dp).size(26.dp).clip(CircleShape).background(oro)
@@ -1017,7 +1014,7 @@ fun VistaRecorte(imagen: Bitmap, recorte: Recorte, alCambiar: (Recorte) -> Unit)
                         }
                         .semantics { contentDescription = "Agrandar el recuadro" },
                     contentAlignment = Alignment.Center,
-                ) { Icono("arrow.up.left.and.arrow.down.right", 11f, Color.Black) }
+                ) { Icono("arrow.up.left.and.arrow.down.right", 11f, Color.Black, peso = Peso.bold) }
             }
         }
     }
@@ -1033,7 +1030,7 @@ fun FlowChips(items: List<Pair<String, String>>, modifier: Modifier = Modifier) 
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Icono(i, 15f, Color(0xFF18201D))
-                Texto(t, Estilo(15f, Peso.bold), Color(0xFF18201D), lineas = 1)
+                Texto(t, Estilo(15f, Peso.bold, relativo = Relativo.subheadline), Color(0xFF18201D), lineas = 1)
             }
         }
     }
@@ -1234,7 +1231,7 @@ fun Captadas() {
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icono("viewfinder", 17f, C.sobreAccion)
-                            Texto("Captar otra", Estilo(17f, Peso.semibold), C.sobreAccion)
+                            Texto("Captar otra", Estilo(17f, Peso.semibold, relativo = Relativo.headline), C.sobreAccion)
                         }
                     }
                 }
@@ -1275,7 +1272,7 @@ private fun FilaServidor(c: CaptadaMira, abrirFicha: () -> Unit) {
 @Composable
 private fun ChipTono(t: String, tono: Tono) {
     Box(Modifier.height(24.dp).clip(Capsula).background(tono.fondo).padding(horizontal = 9.dp), contentAlignment = Alignment.Center) {
-        Texto(t, Estilo(12f, Peso.bold), tono.tinta, lineas = 1)
+        Texto(t, Estilo(12f, Peso.bold, relativo = Relativo.caption), tono.tinta, lineas = 1)
     }
 }
 
@@ -1284,20 +1281,20 @@ private fun FilaCola(cola: ColaMira, f: FotoMira, abrir: () -> Unit, sacar: () -
     val (texto, icono, tono) = estadoCaptada(f)
     val imagen = imagenDe(cola, f)
     MenuContextual(listOf(OpcionDeMenu("Sacar de la lista", "trash", destructiva = true) { sacar() }), abrir) {
-        Row(Modifier.fillMaxWidth().tarjeta().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth().tarjeta().padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(C.hundida)) {
                 if (imagen != null) Image(imagen.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             }
-            Column(Modifier.weight(1f).height(72.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Texto(f.lectura?.direccion ?: f.direccionGPS ?: "Cartel sin dirección", Estilo(16f, Peso.bold), C.texto)
                 Texto(listOfNotNull(f.lectura?.precio?.let { Formato.plata(it, f.lectura?.moneda ?: "USD") }, Formato.hace(f.creada)).joinToString(" · "), Estilo.footnote, C.texto2)
-                Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(2.dp))
                 Row(
                     Modifier.height(24.dp).clip(Capsula).background(tono.fondo).padding(horizontal = 9.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Icono(icono, 12f, tono.tinta)
-                    Texto(texto, Estilo(12f, Peso.bold), tono.tinta, lineas = 1)
+                    Texto(texto, Estilo(12f, Peso.bold, relativo = Relativo.caption), tono.tinta, lineas = 1)
                 }
             }
         }

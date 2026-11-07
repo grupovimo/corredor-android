@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 14F El menú del ícono (MenuIcono en App/Atajos.swift): las cuatro acciones rápidas. Abren la app con un link
+<!-- 14F El menú del ícono (MenuIcono en App/Atajos.swift): las cuatro acciones rápidas, y después los otros
+     tres atajos de Atajos/Siri. Abren la app con un link
      corredor:// que entiende Ruta(texto). -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut android:shortcutId="mira" android:enabled="true" android:icon="@mipmap/ic_launcher"
@@ -21,5 +22,26 @@
         android:shortcutShortLabel="@string/atajo_mensajes_corto" android:shortcutLongLabel="@string/atajo_mensajes">
         <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
             android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://mensajes" />
+    </shortcut>
+    <!-- Los atajos de Atajos y Siri (AtajosCorredor en App/Atajos.swift) que no están en el menú del ícono. -->
+    <shortcut android:shortcutId="cobros" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_cobros" android:shortcutLongLabel="@string/atajo_cobros">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://cobranzas" />
+    </shortcut>
+    <shortcut android:shortcutId="hoy" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_hoy" android:shortcutLongLabel="@string/atajo_hoy">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://inicio" />
+    </shortcut>
+    <shortcut android:shortcutId="cobrar" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_cobrar" android:shortcutLongLabel="@string/atajo_cobrar">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://cobranzas" />
+    </shortcut>
+    <shortcut android:shortcutId="ficha" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_ficha" android:shortcutLongLabel="@string/atajo_ficha">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://propiedades" />
     </shortcut>
 </shortcuts>

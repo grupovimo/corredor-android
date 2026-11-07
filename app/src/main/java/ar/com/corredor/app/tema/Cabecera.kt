@@ -82,7 +82,7 @@ fun CabeceraPestana(
             acciones.forEach { a ->
                 Tocable(a.hacer, Modifier.size(44.dp), descripcion = a.etiqueta) {
                     Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                        Icono(a.icono, 21f, C.accion)
+                        Icono(a.icono, 21f, C.accion, peso = Peso.medium)
                         val n = a.insignia
                         if (n != null && n > 0) Box(Modifier.align(Alignment.TopEnd).offset(x = (-3).dp, y = 3.dp)) { InsigniaRoja(n) }
                     }
@@ -179,7 +179,7 @@ enum class Tono {
 @Composable
 fun IconoTono(icono: String, tono: Tono, tam: Dp = 40.dp) {
     Box(Modifier.size(tam).clip(RoundedCornerShape(12.dp)).background(tono.fondo), contentAlignment = Alignment.Center) {
-        Icono(icono, tam.value * 0.5f, tono.tinta)
+        Icono(icono, tam.value * 0.5f, tono.tinta, peso = Peso.medium)
     }
 }
 

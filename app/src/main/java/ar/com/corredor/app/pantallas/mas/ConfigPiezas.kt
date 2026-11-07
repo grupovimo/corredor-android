@@ -127,8 +127,8 @@ fun AvatarPersona(nombre: String, foto: String?, tam: Dp = 40.dp) {
 /** El error de un campo, debajo de él (la API o la validación de acá). */
 @Composable
 fun ErrorDeCampo(texto: String?) {
-    val t = texto?.trim()
-    if (!t.isNullOrEmpty()) Box(Modifier.padding(top = 2.dp)) { MensajeError(t) }
+    val t = texto?.nonEmpty
+    if (t != null) Box(Modifier.padding(top = 2.dp)) { MensajeError(t) }
 }
 
 /** «Tu rol es Agente: podés ver estos datos…»: el candado arriba de lo que sólo cambia el dueño. */
@@ -146,7 +146,7 @@ fun AvisoRol(texto: String) {
 /** Un ícono de color dentro de una fila de Form, para los rubros y los permisos. */
 @Composable
 fun IconoFila(icono: String, color: Color) {
-    Box(Modifier.width(26.dp), contentAlignment = Alignment.Center) { Icono(icono, 17f, color) }
+    Box(Modifier.width(26.dp), contentAlignment = Alignment.Center) { Icono(icono, 17f, color, peso = Peso.medium) }
 }
 
 /** Una confirmación de las que la web pide en una hoja roja («¿Sacás a Lara del equipo?»). */
