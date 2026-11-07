@@ -488,7 +488,10 @@ fun AccionesRapidas() {
         val origen = Offset(ancho / 2, alto + 6)
         val densidad = LocalDensity.current.density
         lista.forEachIndexed { i, a ->
-            val t by animateFloatAsState(if (visible) 1f else 0f, spring(dampingRatio = 0.65f, stiffness = 300f), label = "accion$i")
+            // Cada una sale 25 ms después de la anterior (.delay(Double(i) * 0.025) en iOS).
+            var sale by remember { mutableStateOf(false) }
+            LaunchedEffect(visible) { delay(i * 25L); sale = visible }
+            val t by animateFloatAsState(if (sale) 1f else 0f, spring(dampingRatio = 0.65f, stiffness = 300f), label = "accion$i")
             val destino = puntos[i]
             val x = origen.x + (destino.x - origen.x) * t; val y = origen.y + (destino.y - origen.y) * t
             Box(Modifier.offset { IntOffset(((x - tamanoAccion.first / 2) * densidad).roundToInt(), ((y - 28) * densidad).roundToInt()) }

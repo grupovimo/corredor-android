@@ -305,7 +305,7 @@ fun CorregirBorrador(b: BorradorIA, cerrar: () -> Unit = LocalCerrarHoja.current
     BarraHoja(
         "Corregir el borrador",
         izquierda = { BotonBarra("Cancelar") { cerrar() } },
-        derecha = { BotonBarra("Guardar", fuerte = true, habilitado = texto.trim().isNotEmpty()) { guardar(asunto.trim().ifEmpty { null }, texto); cerrar() } },
+        derecha = { BotonBarra("Guardar", fuerte = true, habilitado = texto.trim().isNotEmpty()) { guardar(asunto.takeIf { it.isNotBlank() }, texto); cerrar() } },
     )
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SeccionLista(null) { Texto(aspecto(b).titulo, Estilo.footnote, C.texto2, Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }

@@ -454,7 +454,7 @@ fun FichaContacto(id: String) {
     @Composable
     fun Dato(l: String, v: String, primera: Boolean, tocar: () -> Unit) {
         Tocable(alTocar = tocar, modifier = Modifier.lineaArriba(!primera)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.Top) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Texto(l, Estilo.body16, C.texto2)
                 Spacer(Modifier.width(12.dp))
                 Texto(v, Estilo.body16, C.texto, Modifier.weight(1f), alinear = TextAlign.End)

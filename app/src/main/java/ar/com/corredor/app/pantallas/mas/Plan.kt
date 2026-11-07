@@ -40,6 +40,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.Estado
 import ar.com.corredor.app.app.LocalEstado
@@ -353,7 +355,7 @@ private fun NotaPlan(icono: String, texto: String) {
 private fun TarjetaPlan(p: Suscripcion.Plan, s: Suscripcion, on: Boolean, ciclo: String, precio: String, porMes: String, ahorro: String?, alTocar: () -> Unit) {
     val actual = s.plan == p.id && !s.soloLectura
     val forma = RoundedCornerShape(M.rTarjeta)
-    Tocable(alTocar) {
+    Tocable(alTocar, Modifier.semantics { selected = on }) {
         Column(
             Modifier.fillMaxWidth().sombra(forma, C.sombra.copy(alpha = 0.32f), 11.dp, y = 10.dp).clip(forma).background(C.superficie)
                 .border(if (on) 2.dp else 1.dp, if (on) C.accion else C.linea, forma).padding(16.dp),

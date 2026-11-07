@@ -39,7 +39,7 @@ object Charla {
     /** «sáb 14 · 11:00» (en la hora de Buenos Aires). */
     fun diaHora(d: Instant): String {
         val z = Formato.enArgentina(d)
-        val h = String.format("%02d:%02d", z.hour, z.minute)
+        val h = String.format(java.util.Locale.ROOT, "%02d:%02d", z.hour, z.minute)
         return "${dias[z.dayOfWeek.value % 7]} ${z.dayOfMonth} · $h"
     }
 

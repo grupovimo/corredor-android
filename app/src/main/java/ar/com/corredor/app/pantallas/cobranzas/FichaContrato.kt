@@ -1,8 +1,6 @@
 package ar.com.corredor.app.pantallas.cobranzas
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,6 +51,7 @@ import ar.com.corredor.app.app.*
 import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.tema.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.text.DecimalFormat
@@ -249,7 +248,7 @@ fun FichaContrato(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (telefono != null) whatsappFicha(ctx, telefono) else estado.avisar(e)
+                if (telefono != null) Afuera.whatsapp(telefono) else estado.avisar(e)
             }
         }
     }
@@ -269,21 +268,23 @@ fun FichaContrato(
     /** Sacar un documento (a la papelera); «Deshacer» lo vuelve a sumar con el mismo archivo. */
     fun sacar(d: DocumentoContrato) {
         s.sacados = s.sacados + d.id
-        val pedido = alcance.launch {
+        val pedido = CompletableDeferred<Boolean>()
+        alcance.launch {
             try {
                 estado.api.hacer("DELETE", "/v1/documentos/${d.id}")
+                pedido.complete(true)
             } catch (e: CancellationException) {
+                pedido.complete(false)
                 throw e
             } catch (e: Exception) {
                 s.sacados = s.sacados - d.id
                 estado.avisar("No se sacó · ${(e as? ErrorApi)?.detalle ?: ""}", ok = false)
-                throw e
+                pedido.complete(false)
             }
         }
         estado.avisar("Sacaste «${d.nombre}»") {
             alcance.launch {
-                pedido.join()
-                if (pedido.isCancelled) return@launch
+                if (!pedido.await()) return@launch
                 val a = d.archivoId ?: return@launch
                 try {
                     estado.api.hacer("POST", "/v1/documentos", DocFicha(a, id, d.nombre))
@@ -380,7 +381,7 @@ fun FichaContrato(
                     PartesFicha(s, k,
                         abrirContacto = { estado.abrir(AFichaContacto(id = it)) },
                         chat = { c, t -> chat(c, t) },
-                        llamar = { llamarFicha(ctx, k.garanteTelefono) })
+                        llamar = { Afuera.llamar(k.garanteTelefono) })
                     CondicionesFicha(k, s.moneda)
                     BloqueDocumentosFicha(s, estado.escribe,
                         subirArchivo = { elegirArchivos.launch(arrayOf("application/pdf", "image/*")) },
@@ -455,7 +456,7 @@ private fun TarjetaAjusteFicha(s: FichaEstado, k: ContratoAPI, a: AjusteContrato
     val sube = if ((p.monto ?: 0.0) > 0 && vigente > 0) (p.monto!! / vigente - 1) else 0.0
     val claro = hex(0xCFE0D8)
     Column(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(C.verde800).padding(18.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(M.rDestacada)).texturaVerde(C.verde800).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Etiqueta("Próximo ajuste · $cuando · ${Fecha.fecha(p.fecha)?.let { Formato.diaCompleto(it) } ?: p.fecha}", "chart.line.uptrend.xyaxis", Estilo.footnoteFuerte, C.oro)
@@ -881,15 +882,4 @@ object FichaContrato {
         }
         return v
     }
-}
-
-/** Afuera.whatsapp: wa.me con el teléfono. */
-private fun whatsappFicha(ctx: Context, telefono: String?) {
-    WhatsAppCorredor.waMe(telefono, "")?.let { abrirUrl(ctx, it.substringBefore("?")) }
-}
-
-/** Afuera.llamar: el marcador con el número (ACTION_DIAL, sin pedir permiso). */
-private fun llamarFicha(ctx: Context, telefono: String?) {
-    val n = (telefono ?: "").filter { it.isDigit() || it == '+' }
-    runCatching { ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$n")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 }

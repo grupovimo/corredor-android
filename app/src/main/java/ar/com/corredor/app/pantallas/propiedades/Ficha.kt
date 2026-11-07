@@ -431,9 +431,11 @@ fun FichaPropiedad(
                     HeroeFicha(pv, alSumarFotos = { if (estado.escribe) estado.abrir(AEditarEnPaso(id = pv.id, paso = "fotos")) }) { i ->
                         estado.abrir(AGaleria(id = pv.id, indice = i))
                     }
+                    Box(Modifier.fillMaxWidth().offset(y = (-22).dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))) {
+                    // El fondo con grano, recortado (FondoApp().clipShape(…) en iOS).
+                    FondoApp(Modifier.matchParentSize())
                     Column(
-                        Modifier.fillMaxWidth().offset(y = (-22).dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)).background(C.fondo)
-                            .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 120.dp),
+                        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 120.dp),
                         verticalArrangement = Arrangement.spacedBy(18.dp),
                     ) {
                         // Cabeza
@@ -737,6 +739,7 @@ fun FichaPropiedad(
                                 alCerrar = { cambiarEstado = false }, verTitulo = false,
                             )
                         }
+                    }
                     }
                 }
             }

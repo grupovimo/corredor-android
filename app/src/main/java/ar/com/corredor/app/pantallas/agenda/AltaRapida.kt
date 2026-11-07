@@ -176,6 +176,7 @@ fun AltaRapidaCita(
 
     LaunchedEffect(Unit) { cargarOpciones() }
     LaunchedEffect(dia ?: "") { cargarDia() }
+    DisposableEffect(Unit) { onDispose { dictado.parar() } }
     LaunchedEffect(dictado.texto) { if (dictado.grabando) texto = listOf(base, dictado.texto).filter { it.isNotEmpty() }.joinToString(" ") }
 
     Column(Modifier.fillMaxSize().imePadding().padding(start = 20.dp, end = 20.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -367,8 +368,10 @@ fun LicenciasAgenda() {
                     }
                 }
                 Etiquetado("Qué") { Segmentado(LicenciasAgendaTextos.tipos, tipo, { tipo = it }) }
-                Etiquetado("Desde") { RenglonFecha("", desde, { desde = it; if (hasta.isBefore(it)) hasta = it }) }
-                Etiquetado("Hasta") { RenglonFecha("", hasta, { hasta = it }, minimo = desde) }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Etiquetado("Desde", Modifier.weight(1f)) { RenglonFecha("", desde, { desde = it; if (hasta.isBefore(it)) hasta = it }) }
+                    Etiquetado("Hasta", Modifier.weight(1f)) { RenglonFecha("", hasta, { hasta = it }, minimo = desde) }
+                }
                 error?.let { MensajeError(it) }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f), lleno = true)

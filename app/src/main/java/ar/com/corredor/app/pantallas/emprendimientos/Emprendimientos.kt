@@ -54,7 +54,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -372,11 +371,9 @@ fun Emprendimientos() {
 
     LaunchedEffect(estado.version) { cargar() }
 
-    PantallaApilada("Emprendimientos", acciones = if (estado.escribe) ({ BotonBarraIcono("plus", "Nuevo emprendimiento") { nuevo = true } }) else null) {
+    PantallaApilada("Emprendimientos", grande = true, acciones = if (estado.escribe) ({ BotonBarraIcono("plus", "Nuevo emprendimiento") { nuevo = true } }) else null) {
         Refrescable({ cargar() }) {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                // .navigationBarTitleDisplayMode(.large): el título grande arriba de la lista.
-                Texto("Emprendimientos", Estilo.tituloGrande, C.texto)
                 val l = lista
                 val err = error
                 if (l != null) {
@@ -619,7 +616,7 @@ fun FichaEmprendimiento(id: String) {
                                 )
                             }
                             ex.descripcion?.let { Texto(it, Estilo.body16, C.texto) }
-                            if (estado.escribe && loteo && unidades.isNotEmpty()) BotonHundidoEmp("Crear lotes en serie", { lotes = true })
+                            if (estado.escribe && loteo && unidades.isNotEmpty()) BotonHundido("Crear lotes en serie", { lotes = true })
                         }
                     } else if (err != null) {
                         Box(Modifier.padding(top = 60.dp)) { EstadoError("el emprendimiento", err) { estado.tarea { cargar() } } }
@@ -785,9 +782,10 @@ private fun FichaUnidad(u: UnidadEmp, loteo: Boolean, buscando: Boolean, nota: S
                 Texto(UnidadEmp.nombresVista[v] ?: v, Estilo(12f, Peso.bold), t.tinta)
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            Texto(u.nombre(loteo), Estilo.titulo3, C.texto)
-            if (sub != null) Texto(sub, Estilo.subhead, C.texto2)
+        // HStack(alignment: .firstTextBaseline).
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Texto(u.nombre(loteo), Estilo.titulo3, C.texto, Modifier.alignByBaseline())
+            if (sub != null) Texto(sub, Estilo.subhead, C.texto2, Modifier.alignByBaseline())
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Caja("Superficie", u.superficie?.let { "${Formato.numero(it.toInt())} m²" } ?: "—", Modifier.weight(1f))
@@ -797,7 +795,7 @@ private fun FichaUnidad(u: UnidadEmp, loteo: Boolean, buscando: Boolean, nota: S
         if (estado.escribe || v != "disponible") {
             BotonPrincipal(if (buscando) "Buscando…" else cta.first, accion, habilitado = !buscando, simbolo = cta.second)
         }
-        BotonHundidoEmp("Mandar ${if (loteo) "el lote" else "la unidad"} por WhatsApp", mandar, simbolo = "square.and.arrow.up")
+        BotonHundido("Mandar ${if (loteo) "el lote" else "la unidad"} por WhatsApp", mandar, simbolo = "square.and.arrow.up")
         Tocable({ estado.abrir(AFichaPropiedad(id = u.id)) }) { _ -> Texto("La ficha de la propiedad", Estilo.footnoteFuerte, C.accion) }
     }
 }
@@ -844,19 +842,4 @@ private fun BarraAvance(valor: Double, color: Color) {
 @Composable
 private fun androidx.compose.foundation.layout.ColumnScope.FilaForm(contenido: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, content = contenido)
-}
-
-// Copia de BotonHundido (Pantallas/Inicio/Inicio.swift).
-@Composable
-private fun BotonHundidoEmp(texto: String, alTocar: () -> Unit, simbolo: String? = null) {
-    Tocable(alTocar, hundir = false) { apretado ->
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.hundida).padding(horizontal = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            val color = C.texto.copy(alpha = if (apretado) 0.8f else 1f)
-            if (simbolo != null) Icono(simbolo, 15f, color)
-            Texto(texto, Estilo(15f, Peso.semibold), color, lineas = 1, alinear = TextAlign.Center)
-        }
-    }
 }

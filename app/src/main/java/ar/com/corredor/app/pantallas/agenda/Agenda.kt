@@ -43,6 +43,7 @@ import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.nucleo.JSONLibre
 import ar.com.corredor.app.nucleo.Licencia
 import ar.com.corredor.app.nucleo.Resultado
+import ar.com.corredor.app.nucleo.nonEmpty
 import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.pantallas.cobranzas.ARecordarMes
 import ar.com.corredor.app.pantallas.informes.GraficoVisitasSemanas
@@ -621,7 +622,7 @@ private fun FormularioCita(propiedad: Propiedad?, contacto: Pair<String, String>
     var titulo by remember { mutableStateOf(editar?.titulo ?: "") }
     var lugar by remember { mutableStateOf(editar?.lugar ?: "") }
     var notas by remember { mutableStateOf(editar?.notas ?: "") }
-    var avisar by remember { mutableStateOf(editar?.recordar ?: true) }
+    var avisar by remember { mutableStateOf(if (editar != null) editar.recordar ?: false else true) }
     var calendario by remember { mutableStateOf(false) }
     var eligiendoProp by remember { mutableStateOf(false) }
     var eligiendoCon by remember { mutableStateOf(false) }
@@ -639,7 +640,7 @@ private fun FormularioCita(propiedad: Propiedad?, contacto: Pair<String, String>
             .putExtra(CalendarContract.Events.TITLE, t)
             .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, ini)
             .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, ini + duracion * 60_000L)
-            .putExtra(CalendarContract.Events.EVENT_LOCATION, prop?.direccion ?: lugar.ifEmpty { null })
+            .putExtra(CalendarContract.Events.EVENT_LOCATION, prop?.direccion ?: lugar.nonEmpty)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { ctx.startActivity(i) }
     }
@@ -648,14 +649,14 @@ private fun FormularioCita(propiedad: Propiedad?, contacto: Pair<String, String>
         guardando = true
         val t = if (esTarea == 1) "otro" else tipo
         val tit = if (esTarea == 1) titulo else "${Cita.tipos.firstOrNull { it.first == t }?.second ?: "Visita"} · ${prop?.nombre ?: lugar}"
-        val c = CuerpoCita(t, editar?.estado ?: "pendiente", tit, cuando.atZone(Formato.zona).toInstant(), duracion, prop?.id, con?.id, lugar.ifEmpty { null }, notas.ifEmpty { null },
+        val c = CuerpoCita(t, editar?.estado ?: "pendiente", tit, cuando.atZone(Formato.zona).toInstant(), duracion, prop?.id, con?.id, lugar.nonEmpty, notas.nonEmpty,
             avisar && esTarea == 0, editar?.agenteId ?: prop?.agenteId ?: estado.usuario?.id, editar?.operacionId ?: operacion)
         try {
             if (editar != null) {
                 estado.cola.enviar("PUT", "/v1/agenda/${editar.id}", c, etiqueta = "Cambios en $tit")
             } else {
                 val subio = estado.cola.enviar("POST", "/v1/agenda", c, etiqueta = tit)
-                val quien = (con?.titulo ?: "").split(" ").firstOrNull()?.takeIf { con != null }
+                val quien = (con?.titulo ?: "").split(" ").firstOrNull { it.isNotEmpty() }
                 estado.avisar(if (!subio) "En cola · se agenda cuando vuelva la señal" else (if (avisar && quien != null) "Visita agendada · le avisamos a $quien" else "Agendada"))
             }
             if (calendario) sumarAlCalendario(tit)
@@ -883,7 +884,7 @@ fun FichaCita(id: String) {
                         x.operacionId?.let { o -> Enlace("rectangle.split.3x1", "La operación", primera = false) { estado.abrir(AFichaOperacion(o)) } }
                         Enlace("location", "Cómo llegar", primera = x.propiedadId == null && x.contactoId == null) { Afuera.mapas(x.lugar ?: x.propiedadTitulo ?: "") }
                     }
-                    x.notas?.takeIf { it.isNotEmpty() }?.let { n -> Texto(n, Estilo.body16, C.texto, Modifier.fillMaxWidth().tarjeta().padding(14.dp)) }
+                    x.notas?.nonEmpty?.let { n -> Texto(n, Estilo.body16, C.texto, Modifier.fillMaxWidth().tarjeta().padding(14.dp)) }
                     if (estado.escribe) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (x.estado != "hecha") BotonAccion("Marcar como hecha", { alcance.launch { poner("hecha") } })

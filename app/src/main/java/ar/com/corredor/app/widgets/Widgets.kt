@@ -110,7 +110,8 @@ class WidgetHoy : GlanceAppWidget() {
             val ahora = Instant.now()
             val arriba = if (v.empieza.isAfter(ahora)) {
                 val min = Duration.between(ahora, v.empieza).toMinutes()
-                "PRÓXIMA VISITA · EN " + if (min >= 60) "${min / 60} H ${min % 60} MIN" else "$min MIN"
+                // Text(style: .relative) de iOS no va en mayúsculas: «25 min», «1 h 5 min».
+                "PRÓXIMA VISITA · EN " + if (min >= 60) "${min / 60} h ${min % 60} min" else "$min min"
             } else "VISITA EN CURSO"
             Column(GlanceModifier.fillMaxSize()) {
                 Text(arriba, style = TextStyle(cp(oro), 11.sp, FontWeight.Bold), maxLines = 1)

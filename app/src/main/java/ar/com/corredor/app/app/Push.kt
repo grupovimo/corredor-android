@@ -113,11 +113,19 @@ object Push {
     fun acciones(d: Map<String, String>): List<AccionAviso> =
         d["acciones"]?.let { runCatching { Api.json.decodeFromString<List<AccionAviso>>(it) }.getOrNull() } ?: emptyList()
 
+    /** «Llamar» de una consulta: abre el marcador con el teléfono del aviso (sólo dígitos y «+», como iOS). */
+    fun llamar(ctx: Context, telefono: String?, ruta: String, codigo: Int, aviso: String?): PendingIntent {
+        val t = telefono?.filter { it.isDigit() || it == '+' }.orEmpty()
+        if (t.isEmpty()) return abrir(ctx, ruta, codigo, "llamar", aviso)
+        val i = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$t")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return PendingIntent.getActivity(ctx, codigo, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
     /** Una acción que corre sin abrir la app: Responder (14C), Marcar como hecha, o una de la API. */
-    fun accion(ctx: Context, que: String, ruta: String, aviso: Int, avisoId: String? = null, api: AccionAviso? = null): PendingIntent {
+    fun accion(ctx: Context, que: String, ruta: String, aviso: Int, avisoId: String? = null, api: AccionAviso? = null, citaId: String? = null): PendingIntent {
         val i = Intent(ctx, AccionesPush::class.java).apply {
             action = "ar.com.corredor.app.$que"
-            putExtra("ruta", ruta); putExtra("aviso", aviso); putExtra("avisoId", avisoId)
+            putExtra("ruta", ruta); putExtra("aviso", aviso); putExtra("avisoId", avisoId); putExtra("citaId", citaId)
             api?.let { putExtra("api", Api.json.encodeToString(it)) }
         }
         val conTexto = que == "responder" || api?.entrada == "texto"
@@ -152,11 +160,11 @@ object Push {
             .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build()
         when (d["categoria"]) {
             "mensaje" -> { b.addAction(responder); b.addAction(ver) }
-            // Llamar abre la consulta (el aviso no trae el teléfono; en iOS abre la app).
-            "consulta" -> { b.addAction(responder); b.addAction(0, "Llamar", abrir(ctx, ruta, id + 2, "llamar", aviso)); b.addAction(ver) }
+            // Llamar: el marcador con el `telefono` de la consulta (tel:// en iOS); sin él, abre la app.
+            "consulta" -> { b.addAction(responder); b.addAction(0, "Llamar", llamar(ctx, d["telefono"], ruta, id + 2, aviso)); b.addAction(ver) }
             // Un cobro se registra abriendo la app (en iOS pide desbloquear el teléfono).
             "cobro" -> { b.addAction(0, "Registrar cobro", abrir(ctx, ruta, id + 3, "cobrar", aviso)); b.addAction(ver) }
-            "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso)) }
+            "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso, citaId = d["citaId"])) }
             else -> acciones(d).take(3).forEachIndexed { n, a ->
                 when {
                     a.ruta.isNullOrEmpty() -> b.addAction(0, a.titulo, abrir(ctx, ruta, id + 10 + n, a.accion, aviso))
@@ -220,8 +228,8 @@ class AccionesPush : BroadcastReceiver() {
                         }
                     }
                     "hecha" -> {
-                        // La cita sale de la ruta del aviso (/agenda/<id>).
-                        val id = (ruta?.destino as? ACita)?.id
+                        // La cita sale de la ruta del aviso (/agenda/<id>) o de `citaId`.
+                        val id = (ruta?.destino as? ACita)?.id ?: i.getStringExtra("citaId")?.ifEmpty { null }
                         if (id != null) api.hacer("PATCH", "/v1/agenda/$id", Hecha())
                     }
                     "api" -> {

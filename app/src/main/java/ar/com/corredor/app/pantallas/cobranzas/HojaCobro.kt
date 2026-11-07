@@ -42,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -216,7 +217,7 @@ fun HojaCobro(
                     if (punitorios > 0) {
                         LineaFila()
                         Row(
-                            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { conPunitorios = !conPunitorios }.padding(horizontal = 14.dp),
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { conPunitorios = !conPunitorios }.semantics { selected = conPunitorios }.padding(horizontal = 14.dp),
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Icono(if (conPunitorios) "checkmark.square.fill" else "square", 17f, if (conPunitorios) C.accion else C.texto3)
@@ -241,7 +242,7 @@ fun HojaCobro(
                     LineaFila()
                     Row(
                         Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(enabled = otros.size < 9) { otros.add(HojaCobro.Otro()) }
-                            .padding(horizontal = 14.dp),
+                            .deshabilitado(otros.size >= 9).padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Etiqueta("Otro concepto", "plus", Estilo.subheadFuerte, C.accion)
@@ -379,6 +380,7 @@ fun ReciboVista(contrato: String, cobro: String, enHoja: Boolean = false) {
         } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
     }
 
+    LaunchedEffect(Unit) { PantallasMostradas.cuenta += 1 }
     LaunchedEffect(contrato, cobro) {
         val l: List<MesContrato> = estado.api.opcional("/v1/contratos/$contrato/cobros") ?: emptyList()
         c = l.mapNotNull { it.cobro }.firstOrNull { it.id == cobro }

@@ -44,8 +44,9 @@ import kotlinx.serialization.Serializable
 @Composable
 fun Recorrido(visible: Boolean, alCambiar: (Boolean) -> Unit) {
     val estado = LocalEstado.current
-    var paso by remember { mutableIntStateOf(0) }
     if (!visible) return
+    // Cada vez que se abre (también desde «Más»), desde el primer paso (en iOS la vista se arma de nuevo).
+    var paso by remember { mutableIntStateOf(0) }
 
     fun terminar() {
         alCambiar(false)
@@ -82,11 +83,7 @@ fun Recorrido(visible: Boolean, alCambiar: (Boolean) -> Unit) {
                 Texto(Formato.sinViudas(p.texto), Estilo.subhead, C.texto2)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     BotonTexto("Saltear", { terminar() }, Modifier.width(110.dp), color = C.texto2)
-                    Tocable({ siguiente() }, Modifier.weight(1f)) {
-                        Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.accion), contentAlignment = Alignment.Center) {
-                            Texto(if (i == pasosRecorrido.size - 1) "Empezar" else "Siguiente", Estilo(15f, Peso.semibold, relativo = Relativo.subheadline), C.sobreAccion)
-                        }
-                    }
+                    BotonAccion(if (i == pasosRecorrido.size - 1) "Empezar" else "Siguiente", { siguiente() }, Modifier.weight(1f))
                 }
             }
         }

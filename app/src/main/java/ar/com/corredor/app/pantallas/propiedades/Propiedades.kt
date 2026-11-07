@@ -67,6 +67,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Shape
@@ -498,7 +499,8 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
     @Composable
     fun vacio() {
         if (resumen.total == 0 && filtros.vacio) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // El VStack de 12 del listado, donde iOS apila el vacío y el «Importar de Excel».
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 EstadoVacio(
                     icono = "building.2", titulo = "Así se va a ver tu primera propiedad",
                     texto = "Sacale una foto al cartel o cargala a mano.",
@@ -828,9 +830,9 @@ fun FilaCartera(p: Propiedad, s: Senal? = null, agente: String? = null, marcada:
             }
         }
         Column(Modifier.weight(1f).padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
-                Texto(p.precioTexto, Estilo(17f, Peso.bold, -0.01f), C.texto)
-                if (nota.first.isNotEmpty()) Texto(nota.first, Estilo.footnote, if (nota.second == Tono.neutro) C.texto2 else nota.second.tinta, lineas = 1)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Texto(p.precioTexto, Estilo(17f, Peso.bold, -0.01f), C.texto, Modifier.alignBy(FirstBaseline))
+                if (nota.first.isNotEmpty()) Texto(nota.first, Estilo.footnote, if (nota.second == Tono.neutro) C.texto2 else nota.second.tinta, Modifier.alignBy(FirstBaseline), lineas = 1)
             }
             Texto(p.direccion ?: p.nombre, Estilo(15f, Peso.medium), C.texto, lineas = 1)
             Texto(
@@ -959,7 +961,7 @@ fun HojaPrecioVarias(cuantas: Int, cambiar: (Double) -> Unit) {
         Campo(label = "Porcentaje") { Entrada(porcentaje, { porcentaje = it }, "-5", Modifier.weight(1f), teclado = KeyboardType.Text) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             BotonTexto("Cancelar", { cerrar() }, Modifier.weight(1f))
-            Spacer(Modifier.weight(0.2f))
+            Spacer(Modifier.width(8.dp))
             BotonPrincipal("Cambiar", {
                 val n = porcentaje.replace(",", ".").replace("−", "-").toDoubleOrNull() ?: 0.0
                 if (!n.isFinite() || n == 0.0) return@BotonPrincipal

@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -330,7 +331,7 @@ fun AltaContrato(
             s.fila.withLock { guardarYaAlta(s, estado.api) }
         }
         s.idBorrador?.let { id ->
-            estado.sugerir("Quedó en borrador. Seguilo cuando quieras.", "Seguir") { estado.abrir(AAltaContrato(borrador = id)) }
+            estado.sugerir("Quedó en borrador. Seguilo cuando quieras.", "Seguir", AAltaContrato(borrador = id))
         }
         cerrar()
     }
@@ -886,7 +887,7 @@ private fun PasoPlazoAlta(s: AltaEstado) {
                 listOf(24, 36).forEach { m ->
                     val on = s.d.meses == m && s.tMeses.isEmpty()
                     Box(Modifier.weight(1f).heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(if (on) C.accion else C.hundida)
-                        .clickable { s.d = s.d.copy(meses = m); s.tMeses = "" }, contentAlignment = Alignment.Center) {
+                        .semantics { selected = on }.clickable { s.d = s.d.copy(meses = m); s.tMeses = "" }, contentAlignment = Alignment.Center) {
                         Texto("$m meses", Estilo.subheadFuerte, if (on) C.sobreAccion else C.texto)
                     }
                 }
@@ -932,7 +933,7 @@ private fun PasoAjusteAlta(s: AltaEstado) {
                         val on = s.d.indice == i.first
                         val tinta = if (on) C.sobreAccion else C.texto
                         Column(Modifier.weight(1f).heightIn(min = 54.dp).clip(RoundedCornerShape(12.dp)).background(if (on) C.accion else C.hundida)
-                            .clickable { s.elegirIndice(i.first) }.padding(10.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            .semantics { selected = on }.clickable { s.elegirIndice(i.first) }.padding(10.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Texto(i.second, Estilo.subheadFuerte, tinta)
                             Texto(i.third, Estilo.footnote, tinta, Modifier.alpha(0.8f))
                         }

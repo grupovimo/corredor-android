@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.LocalEstado
@@ -126,7 +127,7 @@ fun PestanaExpensasConsorcio(c: ConsorcioAPI, periodos: List<PeriodoAPI>) {
                 periodos.forEachIndexed { i, p ->
                     key(p.id) {
                         val e = estadosPeriodo[p.estado] ?: (p.estado to Tono.neutro)
-                        Tocable({ if (p.estado == "borrador") estado.abrir(ALiquidarConsorcio(consorcio = c.id, periodo = p.periodo)) else elegido = p.id }) {
+                        Tocable({ if (p.estado == "borrador") estado.abrir(ALiquidarConsorcio(consorcio = c.id, periodo = p.periodo)) else elegido = p.id }, Modifier.semantics { selected = elegidoID == p.id }) {
                             RenglonConsorcio(primero = i == 0, modifier = Modifier.background(if (elegidoID == p.id) C.hundida else Color.Transparent)) {
                                 DosLineasConsorcio(Cons.mesConAnio(p.periodo), if (p.estado == "borrador") "${Formato.plata(p.cargado ?: 0.0)} cargados" else Formato.plata(p.total ?: 0.0))
                                 ChipConsorcio(e.first, e.second)

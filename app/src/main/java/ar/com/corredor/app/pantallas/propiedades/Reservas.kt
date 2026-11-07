@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -323,14 +324,15 @@ fun PantallaReserva(id: String) {
                 Icono(if (r.estado == "caida") "bookmark.slash.fill" else "bookmark.fill", 13f, C.texto2)
                 Texto("Reserva de $clase · $direccion", Estilo.footnoteFuerte, C.texto2, lineas = 2)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-                Texto(r.titular, Estilo.titulo, if (r.activa && (r.faltan ?: 0) < 0) C.errorTinta else C.texto)
+            // HStack(alignment: .firstTextBaseline): alineados por la primera línea de texto.
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Texto(r.titular, Estilo.titulo, if (r.activa && (r.faltan ?: 0) < 0) C.errorTinta else C.texto, Modifier.alignBy(FirstBaseline))
                 val v = r.venceEl?.let { Fecha.dia(it) }
                 val c = r.cerradaEl
                 if (r.activa && v != null) {
-                    Texto(Formato.fechaLarga(v) + (r.venceHora?.let { " · $it" } ?: ""), Estilo.subhead, C.texto2)
+                    Texto(Formato.fechaLarga(v) + (r.venceHora?.let { " · $it" } ?: ""), Estilo.subhead, C.texto2, Modifier.alignBy(FirstBaseline))
                 } else if (!r.activa && c != null) {
-                    Texto("el ${ReservaAPI.corta(c)}", Estilo.subhead, C.texto2)
+                    Texto("el ${ReservaAPI.corta(c)}", Estilo.subhead, C.texto2, Modifier.alignBy(FirstBaseline))
                 }
             }
             val fv = r.venceEl?.let { Fecha.dia(it) }

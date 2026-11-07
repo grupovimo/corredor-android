@@ -16,6 +16,7 @@ import ar.com.corredor.app.app.Estado
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.nucleo.Fecha
 import ar.com.corredor.app.nucleo.Formato
+import ar.com.corredor.app.nucleo.nonEmpty
 import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.pantallas.propiedades.ErrorConCampos
 import ar.com.corredor.app.pantallas.propiedades.conCampos
@@ -64,7 +65,7 @@ fun TarifasTemporada(propiedad: String) {
     suspend fun cargar() { lista = estado.api.opcional<List<TarifaAPI>>("/v1/propiedades/$propiedad/tarifas") ?: emptyList() }
 
     suspend fun guardar(t: TarifaAPI) {
-        val c = CuerpoTarifa(t.nombre.takeUnless { it.isNullOrEmpty() }, t.desde, t.hasta, t.precio, t.moneda ?: "USD", t.periodo ?: "noche", t.nochesMinimas)
+        val c = CuerpoTarifa(t.nombre?.nonEmpty, t.desde, t.hasta, t.precio, t.moneda ?: "USD", t.periodo ?: "noche", t.nochesMinimas)
         try {
             if (t.id.isEmpty()) estado.api.hacer("POST", "/v1/propiedades/$propiedad/tarifas", c) else estado.api.hacer("PUT", "/v1/propiedades/$propiedad/tarifas/${t.id}", c)
             cargar()
@@ -113,7 +114,7 @@ fun TarifasTemporada(propiedad: String) {
 fun FormTarifa(t0: TarifaAPI, guardar: (TarifaAPI) -> Unit) {
     val cerrar = LocalCerrarHoja.current
     var t by remember { mutableStateOf(t0) }
-    MarcoHoja("", confirmar = "Guardar", confirmarHabilitado = !(t.precio <= 0 || (t.nombre ?: "").isEmpty()), alConfirmar = { guardar(t); cerrar() }) {
+    MarcoHoja("", confirmar = "Guardar", confirmarHabilitado = !(t.precio <= 0 || (t.nombre ?: "").nonEmpty == null), alConfirmar = { guardar(t); cerrar() }) {
         Bloque {
             RenglonCampo("", t.nombre ?: "", { t = t.copy(nombre = it) }, "Nombre (temporada alta…)")
             Separador()
@@ -248,7 +249,7 @@ fun HojaTarifasTemporada(casas: List<CasaTemporada>) {
                 Separador()
                 Renglon(minimo?.let { "Mín. $it noches" } ?: "Mín. noches (opcional)") { Pasador(minimo ?: 0, { minimo = if (it == 0) null else it }, 0..120) }
                 Separador()
-                RenglonBoton(if (enviando) "Guardando…" else "Sumar temporada", habilitado = !(enviando || precio == null || nombre.isEmpty())) { alcance.launch { sumar() } }
+                RenglonBoton(if (enviando) "Guardando…" else "Sumar temporada", habilitado = !(enviando || precio == null || nombre.nonEmpty == null)) { alcance.launch { sumar() } }
             }
         }
     }

@@ -59,6 +59,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -513,7 +517,11 @@ fun Inventario(
                         // Mantener apretado para grabar (o tocar para empezar y tocar para terminar).
                         Box(
                             Modifier.size(52.dp).clip(CircleShape).background(if (voz.grabando) C.error else C.hundida)
-                                .semantics { contentDescription = if (voz.grabando) "Terminar la nota de voz" else "Mantener para grabar una nota de voz" }
+                                .semantics {
+                                    contentDescription = if (voz.grabando) "Terminar la nota de voz" else "Mantener para grabar una nota de voz"
+                                    role = Role.Button
+                                    onClick { alcance.launch { if (voz.grabando) terminarNota() else empezarNota() }; true }
+                                }
                                 .pointerInput(Unit) {
                                     detectTapGestures(onPress = {
                                         alApretar()
@@ -588,7 +596,7 @@ private fun FilaItemInventario(
                     val fondo = if (on) (if (k == "malo") C.errorFondo else if (k == "regular") C.avisoFondo else C.okFondo) else C.hundida
                     Row(
                         Modifier.weight(1f).heightIn(min = 38.dp).clip(RoundedCornerShape(10.dp)).background(fondo)
-                            .clickable(enabled = escribe) { alPoner(k) },
+                            .clickable(enabled = escribe) { alPoner(k) }.semantics { selected = on },
                         horizontalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (on) Icono("checkmark", 11f, tinta)
@@ -840,7 +848,7 @@ private fun HojaActa(
 ) {
     val tinta = Firmas.tinta; val gris = Firmas.gris; val linea = Firmas.linea
     Column(
-        Modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(6.dp)).clip(RoundedCornerShape(6.dp)).background(hex(0xFFFEFB)).padding(18.dp),
+        Modifier.fillMaxWidth().sombraE2(RoundedCornerShape(6.dp)).clip(RoundedCornerShape(6.dp)).background(hex(0xFFFEFB)).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // Membrete

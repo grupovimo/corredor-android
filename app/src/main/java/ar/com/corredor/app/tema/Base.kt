@@ -59,6 +59,8 @@ fun Texto(
     monoespaciado: Boolean = false,
     /** .tracking(n) extra en puntos (la caption en versalitas). */
     tracking: Float? = null,
+    /** .truncationMode(.middle) de iOS (links largos, en un renglón). */
+    cortarAlMedio: Boolean = false,
 ) {
     var ts = estilo.ts(numeros)
     if (interlineado > 0f) ts = ts.copy(lineHeight = (estilo.tamano * 1.2f + interlineado).sp)
@@ -67,7 +69,7 @@ fun Texto(
     BasicText(
         texto, modifier,
         style = ts.copy(color = color, textAlign = alinear),
-        maxLines = lineas, overflow = TextOverflow.Ellipsis,
+        maxLines = lineas, overflow = if (cortarAlMedio) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis,
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) },
     )
 }

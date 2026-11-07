@@ -108,10 +108,10 @@ fun EtiquetaSeccion(texto: String, modifier: Modifier = Modifier) {
 /** Título de sección (21/700) con acción opcional a la derecha. */
 @Composable
 fun TituloSeccion(texto: String, accion: String? = null, alTocar: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        Texto(texto, Estilo.tituloSeccion, C.texto, Modifier.weight(1f).semantics { heading() })
+    Row(Modifier.fillMaxWidth()) {
+        Texto(texto, Estilo.tituloSeccion, C.texto, Modifier.weight(1f).alignByBaseline().semantics { heading() })
         if (accion != null && alTocar != null) {
-            Texto(accion, Estilo.subheadFuerte, C.primarioTexto, Modifier.clickable(onClick = alTocar).padding(vertical = 2.dp))
+            Texto(accion, Estilo.subheadFuerte, C.primarioTexto, Modifier.alignByBaseline().clickable(onClick = alTocar))
         }
     }
 }
@@ -135,7 +135,7 @@ fun BotonRedondo(simbolo: String, etiqueta: String, punto: Boolean = false, acci
             }
             if (punto) {
                 val sup = C.superficie
-                Box(Modifier.align(Alignment.TopEnd).offset(x = (-9).dp, y = 8.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
+                Box(Modifier.align(Alignment.TopEnd).offset(x = (-7).dp, y = 6.dp).size(13.dp).clip(CircleShape).background(sup).padding(2.dp).clip(CircleShape).background(C.error))
             }
         }
     }
@@ -298,7 +298,7 @@ fun Buscador(placeholder: String, texto: String, alCambiar: (String) -> Unit, mo
             Entrada(texto, alCambiar, placeholder, estilo = Estilo.body16, accionTeclado = ImeAction.Search, alEnviar = alBuscar, sinCorrector = true)
         }
         if (texto.isNotEmpty()) {
-            Box(Modifier.clickable { alCambiar("") }.semantics { contentDescription = "Borrar la búsqueda" }) { Icono("xmark.circle.fill", 16f, C.texto3) }
+            Box(Modifier.clickable { alCambiar("") }.semantics { contentDescription = "Borrar la búsqueda" }) { Icono("xmark.circle.fill", 17f, C.texto3) }
         }
     }
 }
@@ -366,7 +366,7 @@ fun Campo(label: String, error: Boolean = false, enfocado: Boolean = false, modi
 /** Mensaje de error de campo, con el círculo «!» de 17. */
 @Composable
 fun MensajeError(texto: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+    Row(Modifier.semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
         Box(Modifier.padding(top = 1.dp).size(17.dp).clip(CircleShape).background(C.error), contentAlignment = Alignment.Center) {
             Texto("!", Estilo(12f, Peso.bold, relativo = Relativo.caption), Color.White)
         }

@@ -203,7 +203,7 @@ fun Portales() {
                 ) {
                     Texto(
                         feed.replace("https://", "").replace("http://", "").split("?clave=").firstOrNull() ?: feed,
-                        Estilo(12f, Peso.regular), C.texto2, Modifier.weight(1f), lineas = 1, monoespaciado = true,
+                        Estilo(12f, Peso.regular), C.texto2, Modifier.weight(1f), lineas = 1, monoespaciado = true, cortarAlMedio = true,
                     )
                     BotonTonal("Copiar", { copiar(ctx, feed); estado.avisar("Copiado") }, alto = 30.dp)
                     Tocable({ compartirTexto(ctx, feed) }, descripcion = "Compartir el link del feed") { Icono("square.and.arrow.up", 17f, C.accion) }

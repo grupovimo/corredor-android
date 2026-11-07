@@ -360,7 +360,7 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
                 SeccionLista("Mail") {
                     FilaLista {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Entrada(mail, { mail = it }, "nombre@gmail.com", teclado = KeyboardType.Email, sinCorrector = true)
+                            Entrada(mail, { mail = it }, "nombre@gmail.com", Modifier.semantics { contentDescription = "Mail" }, teclado = KeyboardType.Email, sinCorrector = true)
                             ErrorDeCampo(campos["email"])
                         }
                     }

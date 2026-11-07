@@ -570,7 +570,7 @@ fun FormCrearInmobiliaria() {
 
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Texto("¿Cómo se llama tu inmobiliaria?", Estilo.filaLista, C.texto)
-        CampoCorredor(nombre, { n -> nombre = n.take(120); errorNombre = null }, "Luna Propiedades", mayusculas = KeyboardCapitalization.Words)
+        CampoCorredor(nombre, { n -> nombre = n.take(120); errorNombre = null }, "Luna Propiedades")
         errorNombre?.let { Texto(it, Estilo.footnote, C.error) }
         // Tu web
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {

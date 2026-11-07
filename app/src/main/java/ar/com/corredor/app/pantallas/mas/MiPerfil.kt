@@ -229,7 +229,7 @@ fun MiPerfil() {
         try {
             estado.apagarPush()
             push = EstadoPushDispositivo.inactivo
-            estado.avisar("Este dispositivo ya no recibe avisos") { alcance.launch { activarPush() } }
+            estado.avisar("Este dispositivo ya no recibe avisos") { estado.tareaDeshacer { activarPush() } }
         } catch (e: CancellationException) { throw e } catch (_: Exception) {
             estado.avisar("No se guardó", ok = false)
         }
@@ -266,7 +266,7 @@ fun MiPerfil() {
                 urlFoto = a.url
                 Haptico.exito()
                 estado.avisar("Listo: tu foto nueva") {
-                    alcance.launch {
+                    estado.tareaDeshacer {
                         try {
                             estado.api.hacer("PUT", "/v1/perfil/web", antes)
                             web = antes

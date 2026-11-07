@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -271,7 +273,7 @@ fun NumeroCaidoInicio(numero: NumeroWhatsApp) {
     }
     val tono = if (p.oro) Tono.oro else Tono.rojo
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(tono.fondo).padding(14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(M.rTarjeta)).background(tono.fondo).semantics(mergeDescendants = true) {}.padding(14.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top,
     ) {
         IconoTono(icono = p.icono, tono = tono)
@@ -296,7 +298,7 @@ fun TuDiaInicio(titulo: String, citas: List<Cita>, hechas: Set<String>, tildar: 
             citas.forEachIndexed { i, c ->
                 key(c.id) {
                     val hecha = c.id in hechas
-                    Tocable(alTocar = { tildar(c, !hecha) }, modifier = Modifier.lineaArriba(i > 0)) {
+                    Tocable(alTocar = { tildar(c, !hecha) }, modifier = Modifier.lineaArriba(i > 0).semantics { selected = hecha }) {
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(horizontal = 14.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
@@ -558,7 +560,7 @@ fun ComoVieneInicio(ritmos: List<RitmoInicio>, cerradas: Int) {
 
 @Composable
 private fun FilaRitmo(r: RitmoInicio, primera: Boolean, cifra: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Texto(r.nombre, Estilo.subheadFuerte, C.texto)
             Spacer(Modifier.weight(1f))
@@ -787,7 +789,7 @@ fun PrimerosPasos(pasos: List<PasoInicio>, hacer: (PasoInicio) -> Unit, ocultar:
                     Texto("$hechos/${pasos.size}", Estilo(12f, Peso.bold), C.texto)
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Texto("Primeros pasos", Estilo.filaLista, C.texto)
+                    Texto("Primeros pasos", Estilo.filaLista, C.texto, Modifier.semantics { heading() })
                     Texto(
                         if (hechos == 0) "Arrancá por el primero" else "Te ${if (pasos.size - hechos == 1) "falta 1" else "faltan ${pasos.size - hechos}"}",
                         Estilo.footnote, C.texto2,

@@ -146,9 +146,9 @@ fun InsigniaRoja(n: Int) {
 /** El título de un bloque («Para hacer ahora», con la cuenta a la derecha): 20/700 y 15 en tinta 2. */
 @Composable
 fun TituloBloque(texto: String, cuenta: String? = null) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }, verticalAlignment = Alignment.Bottom) {
-        Texto(texto, Estilo.titulo3, C.texto, Modifier.weight(1f))
-        if (cuenta != null) Texto(cuenta, Estilo.subhead, C.texto2)
+    Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp).semantics { heading() }) {
+        Texto(texto, Estilo.titulo3, C.texto, Modifier.weight(1f).alignByBaseline())
+        if (cuenta != null) Texto(cuenta, Estilo.subhead, C.texto2, Modifier.alignByBaseline())
     }
 }
 
@@ -229,7 +229,8 @@ fun Formato.plata(n: Int, moneda: String = "ARS"): String = plata(n.toDouble(), 
 /** «ARS 1,84 M» para las cifras del dueño. */
 fun Formato.plataCorta(n: Double, moneda: String = "ARS"): String {
     if (abs(n) >= 1_000_000) {
-        val f = DecimalFormat("#,##0.##", DecimalFormatSymbols(argentina))
+        // Como el NumberFormatter de iOS sin numberStyle: hasta 2 decimales y sin separador de miles.
+        val f = DecimalFormat("0.##", DecimalFormatSymbols(argentina))
         return "$moneda ${f.format(n / 1_000_000)} M"
     }
     return plata(n, moneda)
@@ -266,9 +267,9 @@ object Afuera {
         abrir(Uri.parse("tel:$n"), marcar = true)
     }
 
-    /** Cómo llegar: la app de mapas del teléfono con la dirección. */
+    /** Cómo llegar: la app de mapas del teléfono con el recorrido hasta la dirección (daddr en iOS). */
     fun mapas(direccion: String) {
-        abrir(Uri.parse("geo:0,0?q=" + Uri.encode(direccion)))
+        abrir(Uri.parse("https://www.google.com/maps/dir/?api=1&destination=" + Uri.encode(direccion)))
     }
 }
 

@@ -217,6 +217,7 @@ fun Contactos(libres: Boolean = false) {
 
     PantallaApilada(
         titulo = "Contactos",
+        grande = true,
         acciones = {
             if (estado.escribe) {
                 // Menu { … } primaryAction: { nuevo = true }: tocar abre el alta; mantener apretado, el menú.

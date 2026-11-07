@@ -219,7 +219,7 @@ fun ConfigInmobiliaria() {
             }
             Separador()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Entrada(cbu, { v -> cbu = v.take(22) }, "luna.propiedades", habilitado = duenio, sinCorrector = true,
+                Entrada(cbu, { v -> cbu = v.take(22) }, "luna.propiedades", Modifier.semantics { contentDescription = "CBU o alias para cobrar" }, habilitado = duenio, sinCorrector = true,
                     mayusculas = KeyboardCapitalization.None, monoespaciado = true)
                 Texto("Sale en los recibos y en los recordatorios de pago.", Estilo.footnote, C.texto3)
                 ErrorDeCampo(campos["cbu"])
@@ -303,7 +303,7 @@ fun ConfigInmobiliaria() {
                         Entrada(
                             legales[cl.clave] ?: "", { v -> legales = legales + (cl.clave to v.take(cl.max)) },
                             if (cl.clave == "cuit") "30-71584209-9" else if (cl.clave == "colegio") "CUCICBA" else cl.nombre,
-                            Modifier.weight(1f),
+                            Modifier.weight(1f).semantics { contentDescription = cl.nombre },
                             teclado = if (cl.clave == "cuit" || cl.clave == "matricula") KeyboardType.Ascii else KeyboardType.Text,
                             monoespaciado = cl.clave == "cuit", habilitado = duenio,
                         )

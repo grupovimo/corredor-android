@@ -128,8 +128,8 @@ class MainActivity : FragmentActivity() {
             estado.avisar("No se mandó la respuesta. Probá desde el chat.", ok = false)
             return
         }
-        // «Llamar» de una consulta: el aviso no trae el teléfono; se abre la consulta.
-        if (accion == "llamar") { abrirLink(estado, u); return }
+        // «Llamar» de una consulta sin `telefono` (con él, el aviso abre el marcador): como iOS, sólo trae la app adelante.
+        if (accion == "llamar") return
         // Otra acción del aviso (las que pide la API): el aviso con esa acción abierta.
         if (accion != null && aviso != null && estado.fase == Estado.Fase.adentro) {
             Avisos.abrir(estado, aviso, accion)

@@ -276,7 +276,7 @@ object Documentos {
     /** La ficha A4 de una propiedad (lo que se manda o se imprime para una visita). */
     suspend fun ficha(p: Propiedad, api: Api): File? {
         val inmo = inmobiliaria(api)
-        val datos = mutableListOf("Operación" to p.operacionTexto.split(" ").joinToString(" ") { Formato.mayuscula(it) }, "Tipo" to p.tipoTexto)
+        val datos = mutableListOf("Operación" to p.operacionTexto.split(" ").joinToString(" ") { Formato.mayuscula(it.lowercase(Formato.argentina)) }, "Tipo" to p.tipoTexto)
         p.ambientes?.let { datos.add("Ambientes" to "$it") }
         p.dormitorios?.let { datos.add("Dormitorios" to "$it") }
         p.banos?.let { datos.add("Baños" to "$it") }
@@ -294,7 +294,7 @@ object Documentos {
         if (w != null && s != null) contacto.add("Ficha online" to "${w.replace("https://", "")}/propiedades/$s")
         if (contacto.isNotEmpty()) bloques.add(Documento.Bloque("Más fotos y consultas", contacto))
         val d = Documento(p.nombre, listOfNotNull(p.precioTexto, p.barrio).joinToString(" · "),
-            p.numero?.let { "LP-${String.format("%04d", it)}" }, foto(p.portada), bloques)
+            p.numero?.let { "LP-${String.format(java.util.Locale.ROOT, "%04d", it)}" }, foto(p.portada), bloques)
         return Impresor.pdf(d, inmo?.nombre ?: "Corredor", "Ficha ${p.nombre}")
     }
 
@@ -310,7 +310,7 @@ object Documentos {
         )
         inmo?.cbu?.let { bloques.add(Documento.Bloque(texto = "CBU o alias: $it")) }
         val d = Documento(contrato?.contactoNombre ?: "Recibo", "${contrato?.propiedadTitulo ?: ""} · ${ReciboVista.mes(c.periodo)}",
-            c.numero?.let { "Recibo N.º " + String.format("0001-%05d", it) }, bloques = bloques)
+            c.numero?.let { "Recibo N.º " + String.format(java.util.Locale.ROOT, "0001-%05d", it) }, bloques = bloques)
         return Impresor.pdf(d, inmo?.nombre ?: "Corredor", "Recibo ${c.periodo}")
     }
 

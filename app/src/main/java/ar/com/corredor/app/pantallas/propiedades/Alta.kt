@@ -72,6 +72,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -910,7 +912,7 @@ fun AltaPropiedad(
                     alcance.launch { seguirAdelante() }
                 }
             } else if (salidas != null) {
-                BotonBarra("Listo", habilitado = !publicando) { cerrar() }
+                BotonBarra("Listo", fuerte = true, habilitado = !publicando) { cerrar() }
             }
         },
     )
@@ -1074,7 +1076,8 @@ fun AltaPropiedad(
                         EtiquetaFotoAlta("camera", "Cámara") {
                             val (_, u) = archivoCamaraAlta(ctx)
                             fotoCamara = u
-                            camara.launch(u)
+                            // Sin cámara, la fototeca (sourceType .photoLibrary de iOS).
+                            runCatching { camara.launch(u) }.onFailure { fototeca.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
                         }
                         EtiquetaFotoAlta("photo.on.rectangle", "Fototeca") {
                             fototeca.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -1193,7 +1196,7 @@ fun AltaPropiedad(
                             Tocable({
                                 Haptico.seleccion()
                                 d = if (on) d.copy(comodidades = d.comodidades.filter { it != c.nombre }) else d.copy(comodidades = d.comodidades + c.nombre)
-                            }) {
+                            }, Modifier.semantics { selected = on }) {
                                 Row(
                                     Modifier.height(36.dp).clip(CircleShape).background(if (on) C.accion else C.superficie)
                                         .border(1.dp, if (on) Color.Transparent else C.linea2, CircleShape).padding(horizontal = 12.dp),

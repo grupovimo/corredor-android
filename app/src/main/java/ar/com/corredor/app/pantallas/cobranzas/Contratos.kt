@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -378,7 +380,7 @@ fun Contratos(
                                 "uva" to "UVA", "fijo" to "Fijo", "todos" to "Todos").forEach { c ->
                                 val activo = filtro == c.first
                                 Box(Modifier.height(32.dp).clip(RoundedCornerShape(50)).background(if (activo) C.accion else C.hundida)
-                                    .clickable { filtro = c.first }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
+                                    .semantics { selected = activo }.clickable { filtro = c.first }.padding(horizontal = 12.dp), contentAlignment = Alignment.Center) {
                                     Texto(c.second, Estilo.footnoteFuerte, if (activo) C.sobreAccion else C.texto)
                                 }
                             }

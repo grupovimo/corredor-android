@@ -412,6 +412,7 @@ fun Operaciones() {
 
     PantallaApilada(
         titulo = if (estado.rol == "agente") "Mis operaciones" else "Operaciones",
+        grande = true,
         acciones = {
             if (puedeMover) {
                 Tocable(alTocar = { nueva = true }, descripcion = "Nueva operación") { Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("plus", 20f, C.accion) } }
@@ -609,14 +610,13 @@ fun NuevaOperacion(contacto: Resultado? = null, propiedad: Propiedad? = null) {
         }
     }
 
+    /** `Button { } label: { LabeledContent(titulo, value:) }` en un Form: el título en Acción y el valor gris, sin chevron. */
     @Composable
     fun FilaValor(titulo: String, valor: String, alTocar: () -> Unit) {
         Tocable(alTocar = alTocar) {
             Row(Modifier.fillMaxWidth().heightIn(min = 46.dp), verticalAlignment = Alignment.CenterVertically) {
-                Texto(titulo, Estilo.body, C.texto, Modifier.weight(1f))
+                Texto(titulo, Estilo.body, C.accion, Modifier.weight(1f))
                 Texto(valor, Estilo.body, C.texto2, lineas = 1)
-                Spacer(Modifier.width(6.dp))
-                Chevron()
             }
         }
     }

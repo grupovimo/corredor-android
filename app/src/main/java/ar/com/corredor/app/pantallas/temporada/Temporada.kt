@@ -50,6 +50,7 @@ import ar.com.corredor.app.nucleo.Fecha
 import ar.com.corredor.app.nucleo.FechaApi
 import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.nucleo.JSONLibre
+import ar.com.corredor.app.nucleo.nonEmpty
 import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.nucleo.subir
 import ar.com.corredor.app.pantallas.propiedades.AReservaTemporada
@@ -601,10 +602,10 @@ fun NuevaReservaTemporada(casas: List<CasaTemporada>, casaInicial: String, entra
         val n = TempFechas.noches(entrada, salida)
         try {
             val r: ReservaTemporada = if (dueno) {
-                estado.api.conCamposComo("POST", "/v1/temporada/reservas", DuenoReserva(propiedadId = casa, entrada = entrada, salida = salida, notas = nombre.ifEmpty { null }), envio)
+                estado.api.conCamposComo("POST", "/v1/temporada/reservas", DuenoReserva(propiedadId = casa, entrada = entrada, salida = salida, notas = nombre.nonEmpty), envio)
             } else {
                 estado.api.conCamposComo("POST", "/v1/temporada/reservas",
-                    HuespedReserva(casa, nombre.trim(), telefono.ifEmpty { null }, huespedes, entrada, salida, if ((sena ?: 0.0) > 0) "confirmada" else "pendiente", total, moneda, sena), envio)
+                    HuespedReserva(casa, nombre.trim(), telefono.nonEmpty, huespedes, entrada, salida, if ((sena ?: 0.0) > 0) "confirmada" else "pendiente", total, moneda, sena), envio)
             }
             estado.version += 1
             cerrar()

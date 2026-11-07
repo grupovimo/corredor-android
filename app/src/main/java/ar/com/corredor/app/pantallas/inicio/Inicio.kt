@@ -40,6 +40,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -772,7 +774,7 @@ fun TarjetaAvance(titulo: String, cifra: String, avance: Double, color: Color = 
     var visto by remember { mutableStateOf(false) }
     val f by animateFloatAsState(if (visto) min(1.0, max(0.0, avance)).toFloat() else 0f, spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessVeryLow), label = "avance")
     LaunchedEffect(Unit) { delay(150); visto = true }
-    Column(Modifier.fillMaxWidth().tarjeta().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.fillMaxWidth().tarjeta().padding(16.dp).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Texto(titulo, Estilo(17f, Peso.bold), C.texto)
             Spacer(Modifier.weight(1f))
@@ -881,7 +883,7 @@ fun PortadaInicio(
             }
             Spacer(Modifier.weight(1f))
             Texto(fecha, Estilo.subhead, C.texto2)
-            Texto(saludo, Estilo(32f, Peso.extrabold, -0.03f), C.texto, lineas = 2, escalaMinima = 0.8f)
+            Texto(saludo, Estilo(32f, Peso.extrabold, -0.03f), C.texto, Modifier.semantics { heading() }, lineas = 2, escalaMinima = 0.8f)
             Texto(resumen, Estilo.subhead, C.texto2, Modifier.padding(top = 4.dp))
         }
     }

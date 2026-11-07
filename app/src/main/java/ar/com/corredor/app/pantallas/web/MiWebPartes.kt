@@ -227,7 +227,7 @@ fun EditorPaginaWeb(pagina: JsonElement, web: String?, guardar: (String, String)
     }
 
     Column(Modifier.fillMaxSize()) {
-        BarraHoja(titulo.trim().ifEmpty { "Página" },
+        BarraHoja(titulo.takeIf { it.isNotBlank() } ?: "Página",
             izquierda = { BotonHoja("Cancelar") { cerrar() } },
             derecha = { BotonHoja("Listo", fuerte = true, habilitado = titulo.trim().length >= 2) { guardar(titulo, texto); cerrar() } })
         ListaAgrupada {

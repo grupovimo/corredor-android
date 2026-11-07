@@ -895,7 +895,7 @@ fun RespuestaML(id: String) {
                         Box(Modifier.size(64.dp).clip(RoundedCornerShape(12.dp))) { Foto(url = pr.miniatura, modifier = Modifier.matchParentSize()) }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Texto(pr.nombre, Estilo(16f, Peso.bold), C.texto)
-                            val op = pr.operacionTexto.split(" ").joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
+                            val op = pr.operacionTexto.split(" ").joinToString(" ") { w -> w.lowercase().replaceFirstChar { it.uppercase() } }
                             Texto("$op · ${pr.precioTexto}", Estilo.texto14, C.texto2)
                             if (linea.isNotEmpty()) Texto(linea, Estilo.footnote, C.texto2)
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {

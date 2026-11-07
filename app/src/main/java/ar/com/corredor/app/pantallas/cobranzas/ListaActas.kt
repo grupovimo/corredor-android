@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.*
@@ -143,7 +144,7 @@ fun ListaActas() {
                             val on = vista == k
                             Box(
                                 Modifier.height(36.dp).clip(CircleShape).background(if (on) C.accion else C.superficie)
-                                    .clickable { vista = k; Haptico.seleccion() }.padding(horizontal = 14.dp),
+                                    .clickable { vista = k; Haptico.seleccion() }.semantics { selected = on }.padding(horizontal = 14.dp),
                                 contentAlignment = Alignment.Center,
                             ) { Texto("$t · ${cuenta[k] ?: 0}", Estilo(14f, Peso.semibold), if (on) C.sobreAccion else C.texto) }
                         }

@@ -83,8 +83,8 @@ object MiWeb {
         Triple("clasica", "Clásica", "Sobria, listado primero."), Triple("emprendimiento", "Emprendimiento", "Una web por proyecto."))
 }
 
-/** Un número de un JSON libre, con punto de miles (Informe.num de iOS). */
-private fun num(v: JsonElement?): String = v.numero?.let { Formato.numero(it.toInt()) } ?: "0"
+/** Un número de un JSON libre, con punto de miles; «—» si no hay (Informe.num de iOS). */
+private fun num(v: JsonElement?): String = v.numero?.let { Formato.numero(it.toInt()) } ?: "—"
 
 /** LabeledContent de SwiftUI: el título a la izquierda y el valor en tinta 2 a la derecha. */
 @Composable
@@ -507,20 +507,21 @@ fun MiWeb() {
                 }
                 web?.let { w ->
                     SeccionLista {
-                        FilaLista({ abrirUrl(ctx, w) }) { ConIcono(w.replace("https://", ""), "globe") }
+                        // En iOS todo el Form va .disabled(!esDuenio): estos botones también.
+                        FilaLista({ abrirUrl(ctx, w) }, habilitado = puede) { ConIcono(w.replace("https://", ""), "globe") }
                         Separador()
-                        FilaLista({ Afuera.whatsapp(null, texto = "Mirá las propiedades de ${nombreInmo.trim().ifEmpty { "la inmobiliaria" }}: $w") }) {
+                        FilaLista({ Afuera.whatsapp(null, texto = "Mirá las propiedades de ${nombreInmo.takeIf { it.isNotBlank() } ?: "la inmobiliaria"}: $w") }, habilitado = puede) {
                             ConIcono("Mandar por WhatsApp", "bubble.left")
                         }
                         Separador()
-                        FilaLista({ estado.compartirTexto("Mirá las propiedades de $nombreInmo\n$w") }) { ConIcono("Compartir tu web", "square.and.arrow.up") }
+                        FilaLista({ estado.compartirTexto("Mirá las propiedades de $nombreInmo\n$w", asunto = nombreInmo) }, habilitado = puede) { ConIcono("Compartir tu web", "square.and.arrow.up") }
                         Separador()
                         FilaLista({
                             ctx.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(nombreInmo, w))
                             estado.avisar("Copiaste el link de tu web")
-                        }) { ConIcono("Copiar el link", "doc.on.doc") }
+                        }, habilitado = puede) { ConIcono("Copiar el link", "doc.on.doc") }
                         Separador()
-                        FilaLista({ qr = true }) { ConIcono("El QR de tu web", "qrcode") }
+                        FilaLista({ qr = true }, habilitado = puede) { ConIcono("El QR de tu web", "qrcode") }
                     }
                 }
                 informe?.let { i ->
@@ -537,9 +538,9 @@ fun MiWeb() {
                     val id = completa["plantilla"].texto ?: "barrio"
                     FilaValor("En uso", EditorWeb.plantillas.firstOrNull { it.id == id }?.nombre ?: id)
                     Separador()
-                    FilaLista({ plantillas = true }) { ConIcono("Ver las plantillas", "rectangle.3.group") }
+                    FilaLista({ plantillas = true }, habilitado = puede) { ConIcono("Ver las plantillas", "rectangle.3.group") }
                     Separador()
-                    FilaLista({ versiones = true }) { ConIcono("Versiones publicadas", "clock.arrow.circlepath") }
+                    FilaLista({ versiones = true }, habilitado = puede) { ConIcono("Versiones publicadas", "clock.arrow.circlepath") }
                 }
                 SeccionLista("Página de inicio", "Arrastrá para ordenar. Lo apagado no se ve en tu web.") {
                     secciones.forEachIndexed { i, x ->
@@ -642,7 +643,7 @@ fun MiWeb() {
                         val t = m["titulo"].texto
                         if (m != null && t != null) {
                             Separador()
-                            FilaValor("La más guardada", t) { m["id"].texto?.let { estado.abrir(AFichaPropiedad(id = it)) } }
+                            FilaValor("La más guardada", t) { if (puede) m["id"].texto?.let { estado.abrir(AFichaPropiedad(id = it)) } }
                         }
                     }
                 }

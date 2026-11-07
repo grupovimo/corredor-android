@@ -536,17 +536,19 @@ fun MiraRaiz() {
     LaunchedEffect(fase == Fase.revisar) { if (fase == Fase.revisar) Haptico.exito() }
 
     // Captadas, apilada sobre la cámara (navigationDestination(isPresented:) del NavigationStack de MIRA).
+    // La raíz de MIRA no tiene título: el «‹» vuelve sin nombre y la barra muestra el título de Captadas
+    // (.pantallaApilada("Captadas")), como la barra nativa de la pila.
+    val barraCaptadas = remember { Barra() }
     if (captadas) {
-        CompositionLocalProvider(LocalCerrarHoja provides { captadas = false }) {
-            Column(Modifier.fillMaxSize().background(C.fondo).statusBarsPadding()) {
-                Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Tocable({ captadas = false }, Modifier.padding(horizontal = 8.dp), descripcion = "Volver") { _ ->
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icono("chevron.left", 17f, C.accion)
-                            Texto("MIRA", Estilo.body, C.accion)
-                        }
+        CompositionLocalProvider(LocalBarra provides barraCaptadas, LocalCerrarHoja provides { captadas = false }) {
+            Column(Modifier.fillMaxSize().background(C.fondo)) {
+                Box(Modifier.fillMaxWidth().background(tema(0xF3EFE6, 0x0E1714).actual).statusBarsPadding().height(44.dp)) {
+                    Tocable({ captadas = false }, Modifier.align(Alignment.CenterStart).padding(start = 4.dp), descripcion = "Atrás") { _ ->
+                        Box(Modifier.heightIn(min = 44.dp).padding(horizontal = 4.dp), contentAlignment = Alignment.Center) { Icono("chevron.left", 19f, C.accion) }
                     }
-                    Spacer(Modifier.weight(1f))
+                    barraCaptadas.titulo?.let {
+                        Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center), lineas = 1, alinear = TextAlign.Center)
+                    }
                 }
                 Box(Modifier.weight(1f)) { Captadas() }
             }
@@ -831,7 +833,7 @@ private fun FilaRevision(k: String, v: String, duda: Boolean, nota: String? = nu
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Texto(k, Estilo.texto14, C.texto2, Modifier.width(86.dp))
-                Texto(v, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f), lineas = 1)
+                Texto(v, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f), lineas = 1, cortarAlMedio = true)
                 if (nota != null) {
                     Box(Modifier.height(24.dp).clip(Capsula).background(if (duda) C.avisoFondo else C.superficie).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
                         Texto(nota, Estilo(12f, Peso.bold), if (duda) C.avisoTinta else C.texto2)

@@ -41,6 +41,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import ar.com.corredor.app.pantallas.secciones.ListaGenerica
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 
@@ -74,13 +76,8 @@ data class ImportacionAPI(
 /** El texto de un campo libre (`JSONLibre.texto`). */
 private fun JsonElement?.textoLibre(): String? = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
 
-/** `ListaGenerica.titulo` (Pantallas/Secciones) sobre los datos de una fila. */
-private fun tituloFila(d: Map<String, JsonElement>): String {
-    for (k in listOf("titulo", "nombre", "descripcion", "propiedadTitulo", "propiedad", "texto", "accion", "codigo", "portal")) {
-        d[k].textoLibre()?.nonEmpty?.let { return it }
-    }
-    return "—"
-}
+/** `ListaGenerica.titulo(.objeto(datos))`, igual que el iPhone. */
+private fun tituloFila(d: Map<String, JsonElement>): String = ListaGenerica.titulo(JsonObject(d))
 
 /** Traer la cartera de otro sistema: un Excel o CSV de propiedades o contactos. Primero la vista previa (cuántas entran,
  *  avisos y errores por fila); después se traen, sin publicar. `retomar`: una vista previa para retomar (la web:
@@ -89,8 +86,8 @@ private fun tituloFila(d: Map<String, JsonElement>): String {
 fun Importar(retomar: String? = null) {
     val estado = LocalEstado.current
     val ctx = LocalContext.current
-    /** @Environment(\.dismiss): en una pantalla apilada, volver. */
-    val cerrar = LocalCerrarHoja.current
+    /** @Environment(\.dismiss): Importar se apila (ASeccion "importar"), así que cerrar es volver. */
+    val cerrar: () -> Unit = { estado.volver() }
     var tipo by remember { mutableStateOf("propiedades") }
     var subiendo by remember { mutableStateOf(false) }
     var imp by remember { mutableStateOf<ImportacionAPI?>(null) }

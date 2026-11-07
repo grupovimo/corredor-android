@@ -417,6 +417,7 @@ fun Galeria(id: String, indice: Int = 0) {
 
     BarraDe(oculta = true)
     LaunchedEffect(Unit) {
+        PantallasMostradas.cuenta += 1
         estado.api.opcional<Propiedad>("/v1/propiedades/$id")?.let { fotos = it.fotosUrl ?: emptyList() }
     }
     LaunchedEffect(actual, fotos.size) {

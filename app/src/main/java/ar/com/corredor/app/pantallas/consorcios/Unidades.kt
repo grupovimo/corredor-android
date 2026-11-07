@@ -177,7 +177,7 @@ fun HojaCuentaUnidad(c: ConsorcioAPI, u: UnidadAPI, editar: () -> Unit) {
         "Cuenta de ${u.etiqueta}", cancelar = "Cerrar",
         abajo = if (estado.escribe) ({
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.weight(1f)) { BotonHundido("Editar", { cerrar(); editar() }, simbolo = "pencil") }
+                Box(Modifier.weight(1f)) { BotonHundido("Editar", { cerrar(); estado.tarea { kotlinx.coroutines.delay(450); editar() } }, simbolo = "pencil") }
                 Box(Modifier.weight(1f)) { BotonHundido("Copiar link", { alcance.launch { copiarLink() } }, simbolo = "link") }
             }
             BotonAccion("Registrar pago", { pagando = true }, simbolo = "dollarsign.circle")
