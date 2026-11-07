@@ -656,7 +656,7 @@ fun InicioRaiz() {
                     val e = error
                     if (d != null) {
                         val entrada = remember { androidx.compose.animation.core.MutableTransitionState(false).apply { targetState = true } }
-                        AnimatedVisibility(entrada, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { 16 }) {
+                        androidx.compose.animation.AnimatedVisibility(visibleState = entrada, enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { 16 }) {
                             if (estado.esDuenio) Duena(d) else Agente(d)
                         }
                     } else if (e != null) {

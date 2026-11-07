@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.temporada
 
+import ar.com.corredor.app.nucleo.Fotos
+
 import ar.com.corredor.app.app.PantallaApilada
 
 import android.graphics.Bitmap

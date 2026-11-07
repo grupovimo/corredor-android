@@ -756,7 +756,7 @@ fun Firmas(
                             val vence = (Fecha.iso(l.venceEn)?.let { Inv.numerica(it) } ?: Inv.numerica(l.venceEn)).take(5)
                             Texto("Le mandamos el link a ${Inv.primerNombre(p.nombre).ifBlank { p.rotulo.lowercase() }} · vence el $vence",
                                 Estilo.footnote, C.texto2, Modifier.weight(1f))
-                            if (estado.escribe) BotonLink("Dar de baja", Modifier.heightIn(min = 44.dp)) { alcance.launch { darDeBaja(l) } }
+                            if (estado.escribe) BotonLink("Dar de baja", modifier = Modifier.heightIn(min = 44.dp)) { alcance.launch { darDeBaja(l) } }
                         }
                     }
                 }

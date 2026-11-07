@@ -741,7 +741,7 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
     Column(Modifier.fillMaxSize()) {
         BarraHoja(
             titulo = if (soloBusca) "Qué busca" else (if (contacto == null) "Contacto nuevo" else "Editar contacto"),
-            cancelar = { cerrar() },
+            izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) },
         ) {
             val habilitado = c.nombre.trim().isNotEmpty() && !guardando
             Texto("Guardar", Estilo.headline, if (habilitado) C.accion else C.texto3, Modifier.clickable(enabled = habilitado) { alcance.launch { guardar() } })

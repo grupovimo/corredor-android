@@ -1,6 +1,6 @@
 package ar.com.corredor.app.pantallas.consorcios
 
-import ar.com.corredor.app.nucleo.archivoTemporal
+import ar.com.corredor.app.nucleo.archivoParaCompartir
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -165,7 +165,7 @@ private object PapelConsorcio {
                 dibujar(pagina.canvas)
                 doc.finishPage(pagina)
             }
-            val f = archivoTemporal(ctx, "$nombre.pdf")
+            val f = archivoParaCompartir(ctx, "$nombre.pdf")
             f.outputStream().use { doc.writeTo(it) }
             doc.close()
             f

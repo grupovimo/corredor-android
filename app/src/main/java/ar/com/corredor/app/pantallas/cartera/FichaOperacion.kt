@@ -658,7 +658,7 @@ fun PlataOperacion(o: Operacion, agente: String?) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        BarraHoja(titulo = "Seña y honorarios", cancelar = { cerrar() }) {
+        BarraHoja(titulo = "Seña y honorarios", izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) }) {
             Texto("Guardar", Estilo.headline, if (!guardando) C.accion else C.texto3, Modifier.clickable(enabled = !guardando) { alcance.launch { guardar() } })
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {

@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.entrada
 
+import ar.com.corredor.app.nucleo.Fotos
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable

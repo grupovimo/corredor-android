@@ -355,7 +355,7 @@ fun SelectorAgendaVarios(alElegir: (List<ContactoAgenda>) -> Unit) {
         }
     }
     Column(Modifier.fillMaxSize()) {
-        BarraHoja(titulo = "Contactos", cancelar = { cerrar() }) {
+        BarraHoja(titulo = "Contactos", izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) }) {
             Texto(
                 if (elegidos.isEmpty()) "Listo" else "Listo (${elegidos.size})", Estilo.headline, C.accion,
                 Modifier.clickable(enabled = elegidos.isNotEmpty()) {

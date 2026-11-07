@@ -218,4 +218,3 @@ data class Inmobiliaria(
         }
 }
 
-    split(" ").joinToString(" ") { w -> w.lowercase(Formato.argentina).replaceFirstChar { it.titlecase(Formato.argentina) } }

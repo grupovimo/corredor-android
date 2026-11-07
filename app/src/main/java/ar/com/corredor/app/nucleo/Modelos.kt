@@ -349,8 +349,10 @@ sealed class JSONLibre {
     data class lista(val v: List<JSONLibre>) : JSONLibre()
     data object nulo : JSONLibre()
 
-    /** El texto, si es un texto (`.texto` en iOS: acá el nombre lo usa el caso). */
+    /** El texto, si es un texto (`.texto` en iOS). */
     val comoTexto: String? get() = (this as? JSONLibre.texto)?.v
+    /** `.texto` de iOS (el mismo nombre que el caso: uno es la propiedad y el otro la clase). */
+    val texto: String? get() = comoTexto
     /** subscript(k) de iOS: el campo `k` de un objeto. */
     operator fun get(k: String): JSONLibre? = (this as? objeto)?.v?.get(k)
 

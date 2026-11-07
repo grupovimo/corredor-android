@@ -337,10 +337,10 @@ fun BuscarTodo(texto: String) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Encabezado("En la app")
                 Column(Modifier.fillMaxWidth().tarjeta(16.dp)) {
-                    secciones.take(6).forEachIndexed { i, it ->
-                        key(it.clave) {
-                            Tocable(alTocar = { Lugares.secciones[it.clave]?.second?.let { d -> estado.abrir(d) } }, modifier = Modifier.lineaArriba(i > 0)) {
-                                FilaSimple(Lugares.secciones[it.clave]?.first ?: "square.grid.2x2", it.nombre)
+                    secciones.take(6).forEachIndexed { i, s ->
+                        key(s.clave) {
+                            Tocable(alTocar = { Lugares.secciones[s.clave]?.second?.let { d -> estado.abrir(d) } }, modifier = Modifier.lineaArriba(i > 0)) {
+                                FilaSimple(Lugares.secciones[s.clave]?.first ?: "square.grid.2x2", s.nombre)
                             }
                         }
                     }

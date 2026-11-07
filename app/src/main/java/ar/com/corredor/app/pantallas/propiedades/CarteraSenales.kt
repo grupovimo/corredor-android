@@ -5,6 +5,7 @@ import ar.com.corredor.app.nucleo.Fecha
 import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.nucleo.Preferencias
 import ar.com.corredor.app.tema.Tono
+import ar.com.corredor.app.tema.dia
 import ar.com.corredor.app.tema.plata
 import kotlinx.serialization.Serializable
 import java.time.Instant

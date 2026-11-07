@@ -61,7 +61,6 @@ import ar.com.corredor.app.pantallas.cobranzas.*
 import ar.com.corredor.app.pantallas.propiedades.*
 import ar.com.corredor.app.tema.*
 // Las piezas propias, explícitas: otras áreas tienen las suyas con el mismo nombre.
-import ar.com.corredor.app.pantallas.inicio.copiarTexto
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter

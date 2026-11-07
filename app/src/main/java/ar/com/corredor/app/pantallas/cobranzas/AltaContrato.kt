@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.cobranzas
 
+import ar.com.corredor.app.pantallas.cartera.Operacion
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -352,7 +354,7 @@ fun AltaContrato(
                 garanteNotas = d.garanteNotas.ifBlank { null }, notas = d.notas.ifBlank { null },
             )
             val datos = estado.api.pedir("POST", ruta, cuerpo = Api.json.encodeToString(CuerpoAlta.serializer(), cuerpo).toByteArray(), envio = s.envioAlta)
-            n = Api.json.decodeFromString(CreadoAlta.serializer(), datos)
+            n = Api.json.decodeFromString(CreadoAlta.serializer(), String(datos))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

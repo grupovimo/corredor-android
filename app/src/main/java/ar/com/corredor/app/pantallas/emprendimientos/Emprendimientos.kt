@@ -91,7 +91,7 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
     var precio by remember { mutableStateOf("") }
     var moneda by remember { mutableStateOf("USD") }
 
-    @Serializable data class C(val manzana: String, val desde: Int, val hasta: Int, val superficie: Double? = null, val frente: Double? = null, val fondo: Double? = null, val precio: Double? = null, val moneda: String)
+    @Serializable data class CuerpoLotes(val manzana: String, val desde: Int, val hasta: Int, val superficie: Double? = null, val frente: Double? = null, val fondo: Double? = null, val precio: Double? = null, val moneda: String)
     @Serializable data class R(val creados: Int? = null, val salteados: Int? = null)
 
     BarraHoja(
@@ -102,7 +102,7 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
                 estado.tarea {
                     try {
                         val r: R = estado.api.enviar("POST", "/v1/emprendimientos/$emprendimiento/lotes",
-                            C(manzana, desde, hasta, numeroDe(superficie), numeroDe(frente), numeroDe(fondo), numeroDe(precio), moneda))
+                            CuerpoLotes(manzana, desde, hasta, numeroDe(superficie), numeroDe(frente), numeroDe(fondo), numeroDe(precio), moneda))
                         val salteados = r.salteados ?: 0
                         estado.avisar("Creamos ${Formato.cantidad(r.creados ?: 0, "lote", "lotes")}${if (salteados > 0) " · $salteados ya estaban" else ""}")
                         estado.version += 1
@@ -368,7 +368,7 @@ fun Emprendimientos() {
     }
 
     // La API acepta preventa, en_obra o terminado (emprendimientos.Estados).
-    @Serializable data class C(val nombre: String, val tipo: String = "edificio", val estado: String = "preventa")
+    @Serializable data class CuerpoEmprendimiento(val nombre: String, val tipo: String = "edificio", val estado: String = "preventa")
 
     LaunchedEffect(estado.version) { cargar() }
 
@@ -432,7 +432,7 @@ fun Emprendimientos() {
             nuevo = false
             estado.tarea {
                 try {
-                    estado.api.hacer("POST", "/v1/emprendimientos", C(nombre))
+                    estado.api.hacer("POST", "/v1/emprendimientos", CuerpoEmprendimiento(nombre))
                     nombre = ""
                     estado.version += 1
                 } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }

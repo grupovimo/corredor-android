@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.consorcios
 
+import ar.com.corredor.app.nucleo.Fotos
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -623,7 +625,6 @@ internal suspend fun bajarConsorcio(api: Api, ruta: String): ByteArray = api.ped
 internal suspend inline fun <reified T> todasConsorcio(api: Api, ruta: String, query: List<Pair<String, String>> = emptyList(), crossinline id: (T) -> String): List<T> =
     api.todas(ruta, query) { id(it) }
 
-    File(ctx.cacheDir, "compartir").apply { mkdirs() }.let { File(it, nombre.replace("/", "-")) }
 
 // MARK: - Piezas comunes del área
 

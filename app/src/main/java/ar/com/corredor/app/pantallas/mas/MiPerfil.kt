@@ -552,9 +552,9 @@ fun HojaDatosContacto(perfil: DatosPerfil?, alGuardar: (DatosPerfil) -> Unit) {
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Texto("Tus datos de contacto", Estilo.titulo, C.texto)
         Texto("Van en tu ficha de la web y en lo que mandás a los clientes.", Estilo.subhead, C.texto2)
-        Etiquetado("Celular") { CampoCorredor(telefono, { telefono = it }, KeyboardType.Phone) }
+        Etiquetado("Celular") { CampoCorredor(telefono, { telefono = it }, teclado = KeyboardType.Phone) }
         Etiquetado("WhatsApp (opcional)") {
-            CampoCorredor(whatsapp, { whatsapp = it }, KeyboardType.Phone)
+            CampoCorredor(whatsapp, { whatsapp = it }, teclado = KeyboardType.Phone)
             Texto("Si es otro número que el celular.", Estilo.footnote, C.texto3)
         }
         error?.let { Texto(it, Estilo.footnote, C.error) }

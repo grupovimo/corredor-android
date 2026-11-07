@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.consorcios
 
+import ar.com.corredor.app.nucleo.Fotos
+
 import ar.com.corredor.app.app.PantallaApilada
 import ar.com.corredor.app.nucleo.compartirTexto
 

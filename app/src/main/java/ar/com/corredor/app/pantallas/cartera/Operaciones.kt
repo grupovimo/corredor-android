@@ -622,7 +622,7 @@ fun NuevaOperacion(contacto: Resultado? = null, propiedad: Propiedad? = null) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        BarraHoja(titulo = "Nueva operación", cancelar = { cerrar() }) {
+        BarraHoja(titulo = "Nueva operación", izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) }) {
             val habilitado = !((prop == null && con == null) || guardando)
             Texto("Crear", Estilo.headline, if (habilitado) C.accion else C.texto3, Modifier.clickable(enabled = habilitado) { alcance.launch { crear() } })
         }

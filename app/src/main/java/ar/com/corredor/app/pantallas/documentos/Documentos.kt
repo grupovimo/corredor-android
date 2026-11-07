@@ -75,7 +75,7 @@ fun DocumentosLista(de: String, id: String) {
     var error by remember { mutableStateOf<ErrorApi?>(null) }
     var subiendo by remember { mutableStateOf(false) }
 
-    @Serializable data class C(val archivoId: String, val nombre: String, val contratoId: String? = null, val propiedadId: String? = null)
+    @Serializable data class CuerpoDocumento(val archivoId: String, val nombre: String, val contratoId: String? = null, val propiedadId: String? = null)
 
     suspend fun cargar() {
         try {
@@ -94,7 +94,7 @@ fun DocumentosLista(de: String, id: String) {
                 estado.tarea {
                     val a = d.archivoId ?: return@tarea
                     try {
-                        estado.api.hacer("POST", "/v1/documentos", C(a, d.nombre, if (de == "contrato") id else null, if (de == "propiedad") id else null))
+                        estado.api.hacer("POST", "/v1/documentos", CuerpoDocumento(a, d.nombre, if (de == "contrato") id else null, if (de == "propiedad") id else null))
                         cargar()
                     } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
                 }
@@ -107,7 +107,7 @@ fun DocumentosLista(de: String, id: String) {
         subiendo = true
         try {
             val a = estado.api.subir(datos, nombre = nombre, tipo = tipo, uso = "documento")
-            estado.api.hacer("POST", "/v1/documentos", C(a.id, nombre, if (de == "contrato") id else null, if (de == "propiedad") id else null))
+            estado.api.hacer("POST", "/v1/documentos", CuerpoDocumento(a.id, nombre, if (de == "contrato") id else null, if (de == "propiedad") id else null))
             cargar()
         } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { subiendo = false }
     }
@@ -158,7 +158,7 @@ fun DocumentosLista(de: String, id: String) {
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            if (estado.escribe) VistaConsejo(ConsejoEscanear)
+            if (estado.escribe) VistaConsejo(ConsejoEscanear())
             val err = error
             if (err != null && lista.isEmpty()) {
                 EstadoError("los documentos", err) { estado.tarea { cargar() } }

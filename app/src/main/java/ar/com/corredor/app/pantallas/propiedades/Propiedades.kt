@@ -3,6 +3,8 @@ package ar.com.corredor.app.pantallas.propiedades
 import ar.com.corredor.app.pantallas.mira.Ubicacion
 
 import ar.com.corredor.app.app.PantallaApilada
+import ar.com.corredor.app.app.VistaConsejo
+import ar.com.corredor.app.app.ConsejoMandar
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -684,7 +686,7 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
                         )
                         if (filtros.vacio && !viendoCopia) fijadas()
                         Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            VistaConsejo(ConsejoMandar)
+                            VistaConsejo(ConsejoMandar())
                             lista.forEach { p -> fila(p) }
                             Texto(
                                 "Tocá el logo de WhatsApp para mandarla; mantené apretada una fila para más",

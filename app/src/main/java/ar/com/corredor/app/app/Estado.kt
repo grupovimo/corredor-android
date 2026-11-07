@@ -180,11 +180,15 @@ class Estado(api: Api? = null) {
         get() = faceID
         set(v) { faceID = v; Preferencias.ponerBool("faceID", v) }
 
+    fun ponerFaceID(v: Boolean) { conFaceID = v }
+
     /** El tema elegido: sistema, claro u oscuro (@AppStorage("tema") en iOS). */
     private var temaElegido by mutableStateOf(Preferencias.texto("tema") ?: "sistema")
     var tema: String
         get() = temaElegido
         set(v) { temaElegido = v; Preferencias.ponerTexto("tema", v) }
+
+    fun ponerTema(v: String) { tema = v }
 
     init {
         this.api.alPerderSesion = { alcance.launch { sesionPerdida() } }
@@ -286,17 +290,25 @@ class Estado(api: Api? = null) {
     suspend fun ingresarConGoogle() {
         val clerk = Clerk.crear(BuildConfig.CLERK_PUBLICABLE, api.http) ?: throw Clerk.ErrorClerk("sin_clave")
         val url = clerk.iniciar()
+        val vuelta = abrirHojaWeb(url)
+        canjear(clerk.completar(Uri.parse(vuelta).getQueryParameter("rotating_token_nonce") ?: ""))
+    }
+
+    /** La hoja web del sistema (HojaWeb con ASWebAuthenticationSession en iOS): abre `url` en una Custom Tab y espera
+     *  la vuelta a `ar.com.corredor.app://…` (Clerk, conectar Mercado Libre). Devuelve el link de vuelta entero; si la
+     *  persona la cierra, ErrorClerk «cancelado». */
+    suspend fun abrirHojaWeb(url: String): String {
         val d = CompletableDeferred<String?>()
         vuelta = d
         abrirPestana(url)
-        val nonce = d.await()
+        val r = d.await()
         vuelta = null
-        if (nonce == CANCELADO) throw Clerk.ErrorClerk("cancelado")
-        canjear(clerk.completar(nonce))
+        if (r == null || r == CANCELADO) throw Clerk.ErrorClerk("cancelado")
+        return r
     }
 
     /** MainActivity: llegó la vuelta (`ar.com.corredor.app://callback`). */
-    fun vueltaClerk(nonce: String?) { vuelta?.complete(nonce ?: "") }
+    fun vueltaClerk(url: String) { vuelta?.complete(url) }
 
     /** MainActivity: la Custom Tab se cerró sin vuelta (ASWebAuthenticationSessionError.canceledLogin). */
     fun clerkCancelado() { vuelta?.complete(CANCELADO) }
@@ -636,4 +648,9 @@ class Cola(private val api: Api, private val alcance: CoroutineScope) {
     private fun guardar() { Guardado.guardar(cambios, CLAVE) }
 
     companion object { private const val CLAVE = "cola" }
+}
+
+/** HojaWeb de iOS (Nucleo/Clerk.swift): la hoja web del sistema para un ida y vuelta (conectar Mercado Libre). */
+class HojaWeb {
+    suspend fun abrir(url: String): String = Abrir.estado?.get()?.abrirHojaWeb(url) ?: throw Clerk.ErrorClerk("clerk_no_responde")
 }

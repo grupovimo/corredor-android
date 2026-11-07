@@ -62,7 +62,7 @@ class ErrorCampos(val api: ErrorApi, val campos: Map<String, String>) : Exceptio
  *  web). Devuelve la respuesta cruda. */
 suspend inline fun <reified C> Api.pedirConCampos(metodo: String, ruta: String, cuerpo: C?, envio: String? = null): String {
     try {
-        return pedir(metodo, ruta, cuerpo = cuerpo?.let { Api.json.encodeToString(it).toByteArray() }, envio = envio)
+        return String(pedir(metodo, ruta, cuerpo = cuerpo?.let { Api.json.encodeToString(it).toByteArray() }, envio = envio))
     } catch (e: ErrorApi) {
         throw ErrorCampos(e, e.campos)
     }

@@ -1,6 +1,7 @@
 package ar.com.corredor.app.pantallas.mas
 
 import ar.com.corredor.app.app.PantallaApilada
+import ar.com.corredor.app.app.HojaWeb
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.Image

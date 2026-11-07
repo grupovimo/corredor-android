@@ -14,8 +14,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import ar.com.corredor.app.app.*
 import ar.com.corredor.app.nucleo.*
-import ar.com.corredor.app.pantallas.inicio.horaEnBA
-import ar.com.corredor.app.pantallas.inicio.zonaBA
 import ar.com.corredor.app.pantallas.propiedades.*
 import ar.com.corredor.app.tema.*
 import kotlinx.coroutines.Dispatchers

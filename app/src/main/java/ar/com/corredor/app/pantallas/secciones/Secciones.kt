@@ -144,7 +144,7 @@ fun ListaGenerica(
     suspend fun cargar() {
         try {
             val d = estado.api.pedir("GET", ruta, query = listOf("limite" to "200"))
-            val j = Api.json.parseToJsonElement(d)
+            val j = Api.json.parseToJsonElement(String(d))
             items = j.lista ?: j.objeto?.values?.firstOrNull { it.lista != null }?.lista ?: emptyList()
             error = null
         } catch (e: CancellationException) { throw e } catch (e: ErrorApi) { error = e } catch (e: Exception) { items = emptyList() }

@@ -1630,7 +1630,7 @@ fun Camara(visible: Boolean, alCerrar: () -> Unit, alSacar: (ByteArray) -> Unit)
 
 /** El archivo para la foto de la cámara, en cache/compartir (el FileProvider de nucleo/Abrir.kt). */
 private fun archivoCamaraAlta(ctx: Context): Pair<File, Uri> {
-    val f = archivoTemporal(ctx, "camara-${System.currentTimeMillis()}.jpg")
+    val f = archivoParaCompartir(ctx, "camara-${System.currentTimeMillis()}.jpg")
     return f to FileProvider.getUriForFile(ctx, PROVEEDOR_ARCHIVOS, f)
 }
 

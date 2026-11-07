@@ -116,7 +116,7 @@ class MainActivity : FragmentActivity() {
         val u = i?.data ?: return
         if (u.scheme == Clerk.ESQUEMA) {
             conVuelta = true
-            estado.vueltaClerk(u.getQueryParameter("rotating_token_nonce"))
+            estado.vueltaClerk(u.toString())
             return
         }
         val accion = i.getStringExtra("accion")

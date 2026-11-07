@@ -15,6 +15,7 @@ import android.print.PrintAttributes
 import android.print.PrintDocumentAdapter
 import android.print.PrintDocumentInfo
 import android.print.PrintManager
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +36,14 @@ fun abrirUrl(ctx: Context, url: String) {
     val u = Uri.parse(url)
     val i = if (u.scheme == "tel") Intent(Intent.ACTION_DIAL, u) else Intent(Intent.ACTION_VIEW, u)
     runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+}
+
+/** Un link de la web (términos, privacidad, el panel) en una Custom Tab, como el Link de SwiftUI; si no hay navegador,
+ *  con lo que lo abra. */
+fun abrirEnNavegador(ctx: Context, url: String) {
+    runCatching {
+        CustomTabsIntent.Builder().setShowTitle(true).build().apply { intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }.launchUrl(ctx, Uri.parse(url))
+    }.onFailure { abrirUrl(ctx, url) }
 }
 
 /** Link(destination: mailto:) de iOS. */
@@ -62,7 +71,7 @@ fun archivoCompartible(ctx: Context, archivo: File): File {
 }
 
 /** Un archivo nuevo en cache/compartir con ese nombre (sin barras). */
-fun archivoTemporal(ctx: Context, nombre: String): File =
+fun archivoParaCompartir(ctx: Context, nombre: String): File =
     File(File(ctx.cacheDir, "compartir").apply { mkdirs() }, nombre.replace("/", "-"))
 
 /** ShareLink de un archivo (un PDF, una placa, un CSV). */

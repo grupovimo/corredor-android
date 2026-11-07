@@ -387,7 +387,7 @@ fun TarjetaVisita(id: String) {
                     Estilo.footnote, C.texto2, alinear = TextAlign.Center,
                 )
                 BotonPrincipal("Imprimir o mandar", { estado.tarea { FichaImpresa.tarjeta(dd.p, estado.api)?.let { verArchivo(ctx, it) } } }, simbolo = "printer")
-                BotonHundidoImpreso("La ficha A4", "doc.richtext") { estado.tarea { FichaImpresa.a4(dd.p, estado.api)?.let { verArchivo(ctx, it) } } }
+                BotonHundido("La ficha A4", { estado.tarea { FichaImpresa.a4(dd.p, estado.api)?.let { verArchivo(ctx, it) } } }, Modifier.fillMaxWidth(), simbolo = "doc.richtext")
             } else if (e != null) {
                 EstadoError("la propiedad", e) { estado.tarea { cargar() } }
             } else {

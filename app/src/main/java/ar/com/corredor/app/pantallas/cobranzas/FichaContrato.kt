@@ -362,7 +362,7 @@ fun FichaContrato(
             val error = s.error
             if (k != null) {
                 Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    if (estado.escribe) VistaConsejo(ConsejoCobrar)
+                    if (estado.escribe) VistaConsejo(ConsejoCobrar())
                     CabeceraFicha(k, estado.escribe, cobrar = { cobrar(null) }, renovar = { s.renovando = true })
                     val a = s.ajuste
                     val p = a?.proximo
