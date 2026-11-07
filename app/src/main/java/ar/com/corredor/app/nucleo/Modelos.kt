@@ -342,7 +342,7 @@ val String.nonEmpty: String? get() = if (isBlank()) null else this
 /** Un JSON cualquiera, para los campos libres (marca, datos de un evento). */
 @Serializable(with = JSONLibre.Serializador::class)
 sealed class JSONLibre {
-    data class texto(val v: String) : JSONLibre()
+    data class cadena(val v: String) : JSONLibre()
     data class numero(val v: Double) : JSONLibre()
     data class bool(val v: Boolean) : JSONLibre()
     data class objeto(val v: Map<String, JSONLibre>) : JSONLibre()
@@ -350,14 +350,14 @@ sealed class JSONLibre {
     data object nulo : JSONLibre()
 
     /** El texto, si es un texto (`.texto` en iOS). */
-    val comoTexto: String? get() = (this as? JSONLibre.texto)?.v
-    /** `.texto` de iOS (el mismo nombre que el caso: uno es la propiedad y el otro la clase). */
+    val comoTexto: String? get() = (this as? JSONLibre.cadena)?.v
+    /** `.texto` de iOS (el caso `.texto(String)` de iOS es `cadena` acá, para que la propiedad tenga su nombre). */
     val texto: String? get() = comoTexto
     /** subscript(k) de iOS: el campo `k` de un objeto. */
     operator fun get(k: String): JSONLibre? = (this as? objeto)?.v?.get(k)
 
     val elemento: JsonElement get() = when (this) {
-        is JSONLibre.texto -> JsonPrimitive(v)
+        is JSONLibre.cadena -> JsonPrimitive(v)
         is numero -> JsonPrimitive(v)
         is bool -> JsonPrimitive(v)
         is objeto -> JsonObject(v.mapValues { it.value.elemento })
@@ -371,10 +371,10 @@ sealed class JSONLibre {
             is JsonObject -> JSONLibre.objeto(e.mapValues { de(it.value) })
             is JsonArray -> JSONLibre.lista(e.map { de(it) })
             is JsonPrimitive -> when {
-                e.isString -> JSONLibre.texto(e.content)
+                e.isString -> JSONLibre.cadena(e.content)
                 e.booleanOrNull != null -> JSONLibre.bool(e.booleanOrNull!!)
                 e.doubleOrNull != null -> JSONLibre.numero(e.doubleOrNull!!)
-                else -> JSONLibre.texto(e.content)
+                else -> JSONLibre.cadena(e.content)
             }
         }
     }

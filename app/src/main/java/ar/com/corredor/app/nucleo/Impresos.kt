@@ -379,7 +379,7 @@ object Documentos {
         if (json is JSONLibre.objeto) {
             for ((k, v) in json.v.toSortedMap()) {
                 when (v) {
-                    is JSONLibre.texto -> if (!k.endsWith("Id") && k != "id") sueltos.add(etiqueta(k) to v.v)
+                    is JSONLibre.cadena -> if (!k.endsWith("Id") && k != "id") sueltos.add(etiqueta(k) to v.v)
                     is JSONLibre.numero -> sueltos.add(etiqueta(k) to Formato.numero(v.v.toInt()))
                     is JSONLibre.lista -> {
                         val filas = v.v.take(200).map { x ->
