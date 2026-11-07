@@ -55,6 +55,28 @@ jobs:
           name: capturas
           path: app/build/capturas
           if-no-files-found: ignore
+      # Las mismas capturas en JPG de 540 px de ancho (unos 15 MB): las baja la galería de revisión.
+      - name: Galería
+        if: always()
+        run: |
+          [ -d app/build/capturas ] || exit 0
+          python3 -m pip install -q pillow
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          os.makedirs('galeria', exist_ok=True)
+          for f in glob.glob('app/build/capturas/**/*.png', recursive=True):
+              im = Image.open(f).convert('RGB')
+              im.thumbnail((540, 4000))
+              im.save('galeria/' + os.path.basename(f)[:-4] + '.jpg', quality=78, optimize=True)
+          PY
+      - name: Subir la galería
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: galeria
+          path: galeria
+          if-no-files-found: ignore
       # A mano (workflow_dispatch): el paquete firmado para Play (prueba interna).
       - name: Paquete para Play
         if: github.event_name == 'workflow_dispatch'
