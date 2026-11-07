@@ -126,7 +126,7 @@ fun ListaActas() {
             Modifier.heightIn(min = 26.dp).clip(CircleShape).background(tono.fondo).clickable(enabled = hacer != null) { hacer?.invoke() }
                 .padding(horizontal = 10.dp),
             contentAlignment = Alignment.Center,
-        ) { Texto(t, Estilo(12f, Peso.semibold), tono.tinta) }
+        ) { Texto(t, Estilo(12f, Peso.semibold), tono.tinta, lineas = 1) }
     }
 
     PantallaApilada("Inventarios", grande = true, acciones = if (estado.escribe) ({ BotonBarraActa("plus", "Elegir una propiedad") { elegir = true } }) else null) {
@@ -139,7 +139,7 @@ fun ListaActas() {
                 val err = error
                 if (filas != null) {
                     // Chips
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("todas" to "Todas", "con" to "Con inventario", "sin" to "Sin inventario", "devolver" to "Para devolver").forEach { (k, t) ->
                             val on = vista == k
                             Box(
@@ -202,7 +202,8 @@ fun ListaActas() {
                                     }
                                     // Chips de actas
                                     if (f.entrada != null || f.salida != null) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        // Si no entran en un renglón, la pastilla baja entera (antes se partía adentro: «Sin acta de / devolución»).
+                                        ar.com.corredor.app.pantallas.mensajes.FlowLayout(espacio = 6.dp) {
                                             f.entrada?.let { e ->
                                                 chip("Entrega ${Inv.numerica(e.fecha)}${if (e.firmas < 3) " · faltan firmas" else ""}", if (e.firmas < 3) Tono.oro else Tono.verde) {
                                                     estado.abrir(AFirmas(id = "${f.id}/${e.id}"))

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -67,7 +68,7 @@ fun VistasPropiedad(propiedad: String) {
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Desde siempre", valor = Formato.numero(r?.total ?: 0)) }
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Últimos 90 días", valor = Formato.numero(dias.sumOf { it.cantidad })) }
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Últimos 7 días", valor = Formato.numero(ultimos(7))) }

@@ -514,7 +514,7 @@ private fun FilaIconoPerfil(icono: String, texto: String, hacer: () -> Unit) {
 @Composable
 private fun BotonesHoja(guardando: Boolean, cancelar: () -> Unit, guardar: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-        BotonSecundario("Cancelar", cancelar)
+        BotonSecundario("Cancelar", cancelar, alto = 52.dp)
         BotonPrincipal(if (guardando) "Guardando…" else "Guardar", guardar, Modifier.weight(1f), habilitado = !guardando)
     }
 }

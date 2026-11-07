@@ -471,7 +471,7 @@ internal fun CampoCobro(
         cursorBrush = SolidColor(C.accion),
         decorationBox = { campo ->
             Box(Modifier.fillMaxWidth(), contentAlignment = if (lineasMax > 1) Alignment.TopStart else Alignment.CenterStart) {
-                if (valor.isEmpty() && placeholder.isNotEmpty()) Texto(placeholder, estilo, C.texto3, alinear = alinear, modifier = Modifier.fillMaxWidth())
+                if (valor.isEmpty() && placeholder.isNotEmpty()) Texto(placeholder, estilo, C.texto3, alinear = alinear, modifier = Modifier.fillMaxWidth(), lineas = lineasMax)
                 campo()
             }
         },

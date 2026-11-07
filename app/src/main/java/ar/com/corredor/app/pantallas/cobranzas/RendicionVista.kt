@@ -592,9 +592,10 @@ private fun LineaRendicion(l: String, v: String, primera: Boolean = false, gris:
     Column {
         if (!primera) LineaFila()
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Texto(l, Estilo.subhead, if (gris) C.texto2 else C.texto, Modifier.weight(1f, fill = false))
-            Relleno()
-            Texto(v, Estilo.subhead, C.texto)
+            // El concepto ocupa todo lo que sobra (con `fill = false` + Relleno, el importe quedaba corrido a la
+            // izquierda cuando el concepto era corto: «−27.000» no se alineaba con «540.000»).
+            Texto(l, Estilo.subhead, if (gris) C.texto2 else C.texto, Modifier.weight(1f).padding(end = 8.dp))
+            Texto(v, Estilo.subhead, C.texto, numeros = true)
         }
     }
 }
@@ -663,9 +664,10 @@ private fun FilaPublica(l: String, v: String, primera: Boolean = false) {
     Column {
         if (!primera) LineaFila()
         Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Texto(l, Estilo.subhead, C.texto2, Modifier.weight(1f, fill = false))
-            Relleno()
-            Texto(v, Estilo.subhead, C.texto)
+            // El concepto ocupa todo lo que sobra (con `fill = false` + Relleno, el importe quedaba corrido a la
+            // izquierda cuando el concepto era corto: «−27.000» no se alineaba con «540.000»).
+            Texto(l, Estilo.subhead, C.texto2, Modifier.weight(1f).padding(end = 8.dp))
+            Texto(v, Estilo.subhead, C.texto, numeros = true)
         }
     }
 }

@@ -582,7 +582,7 @@ fun FichaPropiedad(
                         }
                         // La gente
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ChipFiltro(texto = "Interesados${if (abiertas.isEmpty()) "" else " ${abiertas.size}"}", activo = pestana == "interesados") { pestana = "interesados" }
                                 ChipFiltro(texto = "Visitas${if (visitasProp.isEmpty()) "" else " ${visitasProp.size}"}", activo = pestana == "visitas") { pestana = "visitas" }
                                 ChipFiltro(texto = "Reservas${if (reservas.isEmpty()) "" else " ${reservas.size}"}", activo = pestana == "reservas") { pestana = "reservas" }

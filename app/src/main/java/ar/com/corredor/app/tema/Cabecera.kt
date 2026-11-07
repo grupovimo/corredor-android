@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -102,9 +104,19 @@ fun CabeceraPestana(
         }
     }
 
+    // Si el título no entra entero al lado de los botones («Propiedades» con cinco), los botones suben a su renglón
+    // de 44 (como con `sobre`) y el título queda solo: antes se cortaba en «Propiedad…».
+    val medidor = rememberTextMeasurer()
+    val densidad = LocalDensity.current
+    val anchoTitulo = remember(titulo, densidad) {
+        with(densidad) { medidor.measure(titulo, Estilo.tituloGrande.ts(), maxLines = 1, softWrap = false).size.width.toDp() }
+    }
+    val cuantos = acciones.size + (if (avatar) 1 else 0)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val arriba = sobre != null || (cuantos > 0 && anchoTitulo + 8.dp + 44.dp * cuantos - 8.dp > maxWidth - 32.dp)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 6.dp)) {
         // Con renglón de arriba (fecha, inmobiliaria), los botones van ahí; sin él, en el renglón del título.
-        if (sobre != null) {
+        if (arriba) {
             Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) { Spacer(Modifier.weight(1f)); botones() }
         } else {
             Spacer(Modifier.height(12.dp))
@@ -120,8 +132,8 @@ fun CabeceraPestana(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.weight(1f, fill = sobre == null).semantics { heading() }, lineas = 1, escalaMinima = 0.7f)
-            if (sobre == null) botones()
+            Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.weight(1f, fill = !arriba).semantics { heading() }, lineas = 1, escalaMinima = 0.7f)
+            if (!arriba) botones()
         }
         if (busca != null) {
             Tocable({ alBuscar?.invoke() }, Modifier.padding(top = 10.dp)) {
@@ -133,6 +145,7 @@ fun CabeceraPestana(
                 }
             }
         }
+    }
     }
 }
 
@@ -305,9 +318,9 @@ fun Fecha.dia(s: String): Instant? {
 
 /** Un campo con su etiqueta arriba (13/600 en tinta 2). */
 @Composable
-fun Etiquetado(etiqueta: String, modifier: Modifier = Modifier, contenido: @Composable ColumnScope.() -> Unit) {
+fun Etiquetado(etiqueta: String, modifier: Modifier = Modifier, color: Color = C.texto2, contenido: @Composable ColumnScope.() -> Unit) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Texto(etiqueta, Estilo.footnoteFuerte, C.texto2)
+        Texto(etiqueta, Estilo.footnoteFuerte, color)
         contenido()
     }
 }

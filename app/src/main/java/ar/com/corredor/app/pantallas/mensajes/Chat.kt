@@ -1163,7 +1163,7 @@ fun GuardarNumero(waId: String, nombre: String, tipo: String, guardar: suspend (
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             // Como el BotonSecundario de iOS: a su ancho; «Guardar» se queda con el resto.
-            BotonSecundario("Cancelar", { cerrar() })
+            BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
             BotonPrincipal(if (creando) "Guardando…" else "Guardar", {
                 alcance.launch {
                     creando = true
@@ -1211,7 +1211,7 @@ fun GuardarRespuesta(texto: String, alGuardar: (RespuestaGuardada) -> Unit) {
         Spacer(Modifier.weight(1f))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             // Como el BotonSecundario de iOS: a su ancho; «Guardar» se queda con el resto.
-            BotonSecundario("Cancelar", { cerrar() })
+            BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
             BotonPrincipal("Guardar", { alcance.launch { guardar() } }, Modifier.weight(1f), habilitado = titulo.trim().isNotEmpty() && !guardando)
         }
     }

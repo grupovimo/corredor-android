@@ -394,7 +394,7 @@ fun Avisos() {
                             ChipFiltro(texto = "Para hacer" + (if (paraHacer > 0) " $paraHacer" else ""), activo = vista == "para_hacer", hacer = { vista = "para_hacer" })
                             ChipFiltro(texto = "Todo", activo = vista == "todo", hacer = { vista = "todo" })
                         }
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Avisos.tipos.forEach { (t, n) ->
                                 key(t) {
                                     val (icono, _) = Avisos.icono(t)
@@ -486,9 +486,9 @@ fun HojaResponderAviso(aviso: AvisoCentro, accion: AvisoCentro.Accion, mandar: s
         // HStack de iOS: los secundarios a su medida (BotonSecundario no se estira) y el principal con el resto
         // (maxWidth: .infinity), centrados en alto.
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            BotonSecundario("Cancelar", { cerrar() })
+            BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
             val ruta = aviso.url?.let { Ruta.de(it) }
-            if (ruta != null) BotonSecundario("Abrir", { cerrar(); estado.ir(ruta) })
+            if (ruta != null) BotonSecundario("Abrir", { cerrar(); estado.ir(ruta) }, alto = 52.dp)
             BotonPrincipal(
                 if (mandando) "Mandando…" else (accion.titulo ?: "Responder"),
                 {
@@ -741,8 +741,9 @@ fun HorarioSilencio(desde: Int, hasta: Int, domingos: Boolean, guardar: (Int, In
         }
         Interruptor(texto = "Los domingos, todo el día", prendido = domingos, alCambiar = { domingos = it })
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f))
+        // Como en iOS: «Cancelar» a su ancho y «Guardar» con el resto, centrados en alto (y del mismo alto).
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
             BotonPrincipal("Guardar", { guardar(desde, hasta, domingos); cerrar() }, Modifier.weight(1f))
         }
     }

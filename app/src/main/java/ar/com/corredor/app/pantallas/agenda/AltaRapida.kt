@@ -361,8 +361,10 @@ fun LicenciasAgenda() {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (estado.esDuenio) {
                     Etiquetado("Quién") {
-                        SelectorMenu(equipo.filter { it.rol != "lector" || it.usuarioId == yo }.map { p -> p.usuarioId to (if (p.usuarioId == yo) "${p.completo} (vos)" else p.completo) },
-                            quien, { quien = it }, "Quién")
+                        // Vos siempre estás (si el equipo no te trae, el selector quedaba en blanco).
+                        val opciones = equipo.filter { it.rol != "lector" || it.usuarioId == yo }.map { p -> p.usuarioId to (if (p.usuarioId == yo) "${p.completo} (vos)" else p.completo) }
+                        val conmigo = if (yo.isEmpty() || opciones.any { it.first == yo }) opciones else listOf(yo to "${estado.usuario?.completo ?: "Vos"} (vos)") + opciones
+                        SelectorMenu(conmigo, quien, { quien = it }, "Quién")
                     }
                 }
                 Etiquetado("Qué") { Segmentado(LicenciasAgendaTextos.tipos, tipo, { tipo = it }) }
@@ -373,7 +375,7 @@ fun LicenciasAgenda() {
                 error?.let { MensajeError(it) }
                 // Como en iOS: «Cancelar» a su ancho y «Cargar» con el resto.
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    BotonSecundario("Cancelar", { cerrar() })
+                    BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
                     BotonPrincipal(if (guardando) "Cargando…" else "Cargar", { alcance.launch { guardar() } }, Modifier.weight(1f), habilitado = !guardando)
                 }
             }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -212,7 +213,7 @@ fun PantallaMercadoLibre() {
         val variacion = ArregloML.variacion(ml?.visitasSemana, ml?.visitasSemanaAnterior)
         val total = pubs.sumOf { it.visitas ?: 0 }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Sin responder", valor = "${preguntas.size}") }
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Con error", valor = "${errores.size}") }
                 Box(Modifier.weight(1f)) { Cifra(etiqueta = "Activas", valor = "$activas") }
@@ -254,10 +255,11 @@ fun PantallaMercadoLibre() {
                         Texto(
                             listOfNotNull(f?.titulo ?: q.propiedad ?: "Publicación", f?.let { ff -> ff.precio?.let { p -> if (ff.precioOculto == true) null else Formato.plata(p, ff.moneda ?: "USD") } })
                                 .joinToString(" · "),
-                            Estilo.filaLista, C.texto, lineas = 1,
+                            // En dos renglones: en uno se cortaba el precio («Mendoza 2350, 5.º A · US…»).
+                            Estilo.filaLista, C.texto, lineas = 2,
                         )
                         val l = lineaPregunta(q)
-                        if (l.isNotEmpty()) Texto(l, Estilo.footnote, C.texto2, lineas = 1)
+                        if (l.isNotEmpty()) Texto(l, Estilo.footnote, C.texto2, lineas = 2)
                         Texto("«${q.texto}»${q.compradorApodo?.let { " · usuario $it" } ?: ""}", Estilo.subhead, C.texto, lineas = 3)
                     }
                     Column(Modifier.padding(start = 4.dp), horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {

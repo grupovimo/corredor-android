@@ -797,7 +797,8 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
             izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) },
         ) {
             val habilitado = c.nombre.trim().isNotEmpty() && !guardando
-            Texto("Guardar", Estilo.headline, if (habilitado) C.accion else C.texto3, Modifier.clickable(enabled = habilitado) { alcance.launch { guardar() } })
+            // BotonHoja: con su aire contra el borde, como «Cancelar» del otro lado.
+            BotonHoja("Guardar", fuerte = true, habilitado = habilitado, alTocar = { alcance.launch { guardar() } })
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             error?.let { MensajeError(texto = it) }

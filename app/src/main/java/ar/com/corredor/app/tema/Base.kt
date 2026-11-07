@@ -8,6 +8,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -51,7 +53,9 @@ import ar.com.corredor.app.R
 // Lo que SwiftUI da hecho y Compose sin Material no: Text, Image(systemName:), Image de los assets, .shadow, los
 // estilos de botón que se hunden (Presionable) y Reducir movimiento. Lo usan todas las piezas y pantallas.
 
-/** El texto de la app (Text de SwiftUI). `escalaMinima`: .minimumScaleFactor (achica la letra hasta entrar). */
+/** El texto de la app (Text de SwiftUI). `escalaMinima`: .minimumScaleFactor (achica la letra hasta entrar). Con
+ *  `escalaMinima` y más de un renglón, primero achica para entrar en uno (el «ARS 85.000» no se parte en dos) y sólo si
+ *  ni achicado entra, lo parte. Nunca deja una palabra sola en el último renglón (ver [viuda]). */
 @Composable
 fun Texto(
     texto: String,
@@ -74,12 +78,64 @@ fun Texto(
     if (interlineado > 0f) ts = ts.copy(lineHeight = (estilo.tamano * 1.2f + interlineado).sp)
     if (monoespaciado) ts = ts.copy(fontFamily = FontFamily.Monospace)
     if (tracking != null) ts = ts.copy(letterSpacing = tracking.sp)
+    val estiloFinal = ts.copy(color = color, textAlign = alinear)
+    val corte = if (cortarAlMedio) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis
+    val achicar = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) }
+    // La viuda arreglada: el índice del espacio que se volvió duro (se recalcula si cambia el texto).
+    var pegado by remember(texto) { mutableStateOf<Int?>(null) }
+    val base = sinPuntoSuelto(texto)
+    val mostrado = pegado?.let { base.substring(0, it) + '\u00A0' + base.substring(it + 1) } ?: base
+    val alMedir: (TextLayoutResult) -> Unit = { r -> if (pegado == null && lineas > 1) viuda(r)?.let { pegado = it } }
+    if (escalaMinima != null && lineas > 1) {
+        val medidor = rememberTextMeasurer()
+        Layout(content = {
+            BasicText(mostrado, style = estiloFinal, maxLines = 1, overflow = corte, autoSize = achicar)
+            BasicText(mostrado, style = estiloFinal, maxLines = lineas, overflow = corte, autoSize = achicar, onTextLayout = alMedir)
+        }, modifier = modifier) { m, c ->
+            val natural = medidor.measure(mostrado, estiloFinal, maxLines = 1, softWrap = false).size.width
+            val p = (if (natural * escalaMinima <= c.maxWidth) m[0] else m[1]).measure(c)
+            layout(p.width, p.height) { p.place(0, 0) }
+        }
+        return
+    }
     BasicText(
-        texto, modifier,
-        style = ts.copy(color = color, textAlign = alinear),
-        maxLines = lineas, overflow = if (cortarAlMedio) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis,
-        autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) },
+        mostrado, modifier,
+        style = estiloFinal,
+        maxLines = lineas, overflow = corte,
+        autoSize = achicar,
+        onTextLayout = alMedir,
     )
+}
+
+/** El espacio de la posición `i` como espacio duro, sin perder los estilos ni los links. */
+private fun duro(a: AnnotatedString, i: Int): AnnotatedString = a.subSequence(0, i) + AnnotatedString("\u00A0") + a.subSequence(i + 1, a.length)
+
+/** «Propiedad · Venta · Palermo»: el «·» va pegado a lo de antes, para que ningún renglón empiece con un punto suelto. */
+fun sinPuntoSuelto(s: String): String = if (s.contains(" · ")) s.replace(" · ", "\u00A0· ") else s
+
+/** Si el último renglón quedó con una sola palabra (una viuda), el índice del espacio que la separa de la anterior,
+ *  para volverlo duro y que bajen juntas: lo que hace `Formato.sinViudas` en iOS, pero sólo cuando pasa y con el ancho
+ *  real (las dos tienen que entrar en un renglón, y en el de arriba tiene que quedar algo). */
+fun viuda(r: TextLayoutResult): Int? {
+    val n = r.lineCount
+    if (n < 2 || r.hasVisualOverflow) return null
+    val t = r.layoutInput.text.text
+    val ini = r.getLineStart(n - 1)
+    val fin = r.getLineEnd(n - 1, visibleEnd = true)
+    if (ini < 2 || fin <= ini) return null
+    val ultima = t.substring(ini, fin).trim()
+    if (ultima.isEmpty() || ultima.any { it == ' ' || it == '\u00A0' }) return null
+    // El renglón tiene que haber cortado en un espacio (no en un salto de párrafo ni en medio de una palabra).
+    var s = ini - 1
+    while (s > 0 && t[s] == ' ' && t[s - 1] == ' ') s--
+    if (t[s] != ' ') return null
+    // La anteúltima palabra y que en su renglón quede algo más.
+    var p = s
+    while (p > 0 && t[p - 1] != ' ' && t[p - 1] != '\n' && t[p - 1] != '\u00A0') p--
+    if (p <= r.getLineStart(n - 2)) return null
+    val anteultima = kotlin.math.abs(r.getHorizontalPosition(s, true) - r.getHorizontalPosition(p, true))
+    val sola = r.getLineRight(n - 1) - r.getLineLeft(n - 1)
+    return if (anteultima + sola + anteultima / maxOf(1, s - p) <= r.size.width) s else null
 }
 
 /** Texto con partes de distinto estilo (Text + Text en iOS). */
@@ -97,17 +153,32 @@ fun TextoRico(
      *  resaltado de búsqueda). Sin él, el subrayado va del color del texto. */
     subrayado: Color? = null,
 ) {
+    var pegado by remember(texto) { mutableStateOf<Int?>(null) }
+    // Los espacios se vuelven duros pedazo a pedazo (subSequence + plus): cada parte conserva su estilo y sus links. Con
+    // estilos de párrafo no se toca (partirlos los volvería dos párrafos).
+    val arreglable = texto.paragraphStyles.isEmpty()
+    val base = remember(texto) {
+        if (!arreglable || !texto.text.contains(" · ")) texto else {
+            var a = texto
+            var i = a.text.indexOf(" · ")
+            while (i >= 0) { a = duro(a, i); i = a.text.indexOf(" · ", i + 1) }
+            a
+        }
+    }
+    val mostrado = pegado?.let { duro(base, it) } ?: base
+    val alMedir: (TextLayoutResult) -> Unit = { r -> if (arreglable && pegado == null && lineas > 1) viuda(r)?.let { pegado = it } }
     if (subrayado == null) {
-        BasicText(texto, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+        BasicText(mostrado, modifier, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
+            onTextLayout = alMedir,
             autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
         return
     }
     // Las partes subrayadas se dibujan sin el subrayado del texto y con una raya propia del color pedido.
-    val rangos = remember(texto) { texto.spanStyles.filter { it.item.textDecoration?.contains(TextDecoration.Underline) == true }.map { it.start until it.end } }
-    val limpio = remember(texto) {
-        AnnotatedString(texto.text, texto.spanStyles.map { r ->
+    val rangos = remember(mostrado) { mostrado.spanStyles.filter { it.item.textDecoration?.contains(TextDecoration.Underline) == true }.map { it.start until it.end } }
+    val limpio = remember(mostrado) {
+        AnnotatedString(mostrado.text, mostrado.spanStyles.map { r ->
             if (r.item.textDecoration?.contains(TextDecoration.Underline) == true) AnnotatedString.Range(r.item.copy(textDecoration = TextDecoration.None), r.start, r.end) else r
-        }, texto.paragraphStyles)
+        }, mostrado.paragraphStyles)
     }
     var disposicion by remember { mutableStateOf<TextLayoutResult?>(null) }
     BasicText(limpio, modifier.drawBehind {
@@ -126,7 +197,7 @@ fun TextoRico(
             }
         }
     }, style = estilo.ts(numeros).copy(color = color, textAlign = alinear), maxLines = lineas, overflow = TextOverflow.Ellipsis,
-        onTextLayout = { disposicion = it },
+        onTextLayout = { disposicion = it; alMedir(it) },
         autoSize = escalaMinima?.let { TextAutoSize.StepBased((estilo.tamano * it).sp, estilo.tamano.sp, 0.5.sp) })
 }
 

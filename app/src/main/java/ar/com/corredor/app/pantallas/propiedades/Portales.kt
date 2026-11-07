@@ -257,7 +257,7 @@ fun Portales() {
                 "${Formato.cantidad(r.difundibles ?: 0, "publicada", "publicadas")}${if ((r.webVisitasSemana ?: 0) > 0) " · ${Formato.cantidad(r.webVisitasSemana ?: 0, "visita esta semana", "visitas esta semana")}" else ""}",
                 "Al día", Tono.verde,
             )
-            Texto("Todo lo disponible sale solo en tu web. Los borradores no.", Estilo.subhead, C.texto2)
+            Texto("Todo lo disponible sale solo en tu web. Los borradores no.", Estilo.footnote, C.texto2)
             val v = r.webVisitasSemana; val antes = r.webVisitasSemanaAnterior
             if (v != null && antes != null && antes > 0) {
                 ArregloML.variacion(v, antes)?.let { x -> Texto("${x.first} contra la semana anterior", Estilo.footnoteFuerte, if (x.second) C.okTinta else C.errorTinta) }
@@ -345,7 +345,7 @@ fun Portales() {
                     Box(Modifier.padding(top = 30.dp)) { EstadoError("la difusión", e) { estado.tarea { cargar() } } }
                 }
                 Box(Modifier.padding(top = 6.dp)) { TituloBloque(texto = "Publicaciones") }
-                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("todos" to "Todos", "error" to "Con error", "mercadolibre" to "Mercado Libre", "zonaprop" to "Zonaprop", "argenprop" to "Argenprop").forEach { (k, n) ->
                         ChipFiltro(n, portal == k) { portal = k }
                     }

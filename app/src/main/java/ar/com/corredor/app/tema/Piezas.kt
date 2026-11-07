@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -290,7 +292,10 @@ fun <V> Segmentado(opciones: List<Pair<V, String>>, elegido: V, alElegir: (V) ->
                         alElegir(v); Haptico.seleccion()
                     }.semantics { selected = activo },
                     contentAlignment = Alignment.Center,
-                ) { Texto(t, Estilo.label, if (activo) C.texto else C.texto2, lineas = 1) }
+                ) {
+                    // Como el UISegmentedControl: la letra se achica antes de cortarse con «…» y los textos no se tocan.
+                    Texto(t, Estilo.label, if (activo) C.texto else C.texto2, Modifier.padding(horizontal = 4.dp), lineas = 1, alinear = TextAlign.Center, escalaMinima = 0.7f)
+                }
             }
         }
     }
@@ -541,3 +546,34 @@ fun Modifier.sangrar(n: Dp): Modifier = this.layout { medible, restricciones ->
     val p = medible.measure(restricciones.copy(minWidth = ancho, maxWidth = ancho))
     layout(restricciones.maxWidth, p.height) { p.place(-extra / 2, 0) }
 }
+
+/** Lo de la izquierda (chips) y lo de la derecha (botones) en un renglón; si no entran, lo de la derecha baja a su
+ *  propio renglón, pegado a la derecha, en vez de achicarse hasta «Nuev…». */
+@Composable
+fun FilaPartible(izquierda: @Composable RowScope.() -> Unit, derecha: @Composable RowScope.() -> Unit, modifier: Modifier = Modifier, espacio: Dp = 8.dp) {
+    androidx.compose.ui.layout.Layout(content = {
+        Row(horizontalArrangement = Arrangement.spacedBy(espacio), verticalAlignment = Alignment.CenterVertically, content = izquierda)
+        Row(horizontalArrangement = Arrangement.spacedBy(espacio), verticalAlignment = Alignment.CenterVertically, content = derecha)
+    }, modifier.fillMaxWidth()) { m, c ->
+        val ancho = c.maxWidth
+        val e = espacio.roundToPx()
+        val wa = m[0].maxIntrinsicWidth(c.maxHeight)
+        val wb = m[1].maxIntrinsicWidth(c.maxHeight)
+        val libre = c.copy(minWidth = 0, minHeight = 0)
+        val a = m[0].measure(libre)
+        val b = m[1].measure(libre)
+        if (wb == 0 || wa + e + wb <= ancho) {
+            val alto = maxOf(a.height, b.height)
+            layout(ancho, alto) { a.place(0, (alto - a.height) / 2); b.place(ancho - b.width, (alto - b.height) / 2) }
+        } else {
+            val alto = a.height + e + b.height
+            layout(ancho, alto) { a.place(0, 0); b.place(ancho - b.width, a.height + e) }
+        }
+    }
+}
+
+/** Una fila con desplazamiento horizontal (chips, pestañas, tarjetas) adentro de un contenido con margen `margen`: llega
+ *  hasta los bordes de la pantalla y arranca alineada con el margen, como las tarjetas de «Potenciá tu negocio». Antes se
+ *  cortaba contra el margen y la última quedaba mocha a mitad de la pantalla («Traba»). */
+@Composable
+fun Modifier.carrusel(margen: Dp = 16.dp): Modifier = this.sangrar(margen).horizontalScroll(rememberScrollState()).padding(horizontal = margen)

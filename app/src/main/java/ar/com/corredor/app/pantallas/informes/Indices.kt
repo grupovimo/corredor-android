@@ -238,9 +238,11 @@ fun Indices() {
 
     @Composable
     fun calculadora() {
+        // Los rótulos en blanco: en tinta 2 no se leían sobre el verde (en iOS el `.foregroundStyle(.white)` de afuera no
+        // le gana al C.texto2 de Etiquetado).
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(C.verde700).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ConIcono("Calculadora de alquiler", "function", Estilo.headline, Color.White)
-            Etiquetado("Alquiler") {
+            Etiquetado("Alquiler", color = Color.White.copy(alpha = 0.8f)) {
                 Row(Modifier.fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp)).background(C.superficie).padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Texto("ARS", Estilo.label, C.texto2)
@@ -252,14 +254,14 @@ fun Indices() {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(Modifier.weight(1f)) {
-                    Etiquetado("Desde") {
+                    Etiquetado("Desde", color = Color.White.copy(alpha = 0.8f)) {
                         Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
                             SelectorMenu(meses.map { it to etiquetaMes(it) }, desde, { desde = it }, "Desde", color = C.texto)
                         }
                     }
                 }
                 Box(Modifier.weight(1f)) {
-                    Etiquetado("Índice") {
+                    Etiquetado("Índice", color = Color.White.copy(alpha = 0.8f)) {
                         Box(Modifier.fillMaxWidth().heightIn(min = 44.dp).clip(RoundedCornerShape(12.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
                             SelectorMenu(listOf("icl" to "ICL", "ipc" to "IPC", "uva" to "UVA"), indice, { indice = it }, "Índice", color = C.texto)
                         }

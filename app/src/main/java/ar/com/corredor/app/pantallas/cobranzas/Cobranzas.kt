@@ -569,18 +569,20 @@ private fun FilaDeudor(f: FilaDeuda, primera: Boolean, tono: Cobranzas.TonoFila,
                     Modifier.fillMaxWidth().background(C.superficie).padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // El monto va abajo del nombre: con el monto, la campana y «Cobrar» en la misma fila, al nombre le
+                    // quedaban 100 de ancho («Lucía / Méndez») y el atraso se perdía en «Gorriti 4820 · …».
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Texto(f.nombre ?: "Sin inquilino", Estilo(16f, Peso.semibold), C.texto)
+                        Texto(f.nombre ?: "Sin inquilino", Estilo(16f, Peso.semibold), C.texto, lineas = 1)
+                        Texto(Formato.plata(f.monto, f.moneda), Estilo(15f, Peso.bold), C.texto, lineas = 1, numeros = true)
                         val rojo = C.error; val gris = C.texto2
-                        BasicText(
+                        TextoRico(
                             buildAnnotatedString {
                                 append("${f.propiedad ?: ""} · ")
                                 withStyle(SpanStyle(color = if (tono == Cobranzas.TonoFila.rojo) rojo else gris, fontWeight = FontWeight.SemiBold)) { append(atraso) }
                             },
-                            style = Estilo.footnote.ts().copy(color = gris), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            Estilo.footnote, gris, lineas = 2,
                         )
                     }
-                    Texto(Formato.plata(f.monto, f.moneda), Estilo(15f, Peso.bold), C.texto)
                     Box(Modifier.size(44.dp).clickable(onClick = recordar), contentAlignment = Alignment.Center) {
                         Icono("bell.badge", 20f, C.texto2, descripcion = "Mandar recordatorio por WhatsApp")
                     }

@@ -798,9 +798,11 @@ fun TarjetaAvance(titulo: String, cifra: String, avance: Double, color: Color = 
 /** Una cifra de la dueña: etiqueta 12/600 y valor 16/700. */
 @Composable
 fun Cifra(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().tarjeta(16.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // Todo el alto de la fila (las vecinas quedan parejas aunque una etiqueta o una cifra ocupe dos renglones) y la cifra
+    // abajo, alineada con las de al lado.
+    Column(modifier.fillMaxWidth().fillMaxHeight().tarjeta(16.dp).padding(12.dp), verticalArrangement = Arrangement.SpaceBetween) {
         Texto(etiqueta, Estilo(12f, Peso.semibold), C.texto2)
-        Texto(valor, Estilo(16f, Peso.bold, -0.01f), C.texto, lineas = 2, escalaMinima = 0.8f)
+        Texto(valor, Estilo(16f, Peso.bold, -0.01f), C.texto, Modifier.padding(top = 4.dp), lineas = 2, escalaMinima = 0.8f)
     }
 }
 

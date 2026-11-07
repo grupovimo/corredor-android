@@ -85,13 +85,13 @@ fun PestanaUnidadesConsorcio(c: ConsorcioAPI, pedido: String?, alCambiarPedido: 
         val e = error
         if (us != null) {
             // Barra
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            FilaPartible({
                 ChipFiltro("Todas ${us.size}", !soloDeben) { soloDeben = false }
                 ChipFiltro("Deben ${deudores.size}", soloDeben) { soloDeben = true }
-                Spacer(Modifier.weight(1f))
+            }, {
                 if (deudores.isNotEmpty()) BotonBordeadoConsorcio("Intimar", "hammer") { intimar = true }
                 if (estado.escribe) BotonBordeadoConsorcio("Nueva unidad", "plus") { editando = EdicionUnidad(null) }
-            }
+            })
             if (us.isEmpty()) {
                 EstadoVacio("door.left.hand.open", "Cargá las unidades del edificio",
                     "Con su propietario y el coeficiente del reglamento. Con eso, Corredor reparte los gastos de cada mes al centavo.",

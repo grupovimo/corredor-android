@@ -367,7 +367,7 @@ fun Contratos(
                                 withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = okTinta)) { append("avisar a ${if (ajustan30 == 1) "ese" else "los $ajustan30"}") }
                             }
                         }
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             TarjetaContratos("chart.line.uptrend.xyaxis", "Ajustan en 30 días", Formato.cantidad(ajustan30, "contrato", "contratos"), subAjustan, oro = true) { filtro = "ajustan" }
                             TarjetaContratos("calendar.badge.exclamationmark", "Vencen en 90 días", Formato.cantidad(vencen90, "contrato", "contratos"),
                                 AnnotatedString(if (vencen90 > 0) "Preguntale a cada parte si renueva" else "Ninguno por ahora"), oro = false) { filtro = "vencen" }
@@ -375,7 +375,7 @@ fun Contratos(
                                 AnnotatedString(if (mensual.isEmpty()) "Sin alquileres" else "$mensual por mes"), oro = false, hacer = null)
                         }
                         // Chips
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             listOf("vigentes" to "Vigentes", "ajustan" to "Ajustan en 30 días", "vencen" to "Vencen en 90 días", "icl" to "ICL", "ipc" to "IPC",
                                 "uva" to "UVA", "fijo" to "Fijo", "todos" to "Todos").forEach { c ->
                                 val activo = filtro == c.first

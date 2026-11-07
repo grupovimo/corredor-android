@@ -207,7 +207,7 @@ fun RevisionIA(ids: String? = null) {
                 if (lista != null) {
                     // Las cuentas.
                     val c = { t: String -> pendientesTodos.count { it.tipo == t } }
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Texto(if (pendientesTodos.isEmpty()) "Al día" else "${pendientesTodos.size} esperan", Estilo.footnoteFuerte, C.texto)
                         Texto("· Mensajes ${c("mensaje")} · Descripciones ${c("descripcion")} · Notas ${c("nota")}", Estilo.footnote, C.texto2)
                     }

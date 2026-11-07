@@ -321,11 +321,12 @@ fun BotonHundido(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifi
     Tocable(alTocar = alTocar, modifier = modifier, habilitado = habilitado, hundir = false) { apretado ->
         Row(
             Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (!habilitado) 0.5f else if (apretado) 0.8f else 1f).clip(RoundedCornerShape(12.dp))
-                .background(C.hundida),
+                .background(C.hundida).padding(horizontal = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (simbolo != null) Icono(simbolo, 15f, C.texto)
-            Texto(texto, Estilo(15f, Peso.semibold), C.texto, alinear = TextAlign.Center)
+            // Con aire a los costados (el ícono iba pegado al borde) y la letra que se achica antes de partirse en dos.
+            Texto(texto, Estilo(15f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false), lineas = 2, alinear = TextAlign.Center, escalaMinima = 0.75f)
         }
     }
 }

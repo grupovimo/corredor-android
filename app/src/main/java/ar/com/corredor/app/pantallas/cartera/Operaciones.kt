@@ -543,8 +543,8 @@ fun SeCayo(propiedad: String, contacto: String?, alElegir: (String) -> Unit) {
             Estilo.footnote, C.texto2,
         )
         Spacer(Modifier.weight(1f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            BotonSecundario("Cancelar", { cerrar() }, Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            BotonSecundario("Cancelar", { cerrar() }, alto = 52.dp)
             BotonDestructivo("Se cayó", {
                 val m = otro.trim().nonEmpty ?: elegido
                 if (m.isNotEmpty()) {
@@ -619,7 +619,7 @@ fun NuevaOperacion(contacto: Resultado? = null, propiedad: Propiedad? = null) {
     Column(Modifier.fillMaxSize()) {
         BarraHoja(titulo = "Nueva operación", izquierda = { BotonHoja("Cancelar", alTocar = { cerrar() }) }) {
             val habilitado = !((prop == null && con == null) || guardando)
-            Texto("Crear", Estilo.headline, if (habilitado) C.accion else C.texto3, Modifier.clickable(enabled = habilitado) { alcance.launch { crear() } })
+            BotonHoja("Crear", fuerte = true, habilitado = habilitado, alTocar = { alcance.launch { crear() } })
         }
         Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).imePadding().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Column(Modifier.fillMaxWidth().tarjeta(12.dp).padding(horizontal = 12.dp, vertical = 4.dp)) {

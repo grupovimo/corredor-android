@@ -16,6 +16,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -161,7 +165,7 @@ fun PantallaApilada(
                         val corrido = conexion.corrido.coerceIn(0f, p.height.toFloat()).roundToInt()
                         layout(p.width, p.height - corrido) { p.place(0, -corrido) }
                     }) {
-                        Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), lineas = 1)
+                        Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), lineas = 1, escalaMinima = 0.7f)
                     }
                     Box(Modifier.weight(1f).fillMaxWidth(), content = contenido)
                 }
@@ -399,7 +403,10 @@ fun BarraPestanas() {
     val fondo = tema(0xFAF8F2, 0x111314, alfa = 0.94f, alfaOscuro = 0.92f).actual
     Column(Modifier.fillMaxWidth().background(fondo)) {
         Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
-        Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 4.dp).padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        // Abajo, la barra del sistema; si no hay (gestos ocultos), 6 de aire para que «Crear», más bajo por el botón
+        // de MIRA, no quede pegado al borde.
+        Row(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets(bottom = 6.dp))).padding(horizontal = 4.dp).padding(top = 6.dp),
+            verticalAlignment = Alignment.CenterVertically) {
             items.forEach { (p, nombre, icono) ->
                 val activa = estado.pestana == p
                 Tocable({

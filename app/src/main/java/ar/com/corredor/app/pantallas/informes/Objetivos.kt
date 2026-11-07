@@ -243,7 +243,7 @@ fun Objetivos() {
                 Texto("de ${Formato.numero(peor.meta.toInt())}", Estilo.subhead, Color.White.copy(alpha = 0.8f), Modifier.alignByBaseline())
             }
             barra(peor, alto = 10.dp, sobreVerde = true)
-            Texto((if (falta > 0) "Te falta ${Formato.numero(falta)} para ir al día." else "¡Vas bien!") + (a?.let { " ${it.first}." } ?: ""), Estilo.subhead, Color.White)
+            Texto((if (falta > 0) "Te falta ${Formato.numero(falta)} para ir al día." else "¡Vas bien!") + (a?.let { " ${it.first.trimEnd('.')}." } ?: ""), Estilo.subhead, Color.White)
             if (a != null) BotonTonal("Ver qué hacer", { estado.abrir(a.second) }, alto = 44.dp)
         }
         val otras = metas.filter { it != peor }

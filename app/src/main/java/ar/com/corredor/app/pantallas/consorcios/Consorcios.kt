@@ -143,7 +143,7 @@ fun Consorcios() {
                     } else {
                         val unidades = l.sumOf { it.metricas?.unidades ?: 0 }
                         Texto("${Cons.plural(l.size, "edificio", "edificios")} · $unidades u.", Estilo.footnote, C.texto2)
-                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             ChipFiltro("Todos ${l.size}", vista == null) { vista = null }
                             vistasConsorcios.forEach { (k, t) ->
                                 ChipFiltro("$t ${l.count { enVista(it, k) }}", vista == k) { vista = if (vista == k) null else k }
@@ -437,7 +437,7 @@ fun FichaConsorcio(id: String, pestanaInicial: String = "resumen", pedidoInicial
                     val l = listOf("resumen" to "Resumen", "unidades" to (if (u > 0) "Unidades $u" else "Unidades"), "expensas" to "Expensas",
                         "trabajos" to (if (t > 0) "Trabajos $t" else "Trabajos"), "proveedores" to "Proveedores", "personal" to "Personal",
                         "novedades" to "Libro de novedades")
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         l.forEach { (k, n) -> ChipFiltro(n, pestana == k) { pestana = k } }
                     }
                     // Contenido

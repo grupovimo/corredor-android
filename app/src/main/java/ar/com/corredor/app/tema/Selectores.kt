@@ -211,7 +211,8 @@ fun <T> SelectorMenu(opciones: List<Pair<T, String>>, elegido: T, alElegir: (T) 
     val actual = opciones.firstOrNull { it.first == elegido }?.second ?: ""
     MenuBoton(opciones.map { (v, t) -> OpcionDeMenu(t, if (v == elegido) "checkmark" else "circle") { alElegir(v) } }, descripcion.ifEmpty { actual }) {
         Row(Modifier.heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Texto(actual, Estilo(16f, Peso.regular), color, lineas = 1)
+            // Si no entra, se acorta el texto y no las flechitas (antes quedaban pegadas al borde de la tarjeta).
+            Texto(actual, Estilo(16f, Peso.regular), color, Modifier.weight(1f, fill = false), lineas = 1)
             Icono("chevron.up.chevron.down", 12f, color)
         }
     }
@@ -221,9 +222,12 @@ fun <T> SelectorMenu(opciones: List<Pair<T, String>>, elegido: T, alElegir: (T) 
 @Composable
 fun RenglonFecha(titulo: String, fecha: LocalDate, alCambiar: (LocalDate) -> Unit, minimo: LocalDate? = null) {
     var abierto by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 52.dp), verticalAlignment = Alignment.CenterVertically) {
-            Texto(titulo, Estilo(16f, Peso.regular), C.texto, Modifier.weight(1f))
+    // Sin título (.labelsHidden(), con el rótulo arriba en un Etiquetado): la fecha al principio y sin el margen del
+    // renglón de un Form; antes quedaba corrida a la derecha y suelta.
+    val solo = titulo.isEmpty()
+    Column(Modifier.fillMaxWidth().padding(horizontal = if (solo) 0.dp else 16.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = if (solo) 0.dp else 52.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!solo) Texto(titulo, Estilo(16f, Peso.regular), C.texto, Modifier.weight(1f))
             Box(Modifier.clip(RoundedCornerShape(8.dp)).background(C.segmentado).clickable { abierto = !abierto }.padding(horizontal = 10.dp, vertical = 6.dp)) {
                 Texto(DateTimeFormatter.ofPattern("d MMM yyyy", Formato.argentina).format(fecha), Estilo(16f, Peso.regular), if (abierto) C.primarioTexto else C.texto)
             }

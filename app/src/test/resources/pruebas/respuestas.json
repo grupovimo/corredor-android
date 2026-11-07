@@ -2247,5 +2247,101 @@
   "guardadoEn": null,
   "sinCambios": true,
   "cambios": []
- }
+ },
+ "/v1/emprendimientos/m1": {
+  "id": "m1",
+  "slug": "torre-arce",
+  "nombre": "Torre Arce",
+  "masterplanUrl": null,
+  "tipo": "edificio",
+  "estado": "en_obra",
+  "descripcion": null,
+  "direccion": "Arce 300",
+  "barrio": "Las Cañitas",
+  "avance": 60,
+  "entrega": "2027-12",
+  "desarrolladora": "Arce SA",
+  "precioDesde": 120000,
+  "moneda": "USD",
+  "publicado": true,
+  "fotosUrl": [],
+  "unidades": {
+   "total": 24,
+   "disponibles": 10,
+   "reservadas": 4,
+   "vendidas": 10
+  }
+ },
+ "/v1/emprendimientos/m1/unidades": [],
+ "/v1/suscripcion": {
+  "estado": "prueba",
+  "plan": null,
+  "ciclo": "mes",
+  "medio": null,
+  "pruebaHasta": "2026-11-19T12:00:00Z",
+  "pagadoHasta": null,
+  "vigenteHasta": "2026-11-19T12:00:00Z",
+  "diasRestantes": 12,
+  "renueva": false,
+  "proximoCobro": null,
+  "importe": null,
+  "moneda": null,
+  "esperando": null,
+  "soloLectura": false,
+  "enPrueba": true,
+  "funciones": [
+   "ia"
+  ],
+  "agentes": {
+   "usados": 2,
+   "cupo": null
+  },
+  "planes": [
+   {
+    "id": "inicial",
+    "nombre": "Inicial",
+    "resumen": "Para arrancar solo",
+    "agentes": 1,
+    "precioMes": 29900,
+    "precioAnio": 299000,
+    "funciones": [],
+    "incluye": [
+     "1 persona",
+     "Web y portales"
+    ],
+    "destacado": false,
+    "appleMes": "ar.com.corredor.app.inicial.mes",
+    "appleAnio": "ar.com.corredor.app.inicial.anio"
+   },
+   {
+    "id": "equipo",
+    "nombre": "Equipo",
+    "resumen": "Para la inmobiliaria con agentes",
+    "agentes": 5,
+    "precioMes": 59900,
+    "precioAnio": 599000,
+    "funciones": [
+     "ia"
+    ],
+    "incluye": [
+     "Hasta 5 personas",
+     "Corredor en tu IA"
+    ],
+    "destacado": true,
+    "appleMes": "ar.com.corredor.app.equipo.mes",
+    "appleAnio": "ar.com.corredor.app.equipo.anio"
+   }
+  ],
+  "mercadoPago": false,
+  "cobros": [],
+  "graciaDias": 3
+ },
+ "/v1/ia/ajustes": {
+  "habilitado": false,
+  "agendar": true,
+  "mover": false,
+  "url": "https://corredor.com.ar/mcp",
+  "aviso": "Tus datos se tratan según la Ley 25.326."
+ },
+ "/v1/ia/conexiones": []
 }

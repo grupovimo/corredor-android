@@ -589,7 +589,7 @@ fun FichaEmprendimiento(id: String) {
                             } else {
                                 Leyenda(unidades, cuenta, ex, loteo)
                                 // Filtro «Ver».
-                                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     ChipFiltro(if (loteo) "Todos los lotes · ${unidades.size}" else "Todas las unidades · ${unidades.size}", ver == null) { ver = null }
                                     ChipFiltro("Disponibles · ${cuenta["disponible"] ?: 0}", ver == "disponible") { ver = "disponible" }
                                     ChipFiltro("Reservados · ${cuenta["reservado"] ?: 0}", ver == "reservado") { ver = "reservado" }

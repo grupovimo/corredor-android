@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -206,7 +207,7 @@ fun Importar(retomar: String? = null) {
                     }
                 }
             } else if (i != null) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(Modifier.weight(1f)) { Cifra(etiqueta = "Entran", valor = "${i.validas ?: 0}") }
                     Box(Modifier.weight(1f)) { Cifra(etiqueta = "Con avisos", valor = "${i.conAvisos ?: 0}") }
                     Box(Modifier.weight(1f)) { Cifra(etiqueta = "Con errores", valor = "${i.conErrores ?: 0}") }

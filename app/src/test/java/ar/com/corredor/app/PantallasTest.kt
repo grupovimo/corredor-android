@@ -382,7 +382,9 @@ class PantallasTest {
     @Test fun seccionDocumentosPropiedad() = seccion("documentos-propiedad", "x1")
     @Test fun seccionDocumentosContrato() = seccion("documentos-contrato", "x1")
     @Test fun seccionBienes() = seccion("bienes", "x1")
-    @Test fun seccionReglamento() = seccion("reglamento", "x1")
+    // El reglamento no tiene estado de error (como en iOS): con un id que no existe se queda cargando. Con el consorcio de
+    // prueba se ve de verdad.
+    @Test fun seccionReglamento() = seccion("reglamento", "e1")
     @Test fun seccionEnvios() = seccion("envios", "x1")
     @Test fun seccionGrabaciones() = seccion("grabaciones", "x1")
     @Test fun seccionReservasPropiedad() = seccion("reservas-propiedad", "x1")
@@ -398,6 +400,7 @@ class PantallasTest {
     @Test fun seccionTarifasP1() = seccion("tarifas", "p1")
     @Test fun seccionReservasPropiedadP1() = seccion("reservas-propiedad", "p1")
     @Test fun seccionActividadIA() = seccion("actividad", "ia")
+    @Test fun seccionEmprendimientoM1() = seccion("emprendimiento", "m1")
 
     @Test fun entrada() = montar("Entrada") { Entrada() }
     @Test fun elegirInmobiliaria() = montar("ElegirInmobiliaria") { ElegirInmobiliaria() }

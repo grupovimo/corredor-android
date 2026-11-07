@@ -1186,7 +1186,7 @@ fun Captadas() {
                     val ahora = Instant.now()
                     val estaSemana = delServidor.count { Duration.between(it.p.creadaEn ?: Instant.EPOCH, ahora) < semana }
                     Texto("$estaSemana esta semana${meta?.let { " · objetivo del mes $it" } ?: ""}", Estilo.subhead, C.texto2)
-                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.carrusel(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ChipFiltro("Todas · ${delServidor.size}", ver == null) { ver = null }
                         ChipFiltro("Sin llamar · ${delServidor.count { it.sinLlamar }}", ver == "sin-llamar") { ver = "sin-llamar" }
                         ChipFiltro("Faltan fotos · ${delServidor.count { it.faltanFotos && it.deOtra == null }}", ver == "sin-fotos") { ver = "sin-fotos" }
@@ -1225,7 +1225,9 @@ fun Captadas() {
                     } else if (cargado && delServidor.isNotEmpty() && visibles.isEmpty()) {
                         Texto(if (ver == "sin-llamar") "Ya llamaste a todos." else "Todas tienen fotos.", Estilo.subhead, C.texto2, Modifier.padding(top = 10.dp))
                     }
-                    Tocable({ estado.miraAbierta = true; cerrar() }, Modifier.padding(top = 6.dp)) { _ ->
+                    // Con la lista vacía, el «Captar con MIRA» del estado vacío ya está: «Captar otra» quedaba repetido
+                    // (y sin ninguna captada, no hay «otra»).
+                    if (!(cargado && err == null && cola.fotos.isEmpty() && delServidor.isEmpty())) Tocable({ estado.miraAbierta = true; cerrar() }, Modifier.padding(top = 6.dp)) { _ ->
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(C.accion),
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,

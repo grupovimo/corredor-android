@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -352,7 +353,8 @@ fun PantallaReserva(id: String) {
 
     @Composable
     fun dato(clave: String, valor: String, nota: String, modifier: Modifier, verde: Boolean = false) {
-        Column(modifier.tarjeta(radio = 14.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        // Todo el alto de la fila: las tres quedan parejas aunque una ocupe más renglones.
+        Column(modifier.fillMaxHeight().tarjeta(radio = 14.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Texto(clave, Estilo.footnote, C.texto2)
             Texto(valor, Estilo.subheadFuerte, C.texto, lineas = 2, escalaMinima = 0.8f)
             Texto(nota, Estilo(12f, Peso.regular, relativo = Relativo.caption), if (verde) C.okTinta else C.texto3, lineas = 2)
@@ -361,7 +363,7 @@ fun PantallaReserva(id: String) {
 
     @Composable
     fun datos(r: ReservaAPI) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
             val m = Modifier.weight(1f)
             dato(
                 "Seña", r.sena?.let { Formato.plata(it, r.senaMoneda ?: "USD") } ?: "Sin seña",

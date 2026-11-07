@@ -170,11 +170,7 @@ fun Contactos(libres: Boolean = false) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Avatar(c)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Texto(c.nombre, Estilo(16f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false).alignByBaseline(), lineas = 1)
-                            // Los dos se achican como en el HStack de iOS: sin peso, el rol se quedaba con todo y el nombre era «..».
-                            Texto(TextosContacto.rol(c.tipo), Estilo.footnote, C.texto3, Modifier.weight(1f, fill = false).alignByBaseline(), lineas = 1)
-                        }
+                        NombreYRol(c.nombre, TextosContacto.rol(c.tipo))
                         Texto(detalle, Estilo.footnote, if (debe) C.errorTinta else C.texto2, lineas = 1)
                     }
                     Texto(cuando, Estilo(12f, Peso.semibold), if (tono == Tono.oro) C.avisoTinta else if (tono == Tono.verde) C.okTinta else C.texto3)
@@ -326,6 +322,30 @@ fun Contactos(libres: Boolean = false) {
     Hoja(visible = importar, alCerrar = { importar = false }, alturas = listOf(Altura.media, Altura.grande)) { ImportarContactos() }
 }
 
+/** El nombre y, al lado, el rol («Persona interesada») sólo si entra entero: el nombre manda. Antes se repartían el
+ *  ancho a medias y quedaban los dos cortados («Valeri…  Persona …»). */
+@Composable
+private fun NombreYRol(nombre: String, rol: String) {
+    androidx.compose.ui.layout.Layout(content = {
+        Texto(nombre, Estilo(16f, Peso.semibold), C.texto, lineas = 1)
+        Texto(rol, Estilo.footnote, C.texto3, lineas = 1)
+    }) { m, c ->
+        val libre = c.copy(minWidth = 0)
+        val n = m[0].measure(libre)
+        val hueco = 6.dp.roundToPx()
+        val anchoRol = m[1].maxIntrinsicWidth(c.maxHeight)
+        val entra = n.width + hueco + anchoRol <= c.maxWidth
+        val r = if (entra) m[1].measure(libre.copy(maxWidth = anchoRol)) else null
+        val base = n[androidx.compose.ui.layout.FirstBaseline]
+        val baseRol = r?.get(androidx.compose.ui.layout.FirstBaseline) ?: 0
+        val alto = maxOf(n.height, if (r != null) r.height + (base - baseRol).coerceAtLeast(0) else 0)
+        layout(if (r != null) n.width + hueco + r.width else n.width, alto) {
+            n.place(0, 0)
+            r?.place(n.width + hueco, base - baseRol)
+        }
+    }
+}
+
 /** La rayita de arriba con sangría (`Rectangle().frame(height: 0.5).padding(.leading, n)`). */
 internal fun Modifier.lineaDesde(desde: androidx.compose.ui.unit.Dp, color: Color): Modifier = this.drawBehind {
     drawLine(color, androidx.compose.ui.geometry.Offset(desde.toPx(), 0f), androidx.compose.ui.geometry.Offset(size.width, 0f), 0.5.dp.toPx())
@@ -430,8 +450,8 @@ fun ImportarContactos() {
         if (v != null) {
             Texto(Formato.sinViudas(resumen(v)), Estilo.body16, C.texto)
             Spacer(Modifier.weight(1f))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                BotonSecundario("Cancelar", { vista = null }, Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                BotonSecundario("Cancelar", { vista = null }, alto = 52.dp)
                 BotonPrincipal(if (confirmando) "Importando…" else "Importar", { alcance.launch { confirmar(v) } }, Modifier.weight(1f), habilitado = (v.validas ?: 0) != 0 && !confirmando)
             }
         } else {
@@ -439,7 +459,7 @@ fun ImportarContactos() {
             BotonPrincipal(if (importando) "Importando…" else "Importar del celular", { agenda = true }, habilitado = !importando)
             BotonSecundario(if (subiendo) "Leyendo…" else "Subir Excel", {
                 archivo.launch(arrayOf("text/csv", "text/comma-separated-values", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-            }, Modifier.fillMaxWidth(), habilitado = !subiendo)
+            }, Modifier.fillMaxWidth(), habilitado = !subiendo, lleno = true)
             Spacer(Modifier.weight(1f))
         }
     }
