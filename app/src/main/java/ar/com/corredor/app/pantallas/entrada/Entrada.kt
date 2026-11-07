@@ -71,31 +71,6 @@ import java.util.Locale
 
 // Clon de Pantallas/Entrada/Entrada.swift.
 
-/** Fondo de la entrada, el bloqueo y lo que va sobre verde: 0f3530, el patrón rr al 9 % y el grano claro con el
- *  resplandor verde arriba. */
-@Composable
-fun FondoVerde(patron: Double = 0.09, modifier: Modifier = Modifier) {
-    val ctx = LocalContext.current
-    val densidad = LocalDensity.current.density
-    val pinturas = remember(patron, densidad) {
-        listOf(Imagenes.patron to (patron * 255).toInt(), Imagenes.granoClaro to 255).mapNotNull { (id, alfa) ->
-            runCatching { BitmapFactory.decodeResource(ctx.resources, id) }.getOrNull()?.let { b ->
-                android.graphics.Paint().apply {
-                    shader = BitmapShader(b, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT).apply {
-                        setLocalMatrix(android.graphics.Matrix().apply { setScale(densidad / 3f, densidad / 3f) })
-                    }
-                    this.alpha = alfa
-                }
-            }
-        }
-    }
-    Box(modifier.fillMaxSize().background(C.verde800).drawBehind {
-        drawIntoCanvas { c -> pinturas.firstOrNull()?.let { c.nativeCanvas.drawRect(0f, 0f, size.width, size.height, it) } }
-        drawRect(Brush.radialGradient(listOf(hex(0x7FC4AD, 0.2f), hex(0x0F3530, 0f)), center = Offset(size.width * 0.5f, size.height * 0.3f), radius = 320.dp.toPx()))
-        drawIntoCanvas { c -> pinturas.getOrNull(1)?.let { c.nativeCanvas.drawRect(0f, 0f, size.width, size.height, it) } }
-    })
-}
-
 /** El error del ingreso dicho en palabras (los mismos mensajes que la web: nunca el código). `Entrada.mensaje` en iOS. */
 object Entrada {
     fun mensaje(e: Throwable, proveedor: Boolean = false): String {

@@ -406,7 +406,7 @@ fun BuscarTodo(texto: String) {
                 Texto("Cancelar", Estilo.body, C.accion, Modifier.clickable { cerrar() })
             }
             Row(
-                Modifier.salirDelMargen(16.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                Modifier.sangrar(16.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 BuscarTodo.filtros.forEach { f -> key(f.first) { ChipFiltro(texto = f.second, activo = filtro == f.first, hacer = { filtro = f.first }) } }

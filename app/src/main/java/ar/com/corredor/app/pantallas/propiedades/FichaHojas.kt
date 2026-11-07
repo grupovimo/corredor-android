@@ -290,14 +290,13 @@ private fun FilaHojaCompartir(t: String, icono: String, hacer: () -> Unit) {
     }
 }
 
-// PARA EL NÚCLEO: los logos del bundle de iOS (LogoWhatsApp, LogoMercadoLibre, IconoRedondo) como drawables
-// (logo_whatsapp, logo_mercadolibre, icono_redondo). Se buscan por nombre para que compile aunque falten; devuelve
-// si lo dibujó.
+/** Los logos del bundle de iOS (LogoWhatsApp, LogoMercadoLibre, IconoRedondo): tema/Base.kt › Imagenes, o el drawable con
+ *  ese nombre (logo_whatsapp…). Devuelve si lo dibujó. */
 @SuppressLint("DiscouragedApi")
 @Composable
 internal fun LogoDeLaApp(nombre: String, modifier: Modifier = Modifier, tinte: Color? = null, recorte: ContentScale = ContentScale.Fit): Boolean {
     val ctx = LocalContext.current
-    val id = remember(nombre) { ctx.resources.getIdentifier(nombre, "drawable", ctx.packageName) }
+    val id = remember(nombre) { Imagenes.de(nombre).takeIf { it != 0 } ?: ctx.resources.getIdentifier(nombre, "drawable", ctx.packageName) }
     if (id == 0) return false
     Image(painterResource(id), null, modifier, contentScale = recorte, colorFilter = tinte?.let { ColorFilter.tint(it) })
     return true

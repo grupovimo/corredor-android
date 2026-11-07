@@ -626,8 +626,7 @@ private fun InterruptorConDetalle(titulo: String, detalle: String, prendido: Boo
 
 /** El «Deshacer» corre después de cerrada la hoja: lo lanza el alcance de la app, no el de la hoja. */
 private fun ar.com.corredor.app.app.Estado.tareaDeshacer(bloque: suspend () -> Unit) {
-    // PARA EL NÚCLEO: si Estado trae un `tarea { }` (como Tu Local Web), usarlo acá.
-    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Main).launch { bloque() }
+    tarea { bloque() }
 }
 
 /** «Firma en mensajes»: el renglón que va al pie de los WhatsApp y los mails que se mandan desde

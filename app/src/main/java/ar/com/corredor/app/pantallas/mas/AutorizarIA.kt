@@ -85,9 +85,9 @@ object AutorizarIA {
 /** Una imagen de los assets por su nombre (Image("Simbolo") en iOS); no rompe si todavía no está en res/drawable. */
 @Composable
 internal fun ImagenAsset(nombre: String, modifier: Modifier = Modifier) {
-    // PARA EL NÚCLEO: el símbolo de Corredor tiene que estar en res/drawable como «simbolo».
+    // Image("Simbolo") de iOS: los de Assets.xcassets están en res/drawable (tema/Base.kt › Imagenes).
     val ctx = LocalContext.current
-    val id = remember(nombre) { ctx.resources.getIdentifier(nombre, "drawable", ctx.packageName) }
+    val id = remember(nombre) { Imagenes.de(nombre).takeIf { it != 0 } ?: ctx.resources.getIdentifier(nombre, "drawable", ctx.packageName) }
     if (id != 0) Image(painterResource(id), null, modifier, contentScale = ContentScale.Fit) else Box(modifier)
 }
 

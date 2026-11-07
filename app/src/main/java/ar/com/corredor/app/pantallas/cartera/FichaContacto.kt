@@ -820,7 +820,7 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
 
 /** Como `hacer`, pero si la API rechaza los datos (400/422) devuelve los errores por campo
  *  (problem+json `issues`: path → message) en vez de tirar el error. Sin señal tira `ErrorApi.sinRed`.
- *  PARA EL NÚCLEO: en iOS es una extensión de Api que vive en esta pantalla. */
+ *  En iOS es una extensión de Api que vive en esta pantalla (FichaContacto.swift). */
 suspend inline fun <reified C> Api.hacerValidando(metodo: String, ruta: String, cuerpo: C): Map<String, String> =
     try {
         pedir(metodo, ruta, cuerpo = Api.json.encodeToString(cuerpo).toByteArray(), envio = UUID.randomUUID().toString())

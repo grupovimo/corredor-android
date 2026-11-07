@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.web
 
+import ar.com.corredor.app.pantallas.propiedades.FichaImpresa
+
 import android.content.Intent
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -386,13 +388,8 @@ fun HojaPlantillas(alCambiar: () -> Unit, cerrar: () -> Unit) {
     }
 }
 
-/** Un QR en blanco y negro (FichaImpresa.qr de iOS).
- *  PARA EL NÚCLEO: es el mismo que FichaImpresa.qr (pantallas/propiedades); si se expone ahí, se usa ese. */
-fun qrWeb(texto: String, lado: Int = 600): Bitmap? = runCatching {
-    val m = QRCodeWriter().encode(texto, BarcodeFormat.QR_CODE, lado, lado, mapOf(EncodeHintType.MARGIN to 1))
-    val px = IntArray(lado * lado) { i -> if (m[i % lado, i / lado]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt() }
-    Bitmap.createBitmap(px, lado, lado, Bitmap.Config.ARGB_8888)
-}.getOrNull()
+/** El QR (FichaImpresa.qr de iOS, el mismo de los impresos de las propiedades). */
+fun qrWeb(texto: String): Bitmap? = FichaImpresa.qr(texto)
 
 /** El QR de la web, para la vidriera o las tarjetas. */
 @Composable

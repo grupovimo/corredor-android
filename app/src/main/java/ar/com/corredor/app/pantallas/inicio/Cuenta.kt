@@ -320,7 +320,7 @@ fun Avisos() {
                     .border(1.dp, if (primera) Color.Transparent else C.linea2, CircleShape).padding(horizontal = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (ocupado == a.id + (x.accion ?: "")) Girando(if (primera) C.sobreAccion else C.accion, 12.dp)
+                if (ocupado == a.id + (x.accion ?: "")) Rueda(if (primera) C.sobreAccion else C.accion, 12.dp)
                 Texto(x.titulo ?: "Ver", Estilo(14f, Peso.semibold), if (primera) C.sobreAccion else C.accion)
             }
         }

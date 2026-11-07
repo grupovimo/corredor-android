@@ -307,7 +307,7 @@ fun AltaContrato(
     val ctx = LocalContext.current
     val alcance = rememberCoroutineScope()
     val cerrarHoja = LocalCerrarHoja.current
-    // PARA EL NÚCLEO: en iOS es @Environment(\.dismiss): apilada vuelve atrás (estado.volver()), en hoja la cierra.
+    // @Environment(\.dismiss) de iOS: apilada vuelve atrás (estado.volver()), en hoja la cierra.
     val cerrar: () -> Unit = { if (apilada) estado.volver() else cerrarHoja() }
     val s = remember { AltaEstado() }
     val desplazamiento = rememberScrollState()
@@ -849,7 +849,7 @@ private fun AMedioCargarAlta(s: AltaEstado) {
                     Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) { Icono("square.and.pencil", 17f, C.oroTinta) }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                         Texto(b.datos.datos.propiedad?.nombre ?: "Sin propiedad todavía", Estilo.filaLista, C.texto)
-                        Texto("${AltaContrato.pasosNombre[b.datos.paso]} · ${b.actualizadoEn?.let { haceAlta(it) } ?: ""}", Estilo.footnote, C.texto2)
+                        Texto("${AltaContrato.pasosNombre[b.datos.paso]} · ${b.actualizadoEn?.let { Formato.hace(it) } ?: ""}", Estilo.footnote, C.texto2)
                     }
                     Chevron()
                 }
@@ -1310,16 +1310,6 @@ private fun BuscadorAlta(q: String, alCambiar: (String) -> Unit, prompt: String)
 
 /** El monto de un TextField(value:format: .number): «150000» (vacío si no hay). */
 private fun montoTextoAlta(n: Double?): String = n?.let { if (Math.rint(it) == it) it.toLong().toString() else it.toString() } ?: ""
-
-/** Formato.hace: «hace 3 h», «hace 12 min», «hace 2 días». PARA EL NÚCLEO: usar Formato.hace si recibe Instant. */
-internal fun haceAlta(f: Instant): String {
-    val s = max(0L, (Instant.now().toEpochMilli() - f.toEpochMilli()) / 1000)
-    if (s < 60) return "recién"
-    if (s < 3600) return "hace ${s / 60} min"
-    if (s < 86400) return "hace ${s / 3600} h"
-    val d = s / 86400
-    return if (d == 1L) "hace 1 día" else "hace $d días"
-}
 
 /** ByteCountFormatter(.file): «820 KB», «1,2 MB». */
 internal fun tamanoArchivoAlta(bytes: Long): String {

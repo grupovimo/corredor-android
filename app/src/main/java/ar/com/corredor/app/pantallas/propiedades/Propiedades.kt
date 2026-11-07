@@ -1,5 +1,7 @@
 package ar.com.corredor.app.pantallas.propiedades
 
+import ar.com.corredor.app.pantallas.mira.Ubicacion
+
 import ar.com.corredor.app.app.PantallaApilada
 
 import android.Manifest
@@ -899,10 +901,10 @@ fun HojaFiltrosCartera(filtros: FiltrosCartera, alCambiar: (FiltrosCartera) -> U
     }
 
     Column(Modifier.fillMaxSize()) {
-        CabeceraHojaLista(
+        BarraHoja(
             titulo = "Filtros",
-            izquierda = "Sacar los filtros" to { alCambiar(FiltrosCartera(q = filtros.q)); desde = ""; hasta = "" },
-            derecha = "Filtrar" to {
+            cancelar = "Sacar los filtros", alCancelar = { alCambiar(FiltrosCartera(q = filtros.q)); desde = ""; hasta = "" },
+            confirmar = "Filtrar", alConfirmar = {
                 alCambiar(filtros.copy(precioDesde = desde.filter { it.isDigit() }.nonEmpty, precioHasta = hasta.filter { it.isDigit() }.nonEmpty))
                 cerrar()
             },
@@ -1019,8 +1021,7 @@ fun MapaCartera(
     val ctx = LocalContext.current
     var elegida by remember { mutableStateOf<String?>(null) }
     val camara = remember { CamaraMapa() }
-    val ubicacion = remember { UbicacionCartera(ctx) }
-    val permiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> if (ok) ubicacion.pedir() }
+    val ubicacion = remember { Ubicacion() }
     val conLugar = props.filter { it.lat != null && it.lng != null }
     val lugares = conLugar
     var tamano by remember { mutableStateOf(0f to 0f) }
@@ -1049,10 +1050,8 @@ fun MapaCartera(
         return "a $c ${if (c == 1) "cuadra" else "cuadras"} de vos"
     }
 
-    LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) ubicacion.pedir()
-        else permiso.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
+    // Ubicacion de Mira (CLLocationManager en iOS): pide el permiso la primera vez.
+    LaunchedEffect(Unit) { ubicacion.pedir(ctx) { estado.alPedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION) } }
     LaunchedEffect(props.map { it.id }, tamano) { elegida = null; encuadrar() }
 
     val forma = RoundedCornerShape(M.rDestacada)
@@ -1080,7 +1079,7 @@ fun MapaCartera(
             Tocable({
                 val yo = ubicacion.ultima
                 if (yo != null) { camara.lat = yo.latitude; camara.lng = yo.longitude; camara.zoom = max(camara.zoom, 15.0) }
-                else permiso.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                else estado.tarea { ubicacion.pedir(ctx) { estado.alPedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION) } }
             }, descripcion = "Mi ubicación") {
                 Box(Modifier.size(40.dp).e1(RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
                     Icono("location", 17f, C.accion)
@@ -1173,122 +1172,5 @@ private fun EtiquetaTonal(texto: String, simbolo: String?) {
     }
 }
 
-// PARA EL NÚCLEO: la cabecera de una hoja con NavigationStack (título en el medio, un botón a cada lado).
-@Composable
-internal fun CabeceraHojaLista(titulo: String, izquierda: Pair<String, () -> Unit>?, derecha: Pair<String, () -> Unit>?) {
-    Box(Modifier.fillMaxWidth().height(52.dp).padding(horizontal = 8.dp)) {
-        izquierda?.let { (t, a) -> Box(Modifier.align(Alignment.CenterStart)) { Tocable(a) { Texto(t, Estilo.body, C.accion, Modifier.padding(8.dp)) } } }
-        Texto(titulo, Estilo.headline, C.texto, Modifier.align(Alignment.Center))
-        derecha?.let { (t, a) -> Box(Modifier.align(Alignment.CenterEnd)) { Tocable(a) { Texto(t, Estilo.headline, C.accion, Modifier.padding(8.dp)) } } }
-    }
-}
-
 // MARK: - Mapa
-
-// PARA EL NÚCLEO: el mapa (MapKit en iOS) hecho con teselas de CARTO y Coil, sin dependencias nuevas. Lo usa la
-// cartera; la ficha y MIRA podrían usar el mismo.
-
-/** Dónde mira el mapa: centro y zoom (fraccionario, como el de las teselas web). */
-internal class CamaraMapa {
-    var lat by mutableDoubleStateOf(-34.6037)
-    var lng by mutableDoubleStateOf(-58.3816)
-    var zoom by mutableDoubleStateOf(12.0)
-
-    /** Encuadra la región (los grados de alto y ancho) en `ancho` × `alto` dp. */
-    fun encuadrar(cLat: Double, cLng: Double, dLat: Double, dLng: Double, ancho: Float, alto: Float) {
-        lat = cLat; lng = cLng
-        if (ancho <= 0f || alto <= 0f) return
-        val zx = log2(ancho / (dLng / 360.0 * TESELA))
-        val y0 = mundoY(cLat + dLat / 2, 0.0); val y1 = mundoY(cLat - dLat / 2, 0.0)
-        val zy = log2(alto / max(1e-9, y1 - y0))
-        zoom = min(zx, zy).coerceIn(2.0, 18.0)
-    }
-}
-
-internal class PinMapa(val id: String, val lat: Double, val lng: Double, val contenido: @Composable () -> Unit)
-
-private const val TESELA = 256.0
-private fun mundoX(lng: Double, z: Double) = (lng + 180.0) / 360.0 * TESELA * 2.0.pow(z)
-private fun mundoY(lat: Double, z: Double): Double {
-    val s = sin(lat * PI / 180.0).coerceIn(-0.9999, 0.9999)
-    return (0.5 - ln((1 + s) / (1 - s)) / (4 * PI)) * TESELA * 2.0.pow(z)
-}
-private fun lngDe(x: Double, z: Double) = x / (TESELA * 2.0.pow(z)) * 360.0 - 180.0
-private fun latDe(y: Double, z: Double): Double {
-    val n = PI - 2.0 * PI * y / (TESELA * 2.0.pow(z))
-    return atan(sinh(n)) * 180.0 / PI
-}
-
-/** Un mapa de teselas (apagado: sin lugares de interés) que se arrastra y se pellizca, con los pines encima y el punto
- *  azul de la ubicación. */
-@Composable
-internal fun MapaTeselas(camara: CamaraMapa, ancho: Float, alto: Float, pines: List<PinMapa>, yo: Pair<Double, Double>?, alTocarFondo: () -> Unit) {
-    val oscuro = LocalOscuro.current
-    val estiloTeselas = if (oscuro) "dark_nolabels" else "light_all"
-    val densidad = LocalDensity.current.density
-    Box(
-        Modifier.fillMaxSize().clipToBounds()
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoomCambio, _ ->
-                    val z = camara.zoom
-                    val cx = mundoX(camara.lng, z) - pan.x / densidad
-                    val cy = mundoY(camara.lat, z) - pan.y / densidad
-                    camara.lng = lngDe(cx, z); camara.lat = latDe(cy, z).coerceIn(-85.0, 85.0)
-                    if (zoomCambio != 1f) camara.zoom = (z + log2(zoomCambio.toDouble())).coerceIn(2.0, 19.0)
-                }
-            }
-            .pointerInput(Unit) { detectTapGestures { alTocarFondo() } },
-    ) {
-        val zoom = camara.zoom
-        val z = floor(zoom).toInt().coerceIn(0, 19)
-        val escala = 2.0.pow(zoom - z)
-        val tam = TESELA * escala
-        val cx = mundoX(camara.lng, zoom); val cy = mundoY(camara.lat, zoom)
-        val izq = cx - ancho / 2; val arriba = cy - alto / 2
-        val n = 1 shl z
-        val x0 = floor(izq / tam).toInt(); val x1 = floor((izq + ancho) / tam).toInt()
-        val y0 = floor(arriba / tam).toInt().coerceAtLeast(0); val y1 = floor((arriba + alto) / tam).toInt().coerceAtMost(n - 1)
-        for (ty in y0..y1) for (tx in x0..x1) {
-            val xx = ((tx % n) + n) % n
-            AsyncImage(
-                "https://${"abcd"[(xx + ty) % 4]}.basemaps.cartocdn.com/$estiloTeselas/$z/$xx/$ty@2x.png", null,
-                Modifier.offset((tx * tam - izq).toFloat().dp, (ty * tam - arriba).toFloat().dp).size((tam + 0.5).toFloat().dp),
-                contentScale = ContentScale.FillBounds,
-            )
-        }
-        if (yo != null) {
-            val px = mundoX(yo.second, zoom) - izq; val py = mundoY(yo.first, zoom) - arriba
-            Box(Modifier.centradoEn(px.toFloat().dp, py.toFloat().dp).size(18.dp).clip(CircleShape).background(Color.White).padding(3.dp).clip(CircleShape).background(hex(0x007AFF)))
-        }
-        pines.forEach { p ->
-            val px = mundoX(p.lng, zoom) - izq; val py = mundoY(p.lat, zoom) - arriba
-            if (px > -80 && px < ancho + 80 && py > -40 && py < alto + 40) Box(Modifier.centradoEn(px.toFloat().dp, py.toFloat().dp)) { p.contenido() }
-        }
-        Texto("© OpenStreetMap · © CARTO", Estilo(9f, Peso.regular), C.texto3, Modifier.align(Alignment.BottomEnd).padding(4.dp))
-    }
-}
-
-/** Pone el centro de la vista en (x, y). */
-private fun Modifier.centradoEn(x: Dp, y: Dp): Modifier = this.layout { m, r ->
-    val p = m.measure(r.copy(minWidth = 0, minHeight = 0))
-    layout(0, 0) { p.place(x.roundToPx() - p.width / 2, y.roundToPx() - p.height / 2) }
-}
-
-// PARA EL NÚCLEO: la ubicación del teléfono (Ubicacion de Mira.swift en iOS, con CLLocationManager). Con el permiso dado,
-// la última conocida y una nueva.
-internal class UbicacionCartera(private val ctx: Context) {
-    var ultima by mutableStateOf<Location?>(null)
-
-    @SuppressLint("MissingPermission")
-    fun pedir() {
-        if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
-        val lm = ctx.getSystemService(LocationManager::class.java) ?: return
-        val proveedores = lm.getProviders(true)
-        proveedores.mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }.maxByOrNull { it.time }?.let { ultima = it }
-        if (Build.VERSION.SDK_INT >= 30) {
-            val prov = if (LocationManager.NETWORK_PROVIDER in proveedores) LocationManager.NETWORK_PROVIDER else proveedores.firstOrNull() ?: return
-            runCatching { lm.getCurrentLocation(prov, null, ContextCompat.getMainExecutor(ctx)) { l -> if (l != null) ultima = l } }
-        }
-    }
-}
+// El mapa de teselas (MapKit en iOS) es el de tema/Mapa.kt (CamaraMapa, PinMapa, MapaTeselas).

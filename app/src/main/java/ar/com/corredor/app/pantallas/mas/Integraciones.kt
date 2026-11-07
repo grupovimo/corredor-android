@@ -203,9 +203,9 @@ fun Integraciones() {
 @Composable
 private fun LogoDeAssets(nombre: String, icono: String) {
     val ctx = LocalContext.current
-    // PARA EL NÚCLEO: los logos «LogoWhatsApp» y «Simbolo» de iOS, como drawables logo_whatsapp y simbolo.
+    // Los logos «LogoWhatsApp» y «Simbolo» de iOS (tema/Base.kt › Imagenes).
     val clave = nombre.replace(Regex("([a-z])([A-Z])"), "$1_$2").lowercase()
-    val id = remember(clave) { ctx.resources.getIdentifier(clave, "drawable", ctx.packageName) }
+    val id = remember(clave) { Imagenes.de(nombre).takeIf { it != 0 } ?: ctx.resources.getIdentifier(clave, "drawable", ctx.packageName) }
     if (id != 0) Image(painterResource(id), null, Modifier.size(28.dp), contentScale = ContentScale.Fit)
     else Box(Modifier.width(28.dp), contentAlignment = Alignment.Center) { Icono(icono, 20f, C.okTinta) }
 }

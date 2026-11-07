@@ -1044,7 +1044,7 @@ fun Chat(id: String) {
             } else if (e != null) {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { EstadoError(que = "la conversación", error = e) { alcance.launch { cargar() } } }
             } else {
-                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Girando() }
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Rueda() }
             }
             if (c != null) {
                 if (c.enVentana == true) {
@@ -1100,7 +1100,7 @@ fun AudioArchivo(id: String) {
     var url by remember(id) { mutableStateOf<File?>(null) }
     LaunchedEffect(id) { url = runCatching { ArchivosSesion.archivo(id, nombre = "audio-$id.m4a", api = estado.api, ctx = ctx) }.getOrNull() }
     val u = url
-    if (u != null) AudioMensaje(url = u.absolutePath) else Box(Modifier.size(196.dp, 30.dp), contentAlignment = Alignment.Center) { Girando() }
+    if (u != null) AudioMensaje(url = u.absolutePath) else Box(Modifier.size(196.dp, 30.dp), contentAlignment = Alignment.Center) { Rueda() }
 }
 
 /** Vincular la charla a una propiedad: la búsqueda del servidor (calle, barrio o código) y Desvincular. */

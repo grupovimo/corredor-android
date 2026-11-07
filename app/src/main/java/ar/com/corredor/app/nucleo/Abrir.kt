@@ -130,7 +130,7 @@ fun Context.actividad(): Activity? {
 fun String.capitalizado(): String =
     split(" ").joinToString(" ") { w -> w.lowercase(Formato.argentina).replaceFirstChar { it.titlecase(Formato.argentina) } }
 
-/** Los bytes de un archivo de la API (un PDF, un Excel, una foto del CSV): `api.pedir` con `Accept: *\/*` y la sesión.
+/** Los bytes de un archivo de la API (un PDF, un Excel, una foto del CSV): `api.pedir` aceptando cualquier tipo y con la sesión.
  *  Los errores, como los de `pedir`. */
 suspend fun Api.bajar(ruta: String, query: Consulta = emptyList()): ByteArray {
     val r = Request.Builder().url(url(ruta, query)).header("Accept", "*/*")

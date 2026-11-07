@@ -632,6 +632,34 @@ private fun imagenDe(cola: ColaMira, f: FotoMira?): Bitmap? {
 
 // MARK: Partes
 
+/** El visor oro (`visor` en iOS): la cámara oscurecida al 52 % salvo el hueco de radio 24 (36 de cada lado, 210 desde
+ *  arriba y 300 de alto), las cuatro esquinas oro de 6 y, mientras lee, el barrido que sube y baja (1,7 s). No toma
+ *  toques. */
+@Composable
+private fun VisorMira(leyendo: Boolean) {
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+        val ancho = this@BoxWithConstraints.maxWidth - 72.dp
+        val alto = 300.dp
+        Canvas(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
+            drawRect(Color.Black.copy(alpha = 0.52f))
+            drawRoundRect(
+                Color.Black, topLeft = Offset(36.dp.toPx(), 210.dp.toPx()), size = Size(ancho.toPx(), alto.toPx()),
+                cornerRadius = CornerRadius(24.dp.toPx()), blendMode = BlendMode.Clear,
+            )
+        }
+        Box(Modifier.offset(33.dp, 207.dp).size(ancho + 6.dp, alto + 6.dp)) { Visor(color = C.oro, grosor = 6.dp) }
+        if (leyendo) {
+            val t = rememberInfiniteTransition(label = "barrido")
+            val y by t.animateFloat(6f, 282f, infiniteRepeatable(tween(1700, easing = androidx.compose.animation.core.FastOutSlowInEasing), RepeatMode.Reverse), label = "y")
+            Box(
+                Modifier.offset(50.dp, 208.dp + y.dp).size(ancho - 28.dp, 4.dp)
+                    .shadow(15.dp, Capsula, ambientColor = C.oro.copy(alpha = 0.55f), spotColor = C.oro.copy(alpha = 0.55f))
+                    .clip(Capsula).background(C.oro),
+            )
+        }
+    }
+}
+
 @Composable
 private fun Arriba(flash: Boolean, alCerrar: () -> Unit, alFlash: () -> Unit) {
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -642,7 +670,7 @@ private fun Arriba(flash: Boolean, alCerrar: () -> Unit, alFlash: () -> Unit) {
                 Modifier.height(36.dp).clip(Capsula).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(Modifier.size(16.dp)) { Visor(C.oro, 2.dp) }
+                Box(Modifier.size(16.dp)) { Visor(color = C.oro, grosor = 2.dp) }
                 Texto("MIRA", Estilo(15f, Peso.bold, 0.9f / 15f), Color.White)
             }
             Spacer(Modifier.weight(1f))
@@ -896,7 +924,7 @@ private fun AvisoMira(icono: String, tono: Tono, titulo: String, texto: String, 
 private fun SinPermiso(elegirFoto: () -> Unit, cargarAMano: () -> Unit, cerrar: () -> Unit) {
     val ctx = LocalContext.current
     Box(Modifier.fillMaxSize()) {
-        FondoVerdeMira(patron = 0f)
+        FondoVerde(patron = 0.0)
         Column(
             Modifier.fillMaxSize().padding(horizontal = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterVertically),
@@ -1340,7 +1368,7 @@ fun VistaCamara(camara: CamaraMira, modifier: Modifier = Modifier) {
 }
 
 /** La ubicación del teléfono (para ubicar el cartel y proponer la dirección). */
-// PARA EL NÚCLEO: el manifiesto necesita ACCESS_FINE_LOCATION y ACCESS_COARSE_LOCATION (CLLocationManager en iOS).
+// CLLocationManager de iOS: los permisos ACCESS_FINE_LOCATION y ACCESS_COARSE_LOCATION están en el manifiesto.
 class Ubicacion {
     var ultima by mutableStateOf<Location?>(null)
     var direccion by mutableStateOf<String?>(null)
@@ -1385,33 +1413,3 @@ private fun leerDerecha(f: File): Bitmap? = runCatching {
     if (Build.VERSION.SDK_INT >= 28) ImageDecoder.decodeBitmap(ImageDecoder.createSource(f)) { d, _, _ -> d.allocator = ImageDecoder.ALLOCATOR_SOFTWARE }
     else BitmapFactory.decodeFile(f.path)
 }.getOrNull()
-
-// Copia de Visor (App/Principal.swift): las cuatro esquinas del visor de MIRA.
-@Composable
-private fun Visor(color: Color = C.verde800, grosor: Dp = 3.dp) {
-    Canvas(Modifier.fillMaxSize()) {
-        val w = size.width; val h = size.height; val l = w / 3
-        val p = Path().apply {
-            moveTo(0f, l); lineTo(0f, 0f); lineTo(l, 0f)
-            moveTo(w - l, 0f); lineTo(w, 0f); lineTo(w, l)
-            moveTo(0f, h - l); lineTo(0f, h); lineTo(l, h)
-            moveTo(w - l, h); lineTo(w, h); lineTo(w, h - l)
-        }
-        drawPath(p, color, style = Stroke(width = grosor.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-    }
-}
-
-// Copia de FondoVerde (Pantallas/Entrada/Entrada.swift): 0f3530 con el resplandor verde arriba.
-@Composable
-private fun FondoVerdeMira(patron: Float = 0.09f) {
-    BoxWithConstraints(Modifier.fillMaxSize().background(C.verde800)) {
-        val densidad = LocalDensity.current
-        val alto = with(densidad) { this@BoxWithConstraints.maxHeight.toPx() }
-        val ancho = with(densidad) { this@BoxWithConstraints.maxWidth.toPx() }
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.radialGradient(listOf(Color(0x337FC4AD), Color(0x000F3530)), center = Offset(ancho * 0.5f, alto * 0.3f), radius = with(densidad) { 320.dp.toPx() }),
-            ),
-        )
-    }
-}

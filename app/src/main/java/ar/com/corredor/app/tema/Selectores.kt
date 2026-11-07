@@ -198,16 +198,17 @@ fun RenglonHora(titulo: String, minutos: Int, alCambiar: (Int) -> Unit) {
     }
 }
 
-/** El Stepper de iOS (.labelsHidden()): una pastilla de 94 × 32 con − y + separados por una línea. */
+/** El Stepper de iOS (.labelsHidden()): una pastilla de 94 × 32 con − y + separados por una línea. `que`: lo que
+ *  cuenta, para TalkBack («Menos ambientes»). */
 @Composable
-fun Pasador(valor: Int, alCambiar: (Int) -> Unit, rango: IntRange = 0..999, paso: Int = 1) {
+fun Pasador(valor: Int, alCambiar: (Int) -> Unit, rango: IntRange = 0..999, paso: Int = 1, que: String? = null) {
     Row(Modifier.size(94.dp, 32.dp).clip(RoundedCornerShape(8.dp)).background(C.segmentado), verticalAlignment = Alignment.CenterVertically) {
         val menos = valor - paso >= rango.first
         val mas = valor + paso <= rango.last
-        Box(Modifier.weight(1f).fillMaxHeight().clickable(enabled = menos) { alCambiar(valor - paso); Haptico.seleccion() }.semantics { contentDescription = "Menos" },
+        Box(Modifier.weight(1f).fillMaxHeight().clickable(enabled = menos) { alCambiar(valor - paso); Haptico.seleccion() }.semantics { contentDescription = listOfNotNull("Menos", que).joinToString(" ") },
             contentAlignment = Alignment.Center) { Icono("minus", 15f, if (menos) C.texto else C.texto3) }
         Box(Modifier.size(1.dp, 18.dp).background(C.linea2))
-        Box(Modifier.weight(1f).fillMaxHeight().clickable(enabled = mas) { alCambiar(valor + paso); Haptico.seleccion() }.semantics { contentDescription = "Más" },
+        Box(Modifier.weight(1f).fillMaxHeight().clickable(enabled = mas) { alCambiar(valor + paso); Haptico.seleccion() }.semantics { contentDescription = listOfNotNull("Más", que).joinToString(" ") },
             contentAlignment = Alignment.Center) { Icono("plus", 15f, if (mas) C.texto else C.texto3) }
     }
 }

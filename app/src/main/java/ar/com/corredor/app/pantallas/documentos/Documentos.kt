@@ -203,8 +203,7 @@ fun DocumentosLista(de: String, id: String) {
 /** El escáner de documentos (VisionKit en el iPhone; en Android, el de ML Kit): recorta y endereza cada hoja; al
  *  terminar, las páginas salen en un solo PDF. Devuelve cómo abrirlo, o null si el teléfono no lo tiene
  *  (`VNDocumentCameraViewController.isSupported`). */
-// PARA EL NÚCLEO: necesita la dependencia `com.google.android.gms:play-services-mlkit-document-scanner:16.0.0` en
-// app/build.gradle.kts (el escáner de Google Play services, que da el PDF hecho).
+// El escáner de Google Play services (play-services-mlkit-document-scanner, en app/build.gradle.kts) da el PDF hecho.
 @Composable
 fun EscanerDocumentos(listo: (ByteArray) -> Unit): (() -> Unit)? {
     val ctx = LocalContext.current

@@ -909,7 +909,7 @@ fun CarteraVisual(props: List<Propiedad>, total: Int) {
             Texto(if (total > 0) "Ver las $total" else "Ver todas", Estilo.footnoteFuerte, C.accion, Modifier.clickable { estado.pestana = Pestana.propiedades })
         }
         Row(
-            Modifier.salirDelMargen(16.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Modifier.sangrar(16.dp).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top,
         ) {
             props.take(10).forEach { p ->

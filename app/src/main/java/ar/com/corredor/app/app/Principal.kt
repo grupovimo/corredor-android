@@ -86,7 +86,6 @@ import ar.com.corredor.app.pantallas.cartera.EditarContacto
 import ar.com.corredor.app.pantallas.cobranzas.AltaContrato
 import ar.com.corredor.app.pantallas.entrada.AltaInmobiliaria
 import ar.com.corredor.app.pantallas.entrada.Bienvenida
-import ar.com.corredor.app.pantallas.entrada.FondoVerde
 import ar.com.corredor.app.pantallas.mira.MiraRaiz
 import ar.com.corredor.app.tema.*
 import kotlinx.coroutines.delay

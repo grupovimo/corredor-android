@@ -76,7 +76,7 @@ import java.time.Instant
 // urgente, «Tu día», la agenda de hoy, las sugerencias, cómo viene el mes, las cobranzas, el equipo,
 // los primeros pasos, el próximo paso, las acciones rápidas, «Tu web» y el número caído.
 
-// MARK: - Ayudas de plataforma (PARA EL NÚCLEO: si el núcleo trae las suyas, se cambian por esas)
+// MARK: - Ayudas de plataforma (lo que no está en tema/: la ruedita es `Rueda` y el margen negativo, `sangrar`)
 
 /** La rayita de 0,5 entre filas (`.overlay(alignment: .top) { Rectangle().fill(C.linea).frame(height: 0.5) }`). */
 @Composable
@@ -94,29 +94,6 @@ internal fun TextoTachado(texto: String, estilo: Estilo, color: Color, tachado: 
         style = estilo.ts().copy(color = color, textDecoration = if (tachado) TextDecoration.LineThrough else null),
         maxLines = lineas, overflow = TextOverflow.Ellipsis,
     )
-}
-
-/** `.padding(.horizontal, -n)` de SwiftUI: el contenido se estira hasta los bordes de la pantalla. */
-internal fun Modifier.salirDelMargen(n: Dp): Modifier = this.layout { medible, restricciones ->
-    val extra = n.roundToPx() * 2
-    val r = if (restricciones.hasBoundedWidth) restricciones.copy(minWidth = restricciones.maxWidth + extra, maxWidth = restricciones.maxWidth + extra) else restricciones
-    val p = medible.measure(r)
-    layout(p.width - extra, p.height) { p.place(-n.roundToPx(), 0) }
-}
-
-/** ProgressView() de SwiftUI: la ruedita que gira. */
-@Composable
-internal fun Girando(color: Color = C.texto3, tam: Dp = 20.dp) {
-    val giro = androidx.compose.animation.core.rememberInfiniteTransition(label = "girando")
-    val angulo by giro.animateFloat(
-        0f, 360f,
-        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.LinearEasing)),
-        label = "angulo",
-    )
-    Canvas(Modifier.size(tam).semantics { contentDescription = "Cargando" }) {
-        val g = size.minDimension / 9
-        drawArc(color, angulo, 270f, false, topLeft = Offset(g / 2, g / 2), size = androidx.compose.ui.geometry.Size(size.width - g, size.height - g), style = Stroke(g, cap = StrokeCap.Round))
-    }
 }
 
 /** `@Environment(\.dismiss)` de una pantalla apilada: vuelve atrás (saca la pantalla de la pila). */

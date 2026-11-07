@@ -414,9 +414,9 @@ fun PantallaReserva(id: String) {
                 BotonPrincipal("Llamar a ${r.quien}", { Afuera.llamar(ti) }, simbolo = "phone.fill")
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BotonHundidoReserva("Aceptada", Modifier.weight(1f), !ocupado) { cerrarCon("concretada", null) }
-                BotonHundidoReserva(if (ocupado) "Extendiendo…" else "Extender 48 h", Modifier.weight(1f), !ocupado) { estado.tarea { extender(r) } }
-                BotonHundidoReserva("Se cayó", Modifier.weight(1f), !ocupado) { if (r.sena != null) preguntarSena = true else cerrarCon("caida", null) }
+                BotonHundido("Aceptada", { cerrarCon("concretada", null) }, Modifier.weight(1f), habilitado = !ocupado)
+                BotonHundido(if (ocupado) "Extendiendo…" else "Extender 48 h", { estado.tarea { extender(r) } }, Modifier.weight(1f), habilitado = !ocupado)
+                BotonHundido("Se cayó", { if (r.sena != null) preguntarSena = true else cerrarCon("caida", null) }, Modifier.weight(1f), habilitado = !ocupado)
             }
             Texto(Formato.sinViudas("«Se cayó» te pregunta si devolvés la seña y deja la propiedad disponible otra vez, con deshacer."), Estilo.footnote, C.texto2)
         }
@@ -528,10 +528,10 @@ fun NuevaReservaVenta(propiedadId: String, titulo: String, moneda: String = "USD
     }
 
     Column(Modifier.fillMaxSize()) {
-        CabeceraHojaLista(
+        BarraHoja(
             titulo = "Reservar $titulo",
-            izquierda = "Cancelar" to { cerrar() },
-            derecha = (if (mandando) "Reservando…" else "Reservar") to { if (!mandando) estado.tarea { reservar() } },
+            cancelar = "Cancelar", alCancelar = { cerrar() },
+            confirmar = if (mandando) "Reservando…" else "Reservar", alConfirmar = { if (!mandando) estado.tarea { reservar() } },
         )
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             SeccionLista(null, pie = "Queda reservada al toque y deja de ofrecerse.") {
@@ -554,18 +554,5 @@ fun NuevaReservaVenta(propiedadId: String, titulo: String, moneda: String = "USD
                 (errores["venceEl"] ?: errores["venceHora"])?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) { MensajeError(it) } }
             }
         }
-    }
-}
-
-// PARA EL NÚCLEO: `BotonHundido` (Pantallas/Inicio/Inicio.swift, un ButtonStyle): 15/600 en tinta, 44 de alto, fondo
-// hundido de radio 12. Si el Inicio lo expone como composable, usar ese.
-@Composable
-private fun BotonHundidoReserva(texto: String, modifier: Modifier, habilitado: Boolean, alTocar: () -> Unit) {
-    Tocable(alTocar, modifier, habilitado) { apretado ->
-        Box(
-            Modifier.fillMaxWidth().heightIn(min = 44.dp).alpha(if (!habilitado) 0.5f else if (apretado) 0.8f else 1f)
-                .clip(RoundedCornerShape(12.dp)).background(C.hundida),
-            contentAlignment = Alignment.Center,
-        ) { Texto(texto, Estilo(15f, Peso.semibold), C.texto, lineas = 1) }
     }
 }

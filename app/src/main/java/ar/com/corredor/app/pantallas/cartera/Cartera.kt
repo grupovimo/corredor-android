@@ -378,7 +378,7 @@ fun SelectorAgendaVarios(alElegir: (List<ContactoAgenda>) -> Unit) {
         Box(Modifier.padding(horizontal = 16.dp).padding(bottom = 8.dp)) { Buscador(placeholder = "Buscar", texto = q, alCambiar = { q = it }) }
         val l = todos
         if (l == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Girando() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Rueda() }
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                 val f = MasRaizNormal(q)

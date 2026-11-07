@@ -367,41 +367,14 @@ fun EditorZonaWeb(zona: String, marca: Map<String, String>, alCambiar: (Map<Stri
 
 // MARK: - Colores (Acento y ColorPicker)
 
-/** Las cuentas de color de `Acento` (rgb, hex, contraste, mezclar) sobre enteros 0xRRGGBB.
- *  PARA EL NÚCLEO: es la misma cuenta que tema/Acento.kt; si `Acento` expone estas funciones con enteros,
- *  esto se reemplaza por ellas. */
+/** Las cuentas de color de `Acento` (rgb, hex, contraste, mezclar) sobre enteros 0xRRGGBB: las de tema/Acento.kt. */
 object Colores {
-    fun rgb(texto: String?): Int? {
-        var h = texto?.trim()?.lowercase() ?: return null
-        if (h.startsWith("#")) h = h.drop(1)
-        if (h.length == 3) h = h.map { "$it$it" }.joinToString("")
-        if (h.length != 6 || !h.all { it in "0123456789abcdef" }) return null
-        return h.toInt(16)
-    }
-
-    fun canales(n: Int) = Triple(((n shr 16) and 0xFF).toDouble(), ((n shr 8) and 0xFF).toDouble(), (n and 0xFF).toDouble())
-
-    fun hex(c: Triple<Double, Double, Double>): Int {
-        fun r(v: Double): Int = Math.round(max(0.0, min(255.0, v))).toInt()
-        return (r(c.first) shl 16) or (r(c.second) shl 8) or r(c.third)
-    }
-
-    fun luminancia(n: Int): Double {
-        fun l(v: Double): Double { val s = v / 255; return if (s <= 0.03928) s / 12.92 else ((s + 0.055) / 1.055).pow(2.4) }
-        val c = canales(n)
-        return 0.2126 * l(c.first) + 0.7152 * l(c.second) + 0.0722 * l(c.third)
-    }
-
-    fun contraste(a: Int, b: Int): Double {
-        val x = luminancia(a); val y = luminancia(b)
-        return (max(x, y) + 0.05) / (min(x, y) + 0.05)
-    }
-
-    fun mezclar(a: Int, b: Int, t: Double): Int {
-        val x = canales(a); val y = canales(b)
-        return hex(Triple(x.first + (y.first - x.first) * t, x.second + (y.second - x.second) * t, x.third + (y.third - x.third) * t))
-    }
-
-    fun color(n: Int): Color = Color(0xFF000000.toInt() or (n and 0xFFFFFF))
+    fun rgb(texto: String?): Int? = Acento.rgb(texto)?.let { Acento.hex(it) }
+    fun canales(n: Int) = Acento.rgb(n).let { Triple(it.r, it.g, it.b) }
+    fun hex(c: Triple<Double, Double, Double>): Int = Acento.hex(Acento.Rgb(c.first, c.second, c.third))
+    fun luminancia(n: Int): Double = Acento.luminancia(Acento.rgb(n))
+    fun contraste(a: Int, b: Int): Double = Acento.contraste(a, b)
+    fun mezclar(a: Int, b: Int, t: Double): Int = Acento.mezclar(a, b, t)
+    fun color(n: Int): Color = ar.com.corredor.app.tema.hex(n)
 }
 

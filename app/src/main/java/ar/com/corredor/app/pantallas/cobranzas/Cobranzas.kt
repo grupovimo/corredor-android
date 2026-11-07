@@ -524,8 +524,8 @@ fun Cobranzas(
 private fun ResumenCobranzas(totalCobrado: Double, totalMes: Double, moneda: String, pct: Double, pctDeuda: Double, cuantosDeben: Int, deuda: Double, nombreMes: String) {
     val claro = hex(0xCFE0D8)
     Column(
-        // PARA EL NÚCLEO: iOS pinta encima el Patron (al 6 %) y el GranoClaro en mosaico; acá sólo el verde.
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(C.verde800).padding(18.dp),
+        // C.verde800 con el Patron al 6 % y el GranoClaro en mosaico.
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).texturaVerde(C.verde800, patron = 0.06).padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Texto(Formato.plata(totalCobrado, moneda), Estilo(32f, Peso.bold, tracking = -0.03f), Color.White)

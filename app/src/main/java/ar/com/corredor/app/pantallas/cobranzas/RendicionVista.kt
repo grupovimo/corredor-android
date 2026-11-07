@@ -633,8 +633,8 @@ fun RendicionPublica(c: ComprobanteRendicion, items: List<RendicionAPI.Item>, ne
                 Texto("Rendición de $mes", Estilo.caption, C.texto2)
             }
         }
-        // PARA EL NÚCLEO: iOS pinta encima el GranoClaro en mosaico; acá sólo el verde.
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(C.verde700).padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // C.verde700 con el GranoClaro en mosaico.
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).texturaVerde(C.verde700).padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Texto("Hola${if (nombre.isEmpty()) "" else " $nombre"}, te ${if (c.estado == "pagada") "transferimos" else "vamos a transferir"}", Estilo.subhead, Color.White)
             Texto(Formato.plata(neto, c.moneda), Estilo(34f, Peso.bold, tracking = -0.03f), Color.White)
             Texto("a tu cuenta", Estilo.footnote, Color.White)
@@ -645,8 +645,8 @@ fun RendicionPublica(c: ComprobanteRendicion, items: List<RendicionAPI.Item>, ne
             items.forEach { FilaPublica(it.descripcion + (if (it.archivoId == null) "" else " · comprobante adjunto"), "−" + Formato.numero(it.monto.roundToInt())) }
         }
         Texto(pie, Estilo.footnote, C.texto2)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            // PARA EL NÚCLEO: el «Simbolo» de Corredor (10 de alto) a la izquierda, si está en los recursos.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+            Imagen(Imagenes.simbolo, Modifier.height(10.dp))
             TextoRico(buildAnnotatedString {
                 append("Hecha con ")
                 withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("Corredor") }

@@ -98,13 +98,6 @@ object TarjetaAgente {
     }
 }
 
-/** La foto de una URL (Documentos.foto en iOS). */
-// PARA EL NÚCLEO: si nucleo/Impresos.kt trae `Documentos.foto(url)`, usar ese.
-private suspend fun fotoDe(url: String?): Bitmap? {
-    if (url.isNullOrEmpty() || !url.startsWith("http")) return null
-    return withContext(Dispatchers.IO) { runCatching { URL(url).openStream().use { BitmapFactory.decodeStream(it) } }.getOrNull() }
-}
-
 /** El símbolo de Corredor para el pie del PDF (Image("Simbolo")). */
 private fun simbolo(ctx: Context): Bitmap? {
     val id = ctx.resources.getIdentifier("simbolo", "drawable", ctx.packageName)
@@ -113,8 +106,7 @@ private fun simbolo(ctx: Context): Bitmap? {
 
 /** El PDF del tamaño de la tarjeta (85 × 55 mm = 241 × 156 pt), dibujado igual que TarjetaImpresa. */
 private fun pdfTarjeta(ctx: Context, estado: Estado, d: TarjetaAgente.Datos): File? {
-    // PARA EL NÚCLEO: ImageRenderer + .vistaPrevia de iOS → acá se dibuja a mano con PdfDocument y se comparte (el
-    // sistema ofrece imprimir desde la hoja de compartir). Si nucleo/Impresos.kt trae ArchivoPrevio/VistaPrevia, usarlos.
+    // ImageRenderer de iOS → acá se dibuja a mano con PdfDocument, igual que TarjetaImpresa.
     return try {
         val ancho = 241f
         val alto = 156f
@@ -191,13 +183,6 @@ private fun recortar(t: String, p: Paint, ancho: Float): String {
     return "$s…"
 }
 
-/** Comparte (o manda a imprimir) el PDF: la vista previa de iOS. */
-private fun compartirPdf(ctx: Context, archivo: File) {
-    val uri = FileProvider.getUriForFile(ctx, "ar.com.corredor.app.archivos", archivo)
-    val i = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    runCatching { ctx.startActivity(Intent.createChooser(i, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-}
-
 /** Tarjeta del agente · 85 × 55 mm (08 · T2 «se arma sola desde Equipo»): la foto, la marca de la inmobiliaria, el
  *  nombre, de qué barrios es (los de su cartera) y cómo encontrarlo. Se ve en pantalla y se comparte o imprime como
  *  PDF del tamaño de la tarjeta. */
@@ -221,7 +206,7 @@ fun TarjetaAgente(usuario: String) {
             for (p in props) { val b = p.barrio?.takeIf { it.isNotBlank() }; if (b != null) cuenta[b] = (cuenta[b] ?: 0) + 1 }
             val barrios = cuenta.entries.sortedByDescending { it.value }.take(2).map { it.key }
             val nombre = listOfNotNull(m.nombre, m.apellido).filter { it.isNotBlank() }.joinToString(" ").takeIf { it.isNotBlank() } ?: m.email ?: ""
-            val foto = fotoDe(m.foto)
+            val foto = Documentos.foto(m.foto)
             val tel = (m.whatsapp ?: m.telefono)?.replace(Regex("^\\s*\\+?54\\s*9?\\s*"), "")?.trim()
             datos = TarjetaAgente.Datos(nombre, m.email ?: "", tel?.takeIf { it.isNotBlank() }, foto, m.rol ?: "agente", barrios,
                 inmo?.nombre ?: estado.inmobiliaria?.nombre ?: "", MarcaResumen(inmo?.marca, inmo?.nombre ?: ""))
@@ -244,7 +229,7 @@ fun TarjetaAgente(usuario: String) {
                 BotonPrincipal("Compartir o imprimir", {
                     alcance.launch {
                         val f = withContext(Dispatchers.IO) { pdfTarjeta(ctx, estado, d) }
-                        if (f != null) compartirPdf(ctx, f)
+                        if (f != null) verArchivo(ctx, f)
                     }
                 }, simbolo = "printer")
             } else if (noEsta) {

@@ -385,13 +385,6 @@ class MarcaResumen(marca: JsonElement?, nombre: String) {
         fun hexColor(n: Long): Color = Color(0xFF000000 or n)
 
         /** Acento.rgb + Acento.hex de iOS: «#1E5749», «1e5749» o «#abc» → el color; si no, nil. */
-        // PARA EL NÚCLEO: si tema/Acento.kt expone `Acento.rgb(texto)` con la misma regla, usar ese.
-        fun color(s: String?): Color? {
-            var h = s?.trim()?.lowercase() ?: return null
-            if (h.startsWith("#")) h = h.drop(1)
-            if (h.length == 3) h = h.map { "$it$it" }.joinToString("")
-            if (h.length != 6 || !h.all { it in "0123456789abcdef" }) return null
-            return hexColor(h.toLong(16))
-        }
+        fun color(s: String?): Color? = colorDeHex(s)
     }
 }

@@ -192,8 +192,7 @@ object Charla {
     }
 }
 
-// PARA EL NÚCLEO: en iOS son extensiones de Estado que viven acá (ModeloMensajes.swift) y las usan muchas pantallas;
-// `Estado.texto` necesita `companion object` en Estado.
+// En iOS son extensiones de Estado que viven acá (ModeloMensajes.swift) y las usan muchas pantallas.
 
 /** El aviso de error con «Reintentar» (como el de la web): dura 6 s. */
 fun Estado.avisarReintentar(texto: String, reintentar: () -> Unit) {

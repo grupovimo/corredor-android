@@ -1109,7 +1109,7 @@ fun AltaPropiedad(
                             Texto("Ambientes", Estilo.subhead, C.texto2, Modifier.width(96.dp))
                             Texto("${d.ambientes}", Estilo(17f, Peso.bold), C.texto)
                             Spacer(Modifier.weight(1f))
-                            PasadorAlta(d.ambientes, { d = d.copy(ambientes = it) }, 1..20)
+                            Pasador(d.ambientes, { d = d.copy(ambientes = it) }, 1..20, que = "ambientes")
                         }
                     }
                     errores["direccion"]?.let { MensajeError(it) }
@@ -1359,22 +1359,6 @@ private fun MenuFotoAlta(opciones: List<OpcionDeMenu>, alCerrar: () -> Unit) {
                     Icono(o.simbolo, 17f, if (o.destructiva) C.error else C.texto)
                 }
             }
-        }
-    }
-}
-
-// PARA EL NÚCLEO: el Stepper de iOS con .labelsHidden() (en Tu Local Web es `Pasador` en tema/Selectores.kt).
-@Composable
-private fun PasadorAlta(valor: Int, alCambiar: (Int) -> Unit, rango: IntRange) {
-    Row(Modifier.size(94.dp, 32.dp).clip(RoundedCornerShape(8.dp)).background(C.segmentado), verticalAlignment = Alignment.CenterVertically) {
-        val menos = valor - 1 >= rango.first
-        val mas = valor + 1 <= rango.last
-        Box(Modifier.weight(1f).height(32.dp).clickable(enabled = menos) { alCambiar(valor - 1); Haptico.seleccion() }, contentAlignment = Alignment.Center) {
-            Icono("minus", 15f, if (menos) C.texto else C.texto3, descripcion = "Menos ambientes")
-        }
-        Box(Modifier.size(1.dp, 18.dp).background(C.linea2))
-        Box(Modifier.weight(1f).height(32.dp).clickable(enabled = mas) { alCambiar(valor + 1); Haptico.seleccion() }, contentAlignment = Alignment.Center) {
-            Icono("plus", 15f, if (mas) C.texto else C.texto3, descripcion = "Más ambientes")
         }
     }
 }
@@ -1644,11 +1628,10 @@ fun Camara(visible: Boolean, alCerrar: () -> Unit, alSacar: (ByteArray) -> Unit)
     }
 }
 
-// PARA EL NÚCLEO: lo de las fotos y los archivos (en Tu Local Web, nucleo/Fotos.kt y Abrir.kt). El FileProvider es el del
-// manifiesto (ar.com.corredor.app.archivos, cache/compartir).
+/** El archivo para la foto de la cámara, en cache/compartir (el FileProvider de nucleo/Abrir.kt). */
 private fun archivoCamaraAlta(ctx: Context): Pair<File, Uri> {
-    val f = File(File(ctx.cacheDir, "compartir").apply { mkdirs() }, "camara-${System.currentTimeMillis()}.jpg")
-    return f to FileProvider.getUriForFile(ctx, "ar.com.corredor.app.archivos", f)
+    val f = archivoTemporal(ctx, "camara-${System.currentTimeMillis()}.jpg")
+    return f to FileProvider.getUriForFile(ctx, PROVEEDOR_ARCHIVOS, f)
 }
 
 /** La foto en JPEG al 85 % (jpegData(compressionQuality: 0.85) de iOS), derecha; el lado mayor hasta 4096 para no
