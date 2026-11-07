@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16: la próxima visita como Live Update (la Live Activity de iOS). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- NSCameraUsageDescription: «Para que MIRA lea los carteles de «Vende» y para sacarles fotos a las propiedades.» -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- NSMicrophoneUsageDescription y NSSpeechRecognitionUsageDescription: dictar la descripción de una propiedad. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- NSLocationWhenInUseUsageDescription: ubicar el cartel que MIRA fotografía y ordenar la cartera por cercanía. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- NSContactsUsageDescription: traer un contacto de la agenda sin tipearlo. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- NSFaceIDUsageDescription: entrar con la huella o la cara del teléfono. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- NSPhotoLibraryAddUsageDescription: guardar las placas en la galería en Android 8 y 9 (desde el 10 no hace falta). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+
+    <queries>
+        <!-- Custom Tabs para el ingreso con Clerk y para conectar cuentas (Mercado Libre, portales). -->
+        <intent>
+            <action android:name="android.support.customtabs.action.CustomTabsService" />
+        </intent>
+        <!-- El dictado. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+    </queries>
+
+    <application
+        android:name=".app.CorredorApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/red"
+        android:supportsRtl="false"
+        android:theme="@style/Tema.Corredor">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="ar.com.corredor.app.archivos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/archivos" />
+        </provider>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- La vuelta de Clerk (Google): ar.com.corredor.app://callback, como en iOS. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ar.com.corredor.app" />
+            </intent-filter>
+            <!-- corredor://propiedad/123, corredor://agenda/… (avisos, widgets y atajos). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="corredor" />
+            </intent-filter>
+            <!-- Los links de corredor.com.ar (applinks:corredor.com.ar en iOS): invitaciones, fichas, el ingreso. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="corredor.com.ar" />
+                <data android:scheme="https" android:host="www.corredor.com.ar" />
+            </intent-filter>
+            <!-- 14F: el menú del ícono. -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!-- Firebase se inicia a mano (app/Push.kt): sin config no hay push. -->
+        <service android:name=".app.ServicioPush" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Las acciones de los avisos que no abren la app: Responder y Marcar como hecha (14B–14C). -->
+        <receiver android:name=".app.AccionesPush" android:exported="false" />
+
+        <!-- «Hoy» (CorredorWidgets en iOS). -->
+        <receiver android:name=".widgets.WidgetHoyReceiver" android:exported="true" android:label="@string/widget_hoy">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_hoy" />
+        </receiver>
+    </application>
+</manifest>

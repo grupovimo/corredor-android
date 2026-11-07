@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 14F El menú del ícono (MenuIcono en App/Atajos.swift): las cuatro acciones rápidas. Abren la app con un link
+     corredor:// que entiende Ruta(texto). -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="mira" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_mira_corto" android:shortcutLongLabel="@string/atajo_mira">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://mira" />
+    </shortcut>
+    <shortcut android:shortcutId="agenda" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_visita" android:shortcutLongLabel="@string/atajo_visita">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://agenda" />
+    </shortcut>
+    <shortcut android:shortcutId="buscar" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_buscar" android:shortcutLongLabel="@string/atajo_buscar">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://buscar" />
+    </shortcut>
+    <shortcut android:shortcutId="mensajes" android:enabled="true" android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atajo_mensajes_corto" android:shortcutLongLabel="@string/atajo_mensajes">
+        <intent android:action="android.intent.action.VIEW" android:targetPackage="ar.com.corredor.app"
+            android:targetClass="ar.com.corredor.app.MainActivity" android:data="corredor://mensajes" />
+    </shortcut>
+</shortcuts>

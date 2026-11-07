@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Corredor</string>
+    <string name="widget_hoy">Hoy</string>
+    <string name="widget_hoy_descripcion">Tu próxima visita y lo que hay que responder.</string>
+    <!-- Los atajos del ícono (14F, el menú del ícono de iOS) y los de Atajos/Siri (App/Atajos.swift). -->
+    <string name="atajo_mira">Captar con MIRA</string>
+    <string name="atajo_mira_corto">Captar con MIRA</string>
+    <string name="atajo_visita">Nueva visita</string>
+    <string name="atajo_buscar">Buscar</string>
+    <string name="atajo_mensajes">Consultas sin responder</string>
+    <string name="atajo_mensajes_corto">Sin responder</string>
+</resources>

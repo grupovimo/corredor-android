@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- La ventana mientras arranca: el verde de la pantalla de lanzamiento (Fondo en Assets.xcassets de iOS). -->
+    <style name="Tema.Corredor" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/fondo</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+    <color name="fondo">#0F3530</color>
+    <color name="primario">#16443B</color>
+</resources>

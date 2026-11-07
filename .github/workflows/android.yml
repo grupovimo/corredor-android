@@ -1,0 +1,75 @@
+# Compila la app de Android en GitHub cada vez que cambia: en la Mac no se compila (como iOS).
+# Corre los tests (incluidas las capturas de PantallasTest en claro y oscuro) y sube el artifact «capturas»
+# para compararlas con las de iOS (las revisa Nahuel en la galería).
+name: Android
+
+on:
+  pull_request:
+    paths-ignore: ['**.md']
+  push:
+    branches: ['**']
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v5
+      # Firebase (push) y la llave de subida, desde los secretos del repo. Sin secretos compila igual: sin push y
+      # sin firmar.
+      - name: Configuración
+        env:
+          CR_FIREBASE_APP_ID: ${{ secrets.CR_FIREBASE_APP_ID }}
+          CR_FIREBASE_API_KEY: ${{ secrets.CR_FIREBASE_API_KEY }}
+          CR_FIREBASE_PROYECTO: ${{ secrets.CR_FIREBASE_PROYECTO }}
+          CR_FIREBASE_REMITENTE: ${{ secrets.CR_FIREBASE_REMITENTE }}
+          CR_FIRMA_JKS: ${{ secrets.CR_FIRMA_JKS }}
+          CR_FIRMA_CLAVE: ${{ secrets.CR_FIRMA_CLAVE }}
+        run: |
+          : > local.properties
+          if [ -n "$CR_FIREBASE_APP_ID" ]; then
+            printf 'cr.firebase.appId=%s\ncr.firebase.apiKey=%s\ncr.firebase.proyecto=%s\ncr.firebase.remitente=%s\n' \
+              "$CR_FIREBASE_APP_ID" "$CR_FIREBASE_API_KEY" "$CR_FIREBASE_PROYECTO" "$CR_FIREBASE_REMITENTE" >> local.properties
+          fi
+          if [ -n "$CR_FIRMA_JKS" ]; then
+            echo "$CR_FIRMA_JKS" | base64 -d > "$RUNNER_TEMP/subida.jks"
+            printf 'cr.firma.archivo=%s\ncr.firma.clave=%s\n' "$RUNNER_TEMP/subida.jks" "$CR_FIRMA_CLAVE" >> local.properties
+          fi
+      - name: Compilar y probar
+        run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest -Proborazzi.test.record=true
+      - name: Capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: app/build/capturas
+          if-no-files-found: ignore
+      # A mano (workflow_dispatch): el paquete firmado para Play (prueba interna).
+      - name: Paquete para Play
+        if: github.event_name == 'workflow_dispatch'
+        run: ./gradlew --no-daemon :app:bundleRelease
+      - name: Subir el paquete
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: play
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: ignore
+      - name: Reportes de tests
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests
+          path: app/build/reports/tests
+          if-no-files-found: ignore
