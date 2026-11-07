@@ -211,8 +211,8 @@ fun Chat(id: String) {
         adjunto = null
         try {
             if (a != null) {
-                @Serializable data class Cuerpo(val texto: String, val archivoId: String)
-                val m: MensajeWA = estado.api.enviar("POST", "/v1/whatsapp/conversaciones/$id/mensajes", Cuerpo(texto = t, archivoId = a.id))
+                @Serializable data class CuerpoConArchivo(val texto: String, val archivoId: String)
+                val m: MensajeWA = estado.api.enviar("POST", "/v1/whatsapp/conversaciones/$id/mensajes", CuerpoConArchivo(texto = t, archivoId = a.id))
                 enviados = enviados.filter { it.id != tmp.id } + m
             } else {
                 @Serializable data class Cuerpo(val texto: String)
