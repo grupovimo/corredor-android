@@ -164,7 +164,7 @@ fun BotonBarraIcono(simbolo: String, etiqueta: String, alTocar: () -> Unit) {
 /** La barra nativa de las pantallas apiladas, con la tipografía y los colores del handoff: back con chevron y el título
  *  del padre en Acción, título 17/600 (Apariencia en iOS). */
 @Composable
-private fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
+fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
     if (b.oculta) return
     Box(Modifier.fillMaxWidth().background(tema(0xF3EFE6, 0x0E1714).actual).statusBarsPadding().height(44.dp)) {
         Row(Modifier.align(Alignment.CenterStart).padding(start = 4.dp), verticalAlignment = Alignment.CenterVertically) {

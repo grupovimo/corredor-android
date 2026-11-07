@@ -54,7 +54,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -457,9 +459,15 @@ fun Interruptor(texto: String, prendido: Boolean, alCambiar: (Boolean) -> Unit, 
 
 /** El interruptor suelto (Toggle con .labelsHidden()). */
 @Composable
-fun Llave(prendido: Boolean, alCambiar: (Boolean) -> Unit, color: Color = C.ok, habilitado: Boolean = true) {
+fun Llave(prendido: Boolean, alCambiar: (Boolean) -> Unit, color: Color = C.ok, habilitado: Boolean = true, descripcion: String? = null) {
     val x by animateDpAsState(if (prendido) 20.dp else 0.dp, tween(180), label = "llave")
-    Box(Modifier.size(51.dp, 31.dp).clip(Capsula).background(if (prendido) color else C.linea2).clickable(enabled = habilitado) { alCambiar(!prendido); Haptico.seleccion() }.padding(2.dp)) {
+    // Como el Toggle de iOS: el lector dice el nombre (el label escondido) y si está prendido.
+    val lector = Modifier.semantics {
+        role = androidx.compose.ui.semantics.Role.Switch
+        toggleableState = androidx.compose.ui.state.ToggleableState(prendido)
+        if (descripcion != null) contentDescription = descripcion
+    }
+    Box(Modifier.size(51.dp, 31.dp).then(lector).clip(Capsula).background(if (prendido) color else C.linea2).clickable(enabled = habilitado) { alCambiar(!prendido); Haptico.seleccion() }.padding(2.dp)) {
         Box(Modifier.offset(x = x).size(27.dp).sombra(CircleShape, Color.Black.copy(alpha = 0.15f), 4.dp, y = 2.dp).clip(CircleShape).background(Color.White))
     }
 }

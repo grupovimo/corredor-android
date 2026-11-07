@@ -77,8 +77,50 @@ fun Confirmacion(visible: Boolean, titulo: String, mensaje: String = "", opcione
     }
 }
 
-/** Una opción de un menú desplegable (Menu en iOS). */
-data class OpcionDeMenu(val titulo: String, val simbolo: String, val destructiva: Boolean = false, val accion: () -> Unit)
+/** Una opción de un menú desplegable (Menu en iOS). `separadorAntes` es el `Divider()` de iOS (la franja gruesa
+ *  entre grupos), `habilitado = false` el `.disabled` (gris y sin tocar) y `submenu` un `Menu` anidado: tocarlo muestra
+ *  sus opciones en el mismo menú, con «‹ título» para volver. */
+data class OpcionDeMenu(
+    val titulo: String,
+    val simbolo: String,
+    val destructiva: Boolean = false,
+    val separadorAntes: Boolean = false,
+    val habilitado: Boolean = true,
+    val submenu: List<OpcionDeMenu> = emptyList(),
+    val accion: () -> Unit = {},
+)
+
+/** Las filas de un menú flotante (MenuBoton y MenuContextual): separadores de grupo, opciones apagadas y submenús. */
+@Composable
+private fun FilasDeMenu(opciones: List<OpcionDeMenu>, cerrar: () -> Unit) {
+    var abierto by remember(opciones) { mutableStateOf<OpcionDeMenu?>(null) }
+    val sub = abierto
+    if (sub != null) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { abierto = null }.padding(horizontal = 16.dp)
+            .semantics { contentDescription = "Volver" }, verticalAlignment = Alignment.CenterVertically) {
+            Icono("chevron.left", 14f, C.texto2)
+            Box(Modifier.width(8.dp))
+            Texto(sub.titulo, Estilo(14f, Peso.semibold), C.texto2)
+        }
+        Box(Modifier.fillMaxWidth().height(8.dp).background(C.linea))
+    }
+    (sub?.submenu ?: opciones).forEachIndexed { i, o ->
+        if (i > 0) Box(Modifier.fillMaxWidth().height(if (o.separadorAntes) 8.dp else 1.dp).background(C.linea))
+        val tinta = when { !o.habilitado -> C.texto3; o.destructiva -> C.error; else -> C.texto }
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                .clickable(enabled = o.habilitado) { if (o.submenu.isNotEmpty()) abierto = o else { cerrar(); o.accion() } }
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Texto(o.titulo, Estilo(16f, Peso.regular), tinta, Modifier.weight(1f, fill = false))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (o.simbolo.isNotEmpty()) Icono(o.simbolo, 17f, tinta)
+                if (o.submenu.isNotEmpty()) { Box(Modifier.width(6.dp)); Icono("chevron.right", 13f, C.texto3) }
+            }
+        }
+    }
+}
 
 /** Un botón que abre un menú flotante con opciones (Menu { … } label: { … } en iOS). */
 @Composable
@@ -87,18 +129,7 @@ fun MenuBoton(opciones: List<OpcionDeMenu>, descripcion: String, boton: @Composa
     Box {
         Box(Modifier.clickable { abierto = true }.semantics { contentDescription = descripcion }) { boton() }
         if (abierto) Popup(alignment = Alignment.TopEnd, onDismissRequest = { abierto = false }) {
-            Column(Modifier.padding(top = 48.dp).widthIn(min = 250.dp).tarjeta(14.dp)) {
-                opciones.forEachIndexed { i, o ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(C.linea))
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { abierto = false; o.accion() }.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Texto(o.titulo, Estilo(16f, Peso.regular), if (o.destructiva) C.error else C.texto)
-                        if (o.simbolo.isNotEmpty()) Icono(o.simbolo, 17f, if (o.destructiva) C.error else C.texto)
-                    }
-                }
-            }
+            Column(Modifier.padding(top = 48.dp).widthIn(min = 250.dp).tarjeta(14.dp)) { FilasDeMenu(opciones) { abierto = false } }
         }
     }
 }
@@ -221,16 +252,7 @@ fun MenuContextual(opciones: List<OpcionDeMenu>, alTocar: () -> Unit, contenido:
     Box {
         Box(Modifier.combinedClickable(onClick = alTocar, onLongClick = { if (opciones.isNotEmpty()) { Haptico.impacto(); abierto = true } })) { contenido() }
         if (abierto) Popup(alignment = Alignment.BottomEnd, onDismissRequest = { abierto = false }) {
-            Column(Modifier.padding(horizontal = 16.dp).widthIn(min = 250.dp).tarjeta(14.dp)) {
-                opciones.forEachIndexed { i, o ->
-                    if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(C.linea))
-                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { abierto = false; o.accion() }.padding(horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                        Texto(o.titulo, Estilo(16f, Peso.regular), if (o.destructiva) C.error else C.texto)
-                        if (o.simbolo.isNotEmpty()) Icono(o.simbolo, 17f, if (o.destructiva) C.error else C.texto)
-                    }
-                }
-            }
+            Column(Modifier.padding(horizontal = 16.dp).widthIn(min = 250.dp).tarjeta(14.dp)) { FilasDeMenu(opciones) { abierto = false } }
         }
     }
 }
