@@ -7,102 +7,102 @@ internal object Simbolos {
         "aqi.medium" to '\uf154', // airwave
         "archivebox" to '\ue1a1', // inventory_2
         "arrow.clockwise" to '\ue5d5', // refresh
-        "arrow.down" to '\ue5db', // arrow_downward
         "arrow.down.circle" to '\uf181', // arrow_circle_down
         "arrow.down.doc" to '\uf090', // download
-        "arrow.left" to '\ue5c4', // arrow_back
+        "arrow.down" to '\ue5db', // arrow_downward
         "arrow.left.arrow.right" to '\ue8d4', // swap_horiz
-        "arrow.right" to '\ue5c8', // arrow_forward
+        "arrow.left" to '\ue5c4', // arrow_back
         "arrow.right.circle" to '\ueaaa', // arrow_circle_right
-        "arrow.triangle.2.circlepath" to '\ue627', // sync
+        "arrow.right" to '\ue5c8', // arrow_forward
         "arrow.triangle.2.circlepath.icloud" to '\ueb5a', // cloud_sync
-        "arrow.up" to '\ue5d8', // arrow_upward
+        "arrow.triangle.2.circlepath" to '\ue627', // sync
         "arrow.up.arrow.down.square" to '\ue8d5', // swap_vert
         "arrow.up.circle" to '\uf182', // arrow_circle_up
         "arrow.up.doc" to '\ue9fc', // upload_file
         "arrow.up.left.and.arrow.down.right" to '\uf1ce', // open_in_full
-        "arrow.up.right" to '\uf8ce', // arrow_outward
         "arrow.up.right.square" to '\ue89e', // open_in_new
+        "arrow.up.right" to '\uf8ce', // arrow_outward
+        "arrow.up" to '\ue5d8', // arrow_upward
         "arrow.uturn.backward" to '\ue166', // undo
         "arrow.uturn.forward" to '\ue15a', // redo
         "banknote" to '\uef63', // payments
         "bathtub" to '\uea41', // bathtub
         "beach.umbrella" to '\ueb3e', // beach_access
         "bed.double" to '\uefdf', // bed
-        "bell" to '\ue7f5', // notifications
         "bell.badge" to '\uf4fe', // notifications_unread
         "bell.slash" to '\ue7f6', // notifications_off
-        "bolt" to '\uea0b', // bolt
+        "bell" to '\ue7f5', // notifications
         "bolt.slash" to '\ue3e6', // flash_off
+        "bolt" to '\uea0b', // bolt
         "book" to '\uea19', // menu_book
-        "bookmark" to '\ue8e7', // bookmark
         "bookmark.slash" to '\ue59a', // bookmark_remove
-        "bubble.left" to '\ue0cb', // chat_bubble
+        "bookmark" to '\ue8e7', // bookmark
         "bubble.left.and.bubble.right" to '\ue8af', // forum
-        "building" to '\ue7ee', // domain
+        "bubble.left" to '\ue0cb', // chat_bubble
         "building.2" to '\uea40', // apartment
         "building.columns" to '\ue84f', // account_balance
-        "calendar" to '\uebcc', // calendar_month
+        "building" to '\ue7ee', // domain
         "calendar.badge.checkmark" to '\ue614', // event_available
         "calendar.badge.clock" to '\uefd6', // schedule
         "calendar.badge.exclamationmark" to '\ue615', // event_busy
         "calendar.badge.plus" to '\uef85', // calendar_add_on
-        "camera" to '\ue412', // photo_camera
+        "calendar" to '\uebcc', // calendar_month
         "camera.badge.ellipsis" to '\ue8fc', // camera_enhance
         "camera.badge.plus" to '\ue439', // add_a_photo
+        "camera" to '\ue412', // photo_camera
         "car" to '\ueff7', // directions_car
         "chart.bar" to '\ue26b', // bar_chart
         "chart.line.downtrend.xyaxis" to '\ue8e3', // trending_down
         "chart.line.uptrend.xyaxis" to '\ue8e5', // trending_up
         "chart.xyaxis.line" to '\ue6e1', // show_chart
         "checklist" to '\ue6b1', // checklist
-        "checkmark" to '\ue668', // check
         "checkmark.bubble" to '\uf18b', // mark_chat_read
         "checkmark.circle" to '\uf0be', // check_circle
         "checkmark.icloud" to '\ue2bf', // cloud_done
         "checkmark.seal" to '\uef76', // verified
         "checkmark.shield" to '\uf013', // verified_user
         "checkmark.square" to '\ue9de', // check_box
-        "chevron.down" to '\ue5cf', // expand_more
+        "checkmark" to '\ue668', // check
         "chevron.down.circle" to '\ue7cd', // expand_circle_down
+        "chevron.down" to '\ue5cf', // expand_more
         "chevron.left" to '\ue5cb', // chevron_left
         "chevron.right" to '\ue5cc', // chevron_right
-        "chevron.up" to '\ue5ce', // expand_less
         "chevron.up.chevron.down" to '\ue5d7', // unfold_more
-        "circle" to '\ue836', // radio_button_unchecked
+        "chevron.up" to '\ue5ce', // expand_less
         "circle.lefthalf.filled" to '\ueb37', // contrast
-        "clock" to '\uefd6', // schedule
+        "circle" to '\ue836', // radio_button_unchecked
         "clock.arrow.circlepath" to '\ue8b3', // history
+        "clock" to '\uefd6', // schedule
         "creditcard" to '\ue8a1', // credit_card
         "crown" to '\uecb3', // crown
-        "doc" to '\ue873', // description
         "doc.badge.plus" to '\ue89c', // note_add
-        "doc.on.doc" to '\ue14d', // content_copy
         "doc.on.clipboard" to '\ue14f', // content_paste
+        "doc.on.doc" to '\ue14d', // content_copy
         "doc.plaintext" to '\uef42', // article
         "doc.richtext" to '\uf009', // feed
-        "doc.text" to '\ue873', // description
         "doc.text.magnifyingglass" to '\ue880', // find_in_page
+        "doc.text" to '\ue873', // description
         "doc.viewfinder" to '\ue5fa', // document_scanner
-        "dollarsign" to '\ue227', // attach_money
+        "doc" to '\ue873', // description
         "dollarsign.circle" to '\uf041', // paid
+        "dollarsign" to '\ue227', // attach_money
         "door.garage.closed" to '\uf011', // garage
         "door.left.hand.closed" to '\ueffd', // door_front
         "door.left.hand.open" to '\ue77c', // door_open
         "dot.radiowaves.up.forward" to '\ue0e5', // rss_feed
-        "drop" to '\ue798', // water_drop
         "drop.triangle" to '\uf203', // water_damage
-        "ellipsis" to '\ue5d3', // more_horiz
+        "drop" to '\ue798', // water_drop
         "ellipsis.circle" to '\ue5d3', // more_horiz
-        "envelope" to '\ue159', // mail
+        "ellipsis" to '\ue5d3', // more_horiz
         "envelope.badge" to '\uf18a', // mark_email_unread
         "envelope.open" to '\ue151', // drafts
-        "exclamationmark" to '\ue645', // priority_high
+        "envelope" to '\ue159', // mail
         "exclamationmark.circle" to '\uf8b6', // error
         "exclamationmark.icloud" to '\ue2c1', // cloud_off
         "exclamationmark.triangle" to '\uf083', // warning
-        "eye" to '\ue8f4', // visibility
+        "exclamationmark" to '\ue645', // priority_high
         "eye.slash" to '\ue8f5', // visibility_off
+        "eye" to '\ue8f4', // visibility
         "faceid" to '\ue90d', // fingerprint
         "figure.pool.swim" to '\ueb48', // pool
         "figure.walk" to '\ue536', // directions_walk
@@ -119,29 +119,30 @@ internal object Simbolos {
         "hand.tap" to '\ue913', // touch_app
         "hands.sparkles" to '\uf21f', // clean_hands
         "heart.slash" to '\ueac2', // heart_broken
-        "hourglass" to '\ue88b', // hourglass_empty
         "hourglass.circle" to '\uea5b', // hourglass_top
-        "house" to '\ue9b2', // home
+        "hourglass" to '\ue88b', // hourglass_empty
         "house.badge.plus" to '\uf8eb', // add_home
+        "house" to '\ue9b2', // home
         "icloud.and.arrow.up" to '\ue2c3', // cloud_upload
         "icloud.slash" to '\ue2c1', // cloud_off
-        "info" to '\ue88e', // info
         "info.circle" to '\ue88e', // info
+        "info" to '\ue88e', // info
         "iphone" to '\ue7ba', // smartphone
         "key" to '\ue73c', // key
-        "largecircle.circle" to '\ue837', // radio_button_checked
         "laptopcomputer" to '\ue320', // laptop_mac
+        "largecircle.circle" to '\ue837', // radio_button_checked
         "leaf" to '\uea35', // eco
         "light.max" to '\ue518', // light_mode
         "lightbulb" to '\ue90f', // lightbulb
         "line.3.horizontal.decrease.circle" to '\ue152', // filter_list
-        "link" to '\ue250', // link
+        "line.3.horizontal" to '\ue25d', // drag_handle
         "link.badge.plus" to '\ue178', // add_link
-        "list.bullet" to '\ue241', // format_list_bulleted
+        "link" to '\ue250', // link
         "list.bullet.rectangle" to '\ue0ee', // list_alt
+        "list.bullet" to '\ue241', // format_list_bulleted
         "location" to '\uf1db', // location_on
-        "lock" to '\ue899', // lock
         "lock.open" to '\ue898', // lock_open
+        "lock" to '\ue899', // lock
         "magnifyingglass" to '\uef7a', // search
         "map" to '\ue55b', // map
         "mappin.and.ellipse" to '\uf1db', // location_on
@@ -162,29 +163,29 @@ internal object Simbolos {
         "pawprint" to '\ue91d', // pets
         "pencil" to '\uf097', // edit
         "percent" to '\ueb58', // percent
-        "person" to '\uf0d3', // person
         "person.2" to '\uea21', // group
         "person.3" to '\uf233', // groups
         "person.badge.key" to '\uef3d', // admin_panel_settings
         "person.badge.minus" to '\uef66', // person_remove
         "person.badge.plus" to '\uea4d', // person_add
-        "person.crop.circle" to '\uf20b', // account_circle
         "person.crop.circle.badge.checkmark" to '\ue174', // how_to_reg
         "person.crop.circle.badge.questionmark" to '\ue94c', // contact_support
         "person.crop.circle.badge.xmark" to '\ue510', // person_off
+        "person.crop.circle" to '\uf20b', // account_circle
         "person.slash" to '\ue510', // person_off
         "person.text.rectangle" to '\uea67', // badge
+        "person" to '\uf0d3', // person
         "phone" to '\uf0d4', // call
-        "photo" to '\ue3f4', // image
         "photo.badge.plus" to '\ue43e', // add_photo_alternate
-        "photo.on.rectangle" to '\ue413', // photo_library
         "photo.on.rectangle.angled" to '\ue413', // photo_library
+        "photo.on.rectangle" to '\ue413', // photo_library
+        "photo" to '\ue3f4', // image
         "pin" to '\uf10d', // push_pin
         "play.circle" to '\ue1c4', // play_circle
-        "plus" to '\ue145', // add
         "plus.circle" to '\ue990', // add_circle
         "plus.rectangle.on.rectangle" to '\ue03c', // library_add
         "plus.square.on.square" to '\ue03c', // library_add
+        "plus" to '\ue145', // add
         "printer" to '\ue8ad', // print
         "puzzlepiece.extension" to '\ue87b', // extension
         "qrcode" to '\ue00a', // qr_code_2
@@ -204,34 +205,34 @@ internal object Simbolos {
         "slider.horizontal.3" to '\ue429', // tune
         "sparkles" to '\ue65f', // auto_awesome
         "speedometer" to '\ue9e4', // speed
-        "square" to '\ue3c6', // crop_square
         "square.and.arrow.down" to '\uf090', // download
         "square.and.arrow.up" to '\ue6b8', // ios_share
         "square.and.pencil" to '\uf88d', // edit_square
         "square.grid.2x2" to '\ue9b0', // grid_view
+        "square" to '\ue3c6', // crop_square
         "star" to '\uf09a', // star
         "stop.circle" to '\uef71', // stop_circle
         "storefront" to '\uea12', // storefront
         "sun.max" to '\ue518', // light_mode
         "tablecells" to '\uf191', // table
         "tag" to '\uf05b', // sell
-        "text" to '\ue26c', // notes
         "text.bubble" to '\ue0c9', // chat
+        "text" to '\ue26c', // notes
         "timer" to '\ue425', // timer
-        "trash" to '\ue92e', // delete
         "trash.slash" to '\ue938', // restore_from_trash
-        "tray" to '\ue156', // inbox
+        "trash" to '\ue92e', // delete
         "tray.full" to '\ue156', // inbox
+        "tray" to '\ue156', // inbox
         "video" to '\ue04b', // videocam
         "viewfinder" to '\ue3b4', // center_focus_strong
         "wand.and.stars" to '\ue663', // auto_fix_high
         "washer" to '\ue54a', // local_laundry_service
         "waveform" to '\ue1b8', // graphic_eq
         "wifi.slash" to '\ue648', // wifi_off
-        "wrench" to '\uf8cd', // build
         "wrench.adjustable" to '\uf8cd', // build
         "wrench.and.screwdriver" to '\uf10b', // handyman
-        "xmark" to '\ue5cd', // close
+        "wrench" to '\uf8cd', // build
         "xmark.circle" to '\ue888', // cancel
+        "xmark" to '\ue5cd', // close
     )
 }

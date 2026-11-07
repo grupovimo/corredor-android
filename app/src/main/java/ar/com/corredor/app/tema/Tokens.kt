@@ -1,5 +1,16 @@
 package ar.com.corredor.app.tema
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -272,5 +283,22 @@ fun Modifier.sombraE3(forma: androidx.compose.ui.graphics.Shape = RoundedCornerS
 @Composable
 fun Modifier.tarjeta(radio: Dp = M.rTarjeta): Modifier {
     val forma = RoundedCornerShape(radio)
-    return this.sombraE2(forma).clip(forma).background(C.superficie)
+    // Al entrar y salir por los bordes al hacer scroll, las tarjetas se asoman (apenas más chicas y
+    // transparentes): la lista se siente viva sin distraer (el scrollTransition de iOS).
+    var entera by remember { mutableStateOf(true) }
+    val fase by animateFloatAsState(if (entera) 1f else 0f, spring(dampingRatio = 1f, stiffness = 320f), label = "asoma")
+    val alto = LocalConfiguration.current.screenHeightDp * LocalDensity.current.density
+    return this
+        .onGloballyPositioned { c ->
+            // boundsInWindow ya viene recortado por el scroll que la contiene.
+            val visible = c.boundsInWindow().height
+            entera = c.size.height == 0 || visible >= minOf(c.size.height.toFloat(), alto * 0.5f) - 1f
+        }
+        .graphicsLayer {
+            val f = fase
+            alpha = 0.55f + 0.45f * f
+            scaleX = 0.96f + 0.04f * f
+            scaleY = scaleX
+        }
+        .sombraE2(forma).clip(forma).background(C.superficie)
 }

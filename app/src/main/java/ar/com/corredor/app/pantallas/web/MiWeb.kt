@@ -4,6 +4,15 @@ import ar.com.corredor.app.app.PantallaApilada
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -137,6 +146,9 @@ fun MiWeb() {
     var publicando by remember { mutableStateOf(false) }
     var versiones by remember { mutableStateOf(false) }
     var plantillas by remember { mutableStateOf(false) }
+    var arrastrada by remember { mutableStateOf<Int?>(null) }
+    var corridoY by remember { mutableStateOf(0f) }
+    var altoFila by remember { mutableStateOf(1) }
     var qr by remember { mutableStateOf(false) }
     var fotoPortada by remember { mutableStateOf(false) }
     var editandoPagina by remember { mutableStateOf<Int?>(null) }
@@ -555,23 +567,55 @@ fun MiWeb() {
                                 submenu = EditorWeb.tiposParaSumar(secciones).map { t -> OpcionDeMenu(MiWeb.nombreSeccion(t), "") { sumarSeccion(t, despuesDe = i) } }))
                             if (tipo != "portada") add(OpcionDeMenu("Quitar", "trash", destructiva = true) { quitarSeccion(i) })
                         }
+                        // El modo edición (.editMode .active + onMove): la manija de la derecha arrastra la fila y las
+                        // demás se corren para hacerle lugar.
+                        val desde = arrastrada
+                        val destino = desde?.let { (it + (corridoY / altoFila).roundToInt()).coerceIn(0, secciones.size - 1) }
+                        val corre by animateIntAsState(
+                            when {
+                                desde == null || destino == null || i == desde -> 0
+                                i in (desde + 1)..destino -> -altoFila
+                                i in destino until desde -> altoFila
+                                else -> 0
+                            }, label = "corre",
+                        )
+                        Box(Modifier.zIndex(if (i == desde) 1f else 0f).offset { IntOffset(0, if (i == desde) corridoY.roundToInt() else corre) }
+                            .onSizeChanged { altoFila = maxOf(1, it.height) }) {
                         FilaDeslizable(derecha = if (puede) acciones else emptyList()) {
                             MenuContextual(if (puede) menu else emptyList(), alTocar = {}) {
                                 FilaLista(habilitado = puede) {
-                                    // El modo edición (.editMode .active + onMove): subir y bajar en vez de arrastrar.
-                                    if (tipo != "portada" && puede) {
-                                        Column {
-                                            Box(Modifier.size(24.dp, 18.dp).clickable(enabled = i > 1) { mover(i, i - 1) }
-                                                .semantics { contentDescription = "Subir" }.alpha(if (i > 1) 1f else 0.3f), contentAlignment = Alignment.Center) { Icono("chevron.up", 12f, C.texto3) }
-                                            Box(Modifier.size(24.dp, 18.dp).clickable(enabled = i < secciones.size - 1) { mover(i, i + 1) }
-                                                .semantics { contentDescription = "Bajar" }.alpha(if (i < secciones.size - 1) 1f else 0.3f), contentAlignment = Alignment.Center) { Icono("chevron.down", 12f, C.texto3) }
-                                        }
-                                    } else Box(Modifier.width(24.dp))
                                     Texto(MiWeb.nombreSeccion(tipo), Estilo.body16, C.texto, Modifier.weight(1f))
                                     Llave(x["oculta"].bool != true, { on -> ocultar(i, !on) }, color = C.accion, habilitado = puede && tipo != "portada",
                                         descripcion = MiWeb.nombreSeccion(tipo))
+                                    if (puede) {
+                                        Box(
+                                            Modifier.padding(start = 8.dp).size(28.dp, 36.dp)
+                                                .semantics {
+                                                    contentDescription = "Mover ${MiWeb.nombreSeccion(tipo)}"
+                                                    customActions = listOfNotNull(
+                                                        if (i > 1) CustomAccessibilityAction("Subir") { mover(i, i - 1); true } else null,
+                                                        if (i in 1 until secciones.size - 1) CustomAccessibilityAction("Bajar") { mover(i, i + 1); true } else null,
+                                                    )
+                                                }
+                                                .pointerInput(i, secciones.size) {
+                                                    detectDragGestures(
+                                                        onDragStart = { arrastrada = i; corridoY = 0f; Haptico.seleccion() },
+                                                        onDrag = { c, d -> c.consume(); corridoY += d.y },
+                                                        onDragEnd = {
+                                                            val de = arrastrada ?: i
+                                                            val a = (de + (corridoY / altoFila).roundToInt()).coerceIn(0, secciones.size - 1)
+                                                            arrastrada = null; corridoY = 0f
+                                                            if (a != de) mover(de, a)
+                                                        },
+                                                        onDragCancel = { arrastrada = null; corridoY = 0f },
+                                                    )
+                                                },
+                                            contentAlignment = Alignment.Center,
+                                        ) { Icono("line.3.horizontal", 15f, C.texto3) }
+                                    }
                                 }
                             }
+                        }
                         }
                     }
                     Separador()

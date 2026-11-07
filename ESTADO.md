@@ -36,8 +36,8 @@ que falte. Nada sale a las tiendas hasta que esté. Reglas del clon: `CLON.md`. 
 - Siri y Spotlight: los 7 atajos van a `res/xml/shortcuts.xml` (el lanzador muestra 4); Spotlight no tiene par.
 - MapKit → teselas de CARTO; PDFs con `PdfDocument`; la vista previa de archivos abre el visor del sistema.
 - Nota de voz del inventario: Android no graba y transcribe a la vez (con reconocedor, sólo texto).
-- Ordenar secciones de Mi web con flechas (Compose no tiene `onMove`); material translúcido → color al 94 %;
-  la animación de las tarjetas al entrar en pantalla (`scrollTransition`) no está.
+- Material translúcido → color al 94 %. Ordenar secciones de Mi web: manija a la derecha como el modo edición de
+  iOS (con «Subir»/«Bajar» para TalkBack); el `scrollTransition` de las tarjetas está en `Modifier.tarjeta`.
 
 ## Sin probar en un teléfono
 Nunca corrió en un aparato real: ingreso con Clerk, push FCM, notificación en curso, cámara y escáner, dictado,
