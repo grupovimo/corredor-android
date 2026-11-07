@@ -544,8 +544,7 @@ fun AltaPropiedad(
         if (guardado == "error") return@run "No se guardó"
         val g = guardadoEn
         if (guardado == "nada" || g == null) return@run if (editar != null) "Cada cambio se guarda solo" else "Se guarda solo como borrador"
-        val s = maxOf(1L, Duration.between(g, ahora).seconds)
-        if (s < 60) "Guardado hace $s s" else "Guardado hace ${s / 60} min"
+        Formato.guardadoHace(g, ahora)
     }
 
     val sugeridasEnTexto = ComodidadesAlta.nombradas(d.descripcion).filter { d.comodidades.contains(it) }

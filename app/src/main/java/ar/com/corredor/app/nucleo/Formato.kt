@@ -58,6 +58,17 @@ object Formato {
 
     /** La fecha y hora en Buenos Aires. */
     fun enArgentina(f: Instant): ZonedDateTime = f.atZone(zona)
+
+    /** `Formato.guardadoHace` en iOS: «Guardado hace 5 s / 3 min / 2 h»; pasado el día, «Guardado el 06/11». */
+    fun guardadoHace(g: Instant, ahora: Instant): String {
+        val s = maxOf(1L, Math.round(Duration.between(g, ahora).toMillis() / 1000.0))
+        return when {
+            s < 60 -> "Guardado hace $s s"
+            s < 3600 -> "Guardado hace ${s / 60} min"
+            s < 86400 -> "Guardado hace ${s / 3600} h"
+            else -> "Guardado el ${DateTimeFormatter.ofPattern("dd/MM").format(enArgentina(g))}"
+        }
+    }
     /** El día de Buenos Aires de un instante. */
     fun diaDe(f: Instant): LocalDate = enArgentina(f).toLocalDate()
     /** Calendar.isDate(_:inSameDayAs:) en Buenos Aires. */

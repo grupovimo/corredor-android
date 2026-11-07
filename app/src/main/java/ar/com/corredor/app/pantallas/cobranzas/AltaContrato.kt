@@ -725,14 +725,7 @@ private fun textoGuardadoAlta(s: AltaEstado, ahora: Instant): String {
     if (s.guardado == "error") return "No se guardó"
     val g = s.guardadoEn
     if (s.guardado == "nada" || g == null) return "Se guarda solo"
-    val seg = max(1L, ((ahora.toEpochMilli() - g.toEpochMilli()) / 1000.0).roundToLong())
-    // Pasada la hora, en horas (no «hace 1197 min»); pasado el día, la fecha.
-    return when {
-        seg < 60 -> "Guardado hace $seg s"
-        seg < 3600 -> "Guardado hace ${seg / 60} min"
-        seg < 86400 -> "Guardado hace ${seg / 3600} h"
-        else -> "Guardado el ${java.time.format.DateTimeFormatter.ofPattern("dd/MM").format(Formato.enArgentina(g))}"
-    }
+    return Formato.guardadoHace(g, ahora)
 }
 
 @Composable

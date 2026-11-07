@@ -14,8 +14,8 @@ import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.BarraDe
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.nucleo.Fecha
+import ar.com.corredor.app.nucleo.ErrorApi
 import ar.com.corredor.app.nucleo.Formato
-import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.tema.*
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -48,8 +48,15 @@ fun ReglamentoConsorcio(consorcio: String) {
     val estado = LocalEstado.current
     val alcance = rememberCoroutineScope()
     var r by remember { mutableStateOf<ReglamentoConsorcioR?>(null) }
+    var error by remember { mutableStateOf<ErrorApi?>(null) }
 
-    suspend fun cargar() { r = estado.api.opcional<ReglamentoConsorcioR>("/v1/consorcios/$consorcio/reglamento") }
+    // Sin el error, si la API fallaba se quedaba cargando para siempre.
+    suspend fun cargar() {
+        try {
+            r = estado.api.get<ReglamentoConsorcioR>("/v1/consorcios/$consorcio/reglamento")
+            error = null
+        } catch (e: CancellationException) { throw e } catch (e: ErrorApi) { if (r == null) error = e } catch (e: Exception) {}
+    }
 
     LaunchedEffect(estado.version) { cargar() }
 
@@ -97,7 +104,11 @@ fun ReglamentoConsorcio(consorcio: String) {
                         }.padding(vertical = 4.dp))
                     }
                 }
-            } else Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) { Rueda() }
+            } else {
+                val e = error
+                if (e != null) EstadoError("el reglamento", e) { alcance.launch { cargar() } }
+                else Box(Modifier.fillMaxWidth().padding(top = 24.dp), contentAlignment = Alignment.Center) { Rueda() }
+            }
         }
     }
 }
