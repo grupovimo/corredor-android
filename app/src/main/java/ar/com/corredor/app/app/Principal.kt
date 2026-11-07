@@ -427,7 +427,8 @@ fun BarraPestanas() {
                     selected = activa
                 }) {
                     if (p == Pestana.mira) {
-                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        // 6 y no 2: el aro del botón baja 4 más allá de su lugar y tapaba «Crear».
+                        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             BotonMira(abierto = estado.accionesAbiertas)
                             Texto("Crear", Estilo.tab, C.texto3)
                         }

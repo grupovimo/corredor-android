@@ -325,8 +325,8 @@ fun BotonHundido(texto: String, alTocar: () -> Unit, modifier: Modifier = Modifi
             horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
         ) {
             if (simbolo != null) Icono(simbolo, 15f, C.texto)
-            // Con aire a los costados (el ícono iba pegado al borde) y la letra que se achica antes de partirse en dos.
-            Texto(texto, Estilo(15f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false), lineas = 2, alinear = TextAlign.Center, escalaMinima = 0.75f)
+            // Con aire a los costados: el ícono iba pegado al borde.
+            Texto(texto, Estilo(15f, Peso.semibold), C.texto, Modifier.weight(1f, fill = false), lineas = 2, alinear = TextAlign.Center)
         }
     }
 }

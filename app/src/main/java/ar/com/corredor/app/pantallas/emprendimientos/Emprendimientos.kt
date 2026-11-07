@@ -612,7 +612,7 @@ fun FichaEmprendimiento(id: String) {
                             if (a != null && a > 0) {
                                 TarjetaAvance(
                                     titulo = "Avance de obra", cifra = "${a.toInt()} %", avance = a / 100, degrade = listOf(hex(0xE9AD44), hex(0xF2BB57)),
-                                    pie = ex.entrega?.let { "Entrega: $it" } ?: "Sin fecha de entrega",
+                                    pie = ex.entregaTexto?.let { "E" + it.drop(1) } ?: ex.entrega?.let { "Entrega: $it" } ?: "Sin fecha de entrega",
                                 )
                             }
                             ex.descripcion?.let { Texto(it, Estilo.body16, C.texto) }

@@ -95,8 +95,9 @@ fun TarifasTemporada(propiedad: String) {
                                     Column(Modifier.weight(1f)) {
                                         Texto(t.nombre ?: "Tarifa", Estilo.filaLista, C.texto)
                                         // Las fechas como fechas («15/12/2026»), no como las manda la API («2026-12-15»).
-                                        val f = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                                        Texto("${diaTemporada(t.desde).format(f)} al ${diaTemporada(t.hasta).format(f)}${t.nochesMinimas?.let { " · mínimo $it noches" } ?: ""}", Estilo.footnote, C.texto2)
+                                        val f = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yy")
+                                        Texto("${diaTemporada(t.desde).format(f)} al ${diaTemporada(t.hasta).format(f)}", Estilo.footnote, C.texto2)
+                                        t.nochesMinimas?.let { Texto("mínimo $it noches", Estilo.footnote, C.texto2) }
                                     }
                                     Texto("${Formato.plata(t.precio, t.moneda ?: "USD")}\u00A0/ ${TarifaAPI.periodos.firstOrNull { it.first == (t.periodo ?: "temporada") }?.second?.lowercase() ?: "temporada"}",
                                         Estilo.body.con(Peso.semibold), C.texto, Modifier.padding(start = 10.dp))

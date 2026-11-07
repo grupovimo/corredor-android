@@ -129,10 +129,12 @@ fun viuda(r: TextLayoutResult): Int? {
     var s = ini - 1
     while (s > 0 && t[s] == ' ' && t[s - 1] == ' ') s--
     if (t[s] != ' ') return null
-    // La anteúltima palabra y que en su renglón quede algo más.
+    // La anteúltima palabra (con lo que ya tenga pegado con espacio duro) y que en su renglón queden por lo menos dos
+    // palabras: si no, se arregla una viuda abajo y se hace otra arriba («sin / oferta anotada»).
     var p = s
-    while (p > 0 && t[p - 1] != ' ' && t[p - 1] != '\n' && t[p - 1] != '\u00A0') p--
-    if (p <= r.getLineStart(n - 2)) return null
+    while (p > 0 && t[p - 1] != ' ' && t[p - 1] != '\n') p--
+    val ini2 = r.getLineStart(n - 2)
+    if (p <= ini2 || !t.substring(ini2, p).trim().contains(' ')) return null
     val anteultima = kotlin.math.abs(r.getHorizontalPosition(s, true) - r.getHorizontalPosition(p, true))
     val sola = r.getLineRight(n - 1) - r.getLineLeft(n - 1)
     return if (anteultima + sola + anteultima / maxOf(1, s - p) <= r.size.width) s else null
