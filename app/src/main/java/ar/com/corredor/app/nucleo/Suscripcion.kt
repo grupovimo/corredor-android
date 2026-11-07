@@ -98,7 +98,31 @@ data class Suscripcion(
 
 /** Un producto de Google Play (el Product de StoreKit): su id, el precio como lo escribe Play y los días gratis de la
  *  oferta de entrada, si tiene. */
-data class Producto(val id: String, val displayPrice: String, val micros: Long, val oferta: String, val diasGratis: Int?, val detalle: ProductDetails)
+data class Producto(
+    val id: String,
+    /** El precio como lo escribe Play (displayPrice). */
+    val displayPrice: String,
+    val micros: Long,
+    /** La oferta a comprar (con la prueba gratis si le corresponde a esta cuenta). */
+    val oferta: String,
+    val diasGratis: Int?,
+    val detalle: ProductDetails,
+    /** La moneda de la tienda de la cuenta de Google (ARS, USD). */
+    val moneda: String = "ARS",
+    /** La prueba gratis (`P14D`, `P1M`): Play sólo la devuelve si la cuenta puede usarla. */
+    val periodoGratis: String? = null,
+) {
+    val precioTexto: String get() = displayPrice
+    val precio: Double get() = micros / 1_000_000.0
+
+    /** Un monto en la moneda de la tienda (Product.priceFormatStyle de StoreKit). */
+    fun formatear(n: Double, decimales: Int? = null): String {
+        val f = java.text.NumberFormat.getCurrencyInstance(Formato.argentina)
+        runCatching { f.currency = java.util.Currency.getInstance(moneda) }
+        if (decimales != null) { f.minimumFractionDigits = 0; f.maximumFractionDigits = decimales }
+        return f.format(n)
+    }
+}
 
 /** Google Play (la Tienda de StoreKit en iOS): los productos de los planes, la compra (con la inmobiliaria como
  *  obfuscatedAccountId) y las compras que llegan solas (renovaciones, otro teléfono). Cada una se le manda a la API
@@ -156,11 +180,15 @@ class Tienda private constructor() {
             }).build()
             val r = runCatching { c.queryProductDetails(p) }.getOrNull() ?: return
             r.productDetailsList.orEmpty().forEach { d ->
-                val o = d.subscriptionOfferDetails?.firstOrNull() ?: return@forEach
+                val ofertas = d.subscriptionOfferDetails.orEmpty()
+                // La oferta con la prueba gratis (precio 0 en la primera fase), si Play la da; si no, la base.
+                val conGratis = ofertas.firstOrNull { o -> o.pricingPhases.pricingPhaseList.firstOrNull()?.priceAmountMicros == 0L }
+                val o = conGratis ?: ofertas.firstOrNull() ?: return@forEach
                 val fases = o.pricingPhases.pricingPhaseList
                 val fase = fases.lastOrNull() ?: return@forEach
-                val gratis = fases.firstOrNull { it.priceAmountMicros == 0L }?.billingPeriod?.let { diasDe(it) }
-                productos[d.productId] = Producto(d.productId, fase.formattedPrice, fase.priceAmountMicros, o.offerToken, gratis, d)
+                val periodo = fases.firstOrNull { it.priceAmountMicros == 0L }?.billingPeriod
+                productos[d.productId] = Producto(d.productId, fase.formattedPrice, fase.priceAmountMicros, o.offerToken, periodo?.let { diasDe(it) }, d,
+                    moneda = fase.priceCurrencyCode, periodoGratis = periodo)
             }
         } finally {
             cargando = false
@@ -214,7 +242,7 @@ class Tienda private constructor() {
 
     /** «Restaurar compras»: vuelve a mandar a la API lo que Google Play tiene vigente en esta cuenta. */
     suspend fun restaurar(): Suscripcion? {
-        val c = conectado() ?: return null
+        val c = conectado() ?: throw ErrorApi.desconocido
         val r = c.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build())
         var ultima: Suscripcion? = null
         r.purchasesList.forEach { p -> runCatching { procesar(p) }.getOrNull()?.let { ultima = it } }

@@ -71,9 +71,6 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
-    // PROVISORIO: las pantallas que todavía no están (las escriben los agentes de pantallas), con sus firmas, para que
-    // el núcleo compile solo. Se borra la carpeta y estas líneas cuando entran las pantallas de verdad.
-    sourceSets["main"].java.srcDir("src/provisorio/java")
     testOptions {
         unitTests.isReturnDefaultValues = true
         unitTests.isIncludeAndroidResources = true
@@ -126,6 +123,8 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.mlkit.barcode)
+    // El escáner de Documentos (VisionKit en iOS).
+    implementation(libs.mlkit.escaner.documentos)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

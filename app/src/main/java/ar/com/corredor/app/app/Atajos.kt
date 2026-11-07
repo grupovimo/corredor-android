@@ -11,6 +11,7 @@ import ar.com.corredor.app.nucleo.ABuscar
 import ar.com.corredor.app.nucleo.Api
 import ar.com.corredor.app.nucleo.Cita
 import ar.com.corredor.app.nucleo.Fecha
+import ar.com.corredor.app.nucleo.Preferencias
 import ar.com.corredor.app.nucleo.Pestana
 import ar.com.corredor.app.nucleo.Ruta
 import ar.com.corredor.app.nucleo.intentar
@@ -93,16 +94,25 @@ object ActividadVisita {
         }
     }
 
-    /** Lo que manda el servidor por FCM: {tipo: actividad, cita, empieza, termina, donde, con, terminar}. */
+    /** Lo que manda el servidor por FCM (actividades.go › datosActividad): {tipo: «actividad», cita, empieza (RFC 3339),
+     *  estado, terminar: «1»|«0»}. El lugar, con quién y la duración no vienen: son los de la última vez que se mostró esa
+     *  cita (los guarda `mostrar`, también con la app cerrada). */
     fun desdePush(ctx: Context, d: Map<String, String>) {
         val cita = d["cita"] ?: return
-        if (d["terminar"] == "1") { terminar(ctx, cita); return }
-        val empieza = d["empieza"]?.let { Fecha.iso(it) } ?: return
-        val termina = d["termina"]?.let { Fecha.iso(it) } ?: empieza.plusSeconds(3600)
-        mostrar(ctx, cita, d["donde"] ?: "Visita", d["con"]?.ifEmpty { null }, empieza, termina)
+        val estado = d["estado"].orEmpty()
+        if (d["terminar"] == "1" || estado == "cancelada" || estado == "hecha") { terminar(ctx, cita); return }
+        val empieza = Fecha.iso(d["empieza"]) ?: return
+        Preferencias.contexto = Preferencias.contexto ?: ctx.applicationContext
+        val donde = Preferencias.texto("visita.$cita.donde") ?: "Visita"
+        val con = Preferencias.texto("visita.$cita.con")?.ifEmpty { null }
+        val dura = Preferencias.entero("visita.$cita.minutos").takeIf { it > 0 } ?: 60
+        mostrar(ctx, cita, donde, con, empieza, empieza.plusSeconds(dura * 60L))
     }
 
     private fun mostrar(ctx: Context, cita: String, donde: String, con: String?, empieza: Instant, termina: Instant) {
+        Preferencias.ponerTexto("visita.$cita.donde", donde)
+        Preferencias.ponerTexto("visita.$cita.con", con ?: "")
+        Preferencias.ponerEntero("visita.$cita.minutos", maxOf(1L, (termina.epochSecond - empieza.epochSecond) / 60).toInt())
         if (!Push.hayPermiso(ctx)) return
         actual = cita
         val ruta = "agenda/$cita"

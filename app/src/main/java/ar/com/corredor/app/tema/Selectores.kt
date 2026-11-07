@@ -266,9 +266,13 @@ fun colorDeHex(texto: String?): Color? = Acento.rgb(texto)?.let { hex(Acento.hex
 /** El elegidor de color (ColorPicker de iOS): la muestra redonda y, al tocarla, una hoja con la grilla de colores y el
  *  código. `hexActual` y lo que devuelve van como «#rrggbb». */
 @Composable
-fun SelectorDeColor(titulo: String, hexActual: String, alCambiar: (String) -> Unit) {
+fun SelectorDeColor(titulo: String, hexActual: String, soloMuestra: Boolean = false, alCambiar: (String) -> Unit) {
     var abierto by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { abierto = true }.semantics { contentDescription = titulo },
+    if (soloMuestra) {
+        // ColorPicker con .labelsHidden(): sólo la muestra (50).
+        Box(Modifier.size(50.dp).clip(CircleShape).background(colorDeHex(hexActual) ?: Color.White)
+            .border(androidx.compose.foundation.BorderStroke(1.dp, C.linea2), CircleShape).clickable { abierto = true }.semantics { contentDescription = "Elegir $titulo" })
+    } else Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable { abierto = true }.semantics { contentDescription = titulo },
         verticalAlignment = Alignment.CenterVertically) {
         Texto(titulo, Estilo.body16, C.texto, Modifier.weight(1f))
         Box(Modifier.size(28.dp).clip(CircleShape).background(colorDeHex(hexActual) ?: C.accion)

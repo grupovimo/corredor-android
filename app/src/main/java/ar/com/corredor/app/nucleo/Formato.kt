@@ -77,6 +77,13 @@ object Formato {
 
     /** «octubre». */
     fun mesDe(f: Instant): String = mes.format(f)
+    fun mesDe(d: LocalDate): String = DateTimeFormatter.ofPattern("MMMM", argentina).format(d)
+
+    /** «jueves 12 de noviembre» de un día. */
+    fun diaCompleto(d: LocalDate): String = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", argentina).format(d)
+
+    /** «2026-11-12» (Formato.diaISO de iOS, para un día). */
+    fun diaISO(d: LocalDate): String = d.toString()
 
     /** «14 de noviembre de 2026». */
     fun diaMesAnio(f: Instant): String = diaMesAnio.format(f)
@@ -144,11 +151,19 @@ object Fecha {
     private val fraccion = Regex("""\.\d+""")
 
     /** RFC 3339 con o sin fracción (Go manda nanosegundos), o una fecha sola. */
-    fun iso(s: String): Instant? {
+    fun iso(s: String?): Instant? {
+        if (s == null) return null
         runCatching { return OffsetDateTime.parse(s).toInstant() }
         runCatching { return Instant.parse(s) }
         fraccion.find(s)?.let { m -> runCatching { return OffsetDateTime.parse(s.replaceRange(m.range, m.value.take(10))).toInstant() } }
         return runCatching { LocalDate.parse(s.take(10)).atStartOfDay(Formato.zona).toInstant() }.getOrNull()
+    }
+
+    /** «2026-11-12» (o un RFC 3339) → el día (null si no tiene año, mes y día). */
+    fun fecha(s: String?): LocalDate? {
+        val p = (s ?: return null).take(10).split("-").mapNotNull { it.toIntOrNull() }
+        if (p.size != 3) return null
+        return runCatching { LocalDate.of(p[0], p[1], p[2]) }.getOrNull()
     }
 
     /** El instante en RFC 3339 (lo que espera la API). */

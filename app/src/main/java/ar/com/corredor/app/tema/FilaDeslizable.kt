@@ -133,14 +133,14 @@ fun FilaDeslizable(
         if (x > 0 && izquierda.isNotEmpty()) {
             Row(Modifier.matchParentSize().background(izquierda.first().color)) {
                 val w = with(densidad) { maxOf(anchoPx, x / izquierda.size).toDp() }
-                izquierda.forEach { a -> BotonAccion(a, Modifier.width(w).fillMaxHeight()) { cerrar(); a.accion() } }
+                izquierda.forEach { a -> BotonAccionFila(a, Modifier.width(w).fillMaxHeight()) { cerrar(); a.accion() } }
             }
         }
         if (x < 0 && derecha.isNotEmpty()) {
             Row(Modifier.matchParentSize().background(derecha.last().color), horizontalArrangement = Arrangement.End) {
                 derecha.forEachIndexed { i, a ->
                     val w = if (i == derecha.size - 1) with(densidad) { maxOf(anchoPx, -x - anchoPx * (derecha.size - 1)).toDp() } else anchoAccion
-                    BotonAccion(a, Modifier.width(w).fillMaxHeight()) { cerrar(); a.accion() }
+                    BotonAccionFila(a, Modifier.width(w).fillMaxHeight()) { cerrar(); a.accion() }
                 }
             }
         }
@@ -149,7 +149,7 @@ fun FilaDeslizable(
 }
 
 @Composable
-private fun BotonAccion(a: AccionFila, modifier: Modifier, alTocar: () -> Unit) {
+private fun BotonAccionFila(a: AccionFila, modifier: Modifier, alTocar: () -> Unit) {
     Column(modifier.background(a.color).clickable(onClick = alTocar), horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterVertically)) {
         Icono(a.simbolo, 18f, Color.White)

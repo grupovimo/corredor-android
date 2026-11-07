@@ -479,32 +479,22 @@ class Estado(api: Api? = null) {
 
     /** openURL de un link cualquiera (https, tel:, mailto:, wa.me). Llamar abre el marcador. */
     fun abrirUrl(url: String) {
-        val c = contexto ?: return
-        val u = Uri.parse(url)
-        val i = if (u.scheme == "tel") Intent(Intent.ACTION_DIAL, u) else Intent(Intent.ACTION_VIEW, u)
-        runCatching { c.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        contexto?.let { ar.com.corredor.app.nucleo.abrirUrl(it, url) }
     }
 
     /** ShareLink de un texto (o un link). */
     fun compartirTexto(texto: String, asunto: String? = null) {
-        val c = contexto ?: return
-        val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, texto)
-        asunto?.let { i.putExtra(Intent.EXTRA_SUBJECT, it) }
-        runCatching { c.startActivity(Intent.createChooser(i, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        contexto?.let { ar.com.corredor.app.nucleo.compartirTexto(it, texto, asunto) }
     }
 
     /** ShareLink de un archivo (un PDF, una placa, un CSV). Va por el FileProvider (cache/compartir). */
     fun compartirArchivo(archivo: File, tipo: String, texto: String? = null) {
-        val c = contexto ?: return
-        val uri = FileProvider.getUriForFile(c, "ar.com.corredor.app.archivos", archivo)
-        val i = Intent(Intent.ACTION_SEND).setType(tipo).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        texto?.let { i.putExtra(Intent.EXTRA_TEXT, it) }
-        runCatching { c.startActivity(Intent.createChooser(i, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        contexto?.let { ar.com.corredor.app.nucleo.compartirArchivo(it, archivo, tipo, texto) }
     }
 
     /** UIPasteboard.general.string = … */
     fun copiar(texto: String) {
-        contexto?.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText("Corredor", texto))
+        contexto?.let { ar.com.corredor.app.nucleo.copiar(it, texto) }
     }
 
     // MARK: Face ID (1D)

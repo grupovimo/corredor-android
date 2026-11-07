@@ -31,11 +31,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import ar.com.corredor.app.nucleo.Api
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
-// Clon de App/Push.swift (el Delegado de APNs) con FCM sólo datos: registra el token (`POST /v1/push/dispositivos`),
-// muestra los avisos con las mismas categorías y acciones (14B), abre la pantalla exacta al tocarlos (`ruta` del aviso)
-// y resuelve la respuesta escrita desde el aviso (14C) sin abrir la app.
+// Clon de App/Push.swift (el Delegado de APNs) con FCM sólo datos: registra el token (`POST /v1/push/dispositivos` con
+// plataforma android), muestra los avisos con las mismas categorías y acciones (14B), abre la pantalla exacta al tocarlos
+// (`ruta` del aviso) y resuelve la respuesta escrita desde el aviso (14C) sin abrir la app. Las claves son las que manda la
+// API (integraciones/push/nativo.go › datosFCM y actividades.go › datosActividad):
+//   aviso: titulo, cuerpo, ruta, tipo, categoria, avisoId, acciones (JSON: [{accion, titulo, metodo, ruta, cuerpo, entrada}]);
+//   visita en curso: tipo «actividad», cita, empieza (RFC 3339), estado, terminar («1» o «0»).
 
 /** FCM sin google-services.json (como Tengo Libre y Caigo): FirebaseApp se arma a mano con cr.firebase.* de
  *  local.properties. Sin esos datos el push queda apagado y la app anda igual. */
@@ -90,25 +95,47 @@ object Push {
         return PendingIntent.getActivity(ctx, codigo, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    /** Una acción que corre sin abrir la app (Responder, Marcar como hecha). */
-    fun accion(ctx: Context, que: String, ruta: String, aviso: Int, cita: String? = null): PendingIntent {
+    /** Un botón del aviso como lo manda la API en `acciones` (avisos.Accion): con `ruta`, llama a la API con `metodo` y
+     *  `cuerpo`; con `entrada: "texto"`, primero pide el texto y manda {"texto": …}; sin `ruta`, abre el aviso en la app
+     *  con esa acción (la `url` del panel queda de vuelta). */
+    @Serializable
+    data class AccionAviso(
+        val accion: String,
+        val titulo: String,
+        val metodo: String? = null,
+        val ruta: String? = null,
+        val cuerpo: JsonElement? = null,
+        val entrada: String? = null,
+        val url: String? = null,
+    )
+
+    /** `acciones` del aviso (un JSON con la lista). */
+    fun acciones(d: Map<String, String>): List<AccionAviso> =
+        d["acciones"]?.let { runCatching { Api.json.decodeFromString<List<AccionAviso>>(it) }.getOrNull() } ?: emptyList()
+
+    /** Una acción que corre sin abrir la app: Responder (14C), Marcar como hecha, o una de la API. */
+    fun accion(ctx: Context, que: String, ruta: String, aviso: Int, avisoId: String? = null, api: AccionAviso? = null): PendingIntent {
         val i = Intent(ctx, AccionesPush::class.java).apply {
             action = "ar.com.corredor.app.$que"
-            putExtra("ruta", ruta); putExtra("aviso", aviso); putExtra("citaId", cita)
+            putExtra("ruta", ruta); putExtra("aviso", aviso); putExtra("avisoId", avisoId)
+            api?.let { putExtra("api", Api.json.encodeToString(it)) }
         }
-        val mutable = if (que == "responder") PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(ctx, (que + ruta).hashCode(), i, mutable or PendingIntent.FLAG_UPDATE_CURRENT)
+        val conTexto = que == "responder" || api?.entrada == "texto"
+        val mutable = if (conTexto) PendingIntent.FLAG_MUTABLE else PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(ctx, (que + ruta + (api?.accion ?: "")).hashCode(), i, mutable or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
-    /** Arma y muestra un aviso con las acciones de su categoría (las mismas que las categorías de iOS):
-     *  mensaje (Responder, Abrir), consulta (Responder, Llamar, Abrir), cobro (Registrar cobro, Abrir) y visita (Abrir,
-     *  Marcar como hecha). El aviso viene sólo con datos: {titulo, cuerpo, ruta, categoria, avisoId, telefono, citaId}. */
+    /** Arma y muestra un aviso. Llega sólo con datos: {titulo, cuerpo, ruta, tipo, categoria, avisoId, acciones}.
+     *  Los botones son los de su categoría, como las categorías de iOS: mensaje (Responder, Abrir), consulta (Responder,
+     *  Llamar, Abrir), cobro (Registrar cobro, Abrir) y visita (Abrir, Marcar como hecha). Un aviso sin categoría con
+     *  `acciones` muestra las que pide la API (hasta tres, lo que deja Android). */
     fun mostrar(ctx: Context, d: Map<String, String>) {
         val titulo = d["titulo"] ?: return
         val cuerpo = d["cuerpo"].orEmpty()
         val ruta = d["ruta"].orEmpty()
-        val aviso = d["avisoId"]
-        val id = (d["colapso"] ?: ruta.ifEmpty { titulo + cuerpo }).hashCode()
+        val tipo = d["tipo"].orEmpty()
+        val aviso = d["avisoId"]?.ifEmpty { null }
+        val id = (aviso ?: ruta.ifEmpty { titulo + cuerpo }).hashCode()
         val b = NotificationCompat.Builder(ctx, CANAL_AVISOS)
             .setSmallIcon(R.drawable.ic_aviso)
             .setColor(0xFF16443B.toInt())
@@ -116,25 +143,28 @@ object Push {
             .setContentText(cuerpo)
             .setStyle(NotificationCompat.BigTextStyle().bigText(cuerpo))
             .setAutoCancel(true)
-            .setGroup(d["hilo"] ?: "corredor")
+            // El thread-id de iOS es el tipo del aviso.
+            .setGroup(tipo.ifEmpty { "corredor" })
             .setContentIntent(abrir(ctx, ruta, id, aviso = aviso))
         val ver = NotificationCompat.Action(0, "Abrir", abrir(ctx, ruta, id + 1, "ver", aviso))
         // 14C: un WhatsApp o una pregunta de ML se responden sin abrir la app.
-        val responder = NotificationCompat.Action.Builder(0, "Responder", accion(ctx, "responder", ruta, id))
+        val responder = NotificationCompat.Action.Builder(0, "Responder", accion(ctx, "responder", ruta, id, aviso))
             .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build()
         when (d["categoria"]) {
             "mensaje" -> { b.addAction(responder); b.addAction(ver) }
-            "consulta" -> {
-                b.addAction(responder)
-                d["telefono"]?.let { t ->
-                    val marcar = Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + t.filter { it.isDigit() || it == '+' }))
-                    b.addAction(0, "Llamar", PendingIntent.getActivity(ctx, id + 2, marcar, PendingIntent.FLAG_IMMUTABLE))
-                }
-                b.addAction(ver)
-            }
+            // Llamar abre la consulta (el aviso no trae el teléfono; en iOS abre la app).
+            "consulta" -> { b.addAction(responder); b.addAction(0, "Llamar", abrir(ctx, ruta, id + 2, "llamar", aviso)); b.addAction(ver) }
             // Un cobro se registra abriendo la app (en iOS pide desbloquear el teléfono).
             "cobro" -> { b.addAction(0, "Registrar cobro", abrir(ctx, ruta, id + 3, "cobrar", aviso)); b.addAction(ver) }
-            "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, d["citaId"])) }
+            "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso)) }
+            else -> acciones(d).take(3).forEachIndexed { n, a ->
+                when {
+                    a.ruta.isNullOrEmpty() -> b.addAction(0, a.titulo, abrir(ctx, ruta, id + 10 + n, a.accion, aviso))
+                    a.entrada == "texto" -> b.addAction(NotificationCompat.Action.Builder(0, a.titulo, accion(ctx, "api", ruta, id, aviso, a))
+                        .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build())
+                    else -> b.addAction(0, a.titulo, accion(ctx, "api", ruta, id, aviso, a))
+                }
+            }
         }
         if (!hayPermiso(ctx)) return
         runCatching { NotificationManagerCompat.from(ctx).notify(id, b.build()) }
@@ -190,14 +220,24 @@ class AccionesPush : BroadcastReceiver() {
                         }
                     }
                     "hecha" -> {
-                        val id = (ruta?.destino as? ACita)?.id ?: i.getStringExtra("citaId")
+                        // La cita sale de la ruta del aviso (/agenda/<id>).
+                        val id = (ruta?.destino as? ACita)?.id
                         if (id != null) api.hacer("PATCH", "/v1/agenda/$id", Hecha())
+                    }
+                    "api" -> {
+                        val a = i.getStringExtra("api")?.let { Api.json.decodeFromString<Push.AccionAviso>(it) } ?: return@runCatching
+                        val r = a.ruta ?: return@runCatching
+                        val cuerpo = if (a.entrada == "texto") {
+                            if (texto.isNullOrEmpty()) throw IllegalStateException("sin texto")
+                            Api.json.encodeToString(Mensaje(texto)).toByteArray()
+                        } else a.cuerpo?.toString()?.toByteArray()
+                        api.pedir(a.metodo ?: "POST", r, cuerpo = cuerpo)
                     }
                 }
             }.isSuccess
             if (ok && aviso != 0) NotificationManagerCompat.from(ctx).cancel(aviso)
             // Si no se mandó, se abre el chat con lo escrito para mandarlo a mano.
-            if (!ok && que == "responder") {
+            if (!ok && (que == "responder" || (que == "api" && texto != null))) {
                 runCatching { Push.abrir(ctx, rutaTexto, aviso + 9, accion = "fallo-respuesta").send() }
             }
             Widgets.actualizar(ctx)

@@ -17,6 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -105,6 +106,8 @@ class Barra {
     var acciones by mutableStateOf<(@Composable RowScope.() -> Unit)?>(null)
     var izquierda by mutableStateOf<(@Composable RowScope.() -> Unit)?>(null)
     var oculta by mutableStateOf(false)
+    /** `.navigationBarTitleDisplayMode(.large)`: el título va grande en la pantalla y no en la barra. */
+    var grande by mutableStateOf(false)
 }
 
 val LocalBarra = staticCompositionLocalOf { Barra() }
@@ -112,9 +115,34 @@ val LocalBarra = staticCompositionLocalOf { Barra() }
 /** .navigationTitle / .toolbar / .toolbar(.hidden) de la pantalla que se ve (.pantallaApilada("Título") en iOS).
  *  `izquierda` reemplaza el «‹ volver» (ToolbarItem(placement: .cancellationAction)); `acciones`, lo de la derecha. */
 @Composable
-fun BarraDe(titulo: String? = null, oculta: Boolean = false, izquierda: (@Composable RowScope.() -> Unit)? = null, acciones: (@Composable RowScope.() -> Unit)? = null) {
+fun BarraDe(titulo: String? = null, oculta: Boolean = false, izquierda: (@Composable RowScope.() -> Unit)? = null, acciones: (@Composable RowScope.() -> Unit)? = null, grande: Boolean = false) {
     val b = LocalBarra.current
-    SideEffect { b.titulo = titulo; b.oculta = oculta; b.acciones = acciones; b.izquierda = izquierda }
+    SideEffect { b.titulo = titulo; b.oculta = oculta; b.acciones = acciones; b.izquierda = izquierda; b.grande = grande }
+}
+
+/** `.pantallaApilada(titulo)` de iOS (Tema/Cabecera.swift): el fondo con grano (FondoApp) y el título chico en la barra
+ *  nativa, con lo de `.toolbar`: `acciones` a la derecha (.primaryAction) e `izquierda` en lugar del «‹ volver»
+ *  (.cancellationAction). `grande`: `.navigationBarTitleDisplayMode(.large)` (el título grande arriba del contenido y la
+ *  barra sin título). Es la única pieza de pantalla apilada: todas las pantallas pasan por acá. */
+@Composable
+fun PantallaApilada(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    grande: Boolean = false,
+    izquierda: (@Composable RowScope.() -> Unit)? = null,
+    acciones: (@Composable RowScope.() -> Unit)? = null,
+    contenido: @Composable BoxScope.() -> Unit,
+) {
+    BarraDe(titulo, izquierda = izquierda, acciones = acciones, grande = grande)
+    Box(modifier.fillMaxSize()) {
+        FondoApp()
+        if (grande) {
+            Column(Modifier.fillMaxSize()) {
+                Texto(titulo, Estilo.tituloGrande, C.texto, Modifier.padding(start = 16.dp, end = 16.dp, top = 2.dp, bottom = 8.dp), lineas = 1)
+                Box(Modifier.weight(1f).fillMaxWidth(), content = contenido)
+            }
+        } else contenido()
+    }
 }
 
 /** Un botón de texto de la barra (Button("Listo") en un ToolbarItem): Acción, 17. */
@@ -150,7 +178,7 @@ private fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
                 }
             }
         }
-        b.titulo?.let { Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center).widthIn(max = 200.dp), lineas = 1, alinear = TextAlign.Center) }
+        b.titulo?.takeIf { !b.grande }?.let { Texto(it, Estilo.headline, tema(0x18201D, 0xE8EFE9).actual, Modifier.align(Alignment.Center).widthIn(max = 200.dp), lineas = 1, alinear = TextAlign.Center) }
         Row(Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), verticalAlignment = Alignment.CenterVertically) { b.acciones?.invoke(this) }
     }
 }
