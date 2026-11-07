@@ -180,7 +180,7 @@ fun Principal() {
                 }
                 BackHandler(estado.pila(estado.pestana).isNotEmpty()) { estado.volver() }
                 // El abanico del botón del medio, sobre el contenido (la barra queda a la vista).
-                AnimatedVisibility(estado.accionesAbiertas, Modifier.zIndex(3f), enter = fadeIn(), exit = fadeOut()) { AccionesRapidas() }
+                androidx.compose.animation.AnimatedVisibility(estado.accionesAbiertas, Modifier.zIndex(3f), enter = fadeIn(), exit = fadeOut()) { AccionesRapidas() }
                 BackHandler(estado.accionesAbiertas) { estado.accionesAbiertas = false }
             }
             BarraPestanas()
