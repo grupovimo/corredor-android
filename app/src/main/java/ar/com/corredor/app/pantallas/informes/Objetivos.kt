@@ -446,7 +446,7 @@ fun EditarMetas(
             seccion("Equipo", null)
             SeccionLista("Honorarios del equipo") {
                 Box(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it })
+                    Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }, descripcion = "Moneda")
                 }
                 Separador()
                 FilaLista {

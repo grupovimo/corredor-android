@@ -52,9 +52,10 @@ fun CampoCorredor(
     enfoque: FocusRequester? = null,
     accion: ImeAction = ImeAction.Default,
     alAccion: (() -> Unit)? = null,
-    derecha: (@Composable RowScope.() -> Unit)? = null,
     /** `.autocorrectionDisabled()` de iOS: sin autocorrector, pero con la mayúscula de `mayusculas`. */
     sinCorrector: Boolean = false,
+    // Último, para que la lambda final de las llamadas siga siendo `derecha`.
+    derecha: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val color = C.texto
     val gris = C.texto3

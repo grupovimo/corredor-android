@@ -544,7 +544,7 @@ fun NuevaReservaVenta(propiedadId: String, titulo: String, moneda: String = "USD
                 errores["interesadoTelefono"]?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) { MensajeError(it) } }
             }
             SeccionLista("Seña") {
-                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), senaMoneda, { senaMoneda = it }) }
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), senaMoneda, { senaMoneda = it }, descripcion = "Moneda") }
                 Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
                 Entrada(sena, { sena = it }, "Seña", Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(horizontal = 16.dp, vertical = 11.dp), teclado = KeyboardType.Decimal)
                 (errores["sena"] ?: errores["senaMoneda"])?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) { MensajeError(it) } }

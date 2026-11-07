@@ -840,7 +840,7 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
                         elegido = c.buscaTipo ?: "", alElegir = { c = c.copy(buscaTipo = it.nonEmpty) }, descripcion = "Tipo",
                     )
                 }
-                Segmentado(opciones = listOf("USD" to "USD", "ARS" to "ARS"), elegido = c.buscaMoneda ?: "USD", alElegir = { c = c.copy(buscaMoneda = it) })
+                Segmentado(opciones = listOf("USD" to "USD", "ARS" to "ARS"), elegido = c.buscaMoneda ?: "USD", alElegir = { c = c.copy(buscaMoneda = it) }, descripcion = "Moneda")
                 CampoMiles(desdeTexto, { desdeTexto = it }, placeholder = "Desde")
                 CampoMiles(hastaTexto, { hastaTexto = it }, placeholder = "Hasta")
                 // Stepper("Ambientes: …", in: 0...10)

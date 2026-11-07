@@ -629,7 +629,7 @@ fun NuevaOperacion(contacto: Resultado? = null, propiedad: Propiedad? = null) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Texto("OFRECE", Estilo(13f, Peso.regular), C.texto2, Modifier.padding(horizontal = 16.dp))
                 Column(Modifier.fillMaxWidth().tarjeta(12.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Segmentado(opciones = listOf("USD" to "USD", "ARS" to "ARS"), elegido = moneda, alElegir = { moneda = it })
+                    Segmentado(opciones = listOf("USD" to "USD", "ARS" to "ARS"), elegido = moneda, alElegir = { moneda = it }, descripcion = "Moneda")
                     CampoCorredor(valorTexto, { valorTexto = it.filter { ch -> ch.isDigit() } }, placeholder = "Valor", teclado = KeyboardType.Number)
                 }
             }

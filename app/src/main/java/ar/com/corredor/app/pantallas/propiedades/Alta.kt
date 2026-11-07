@@ -1433,7 +1433,7 @@ fun EditorCampoAlta(campo: String, d: DatosAlta, alCambiar: (DatosAlta) -> Unit)
                     RenglonEditor { Entrada(d.barrio, { alCambiar(d.copy(barrio = it)) }, "Belgrano") }
                 }
                 "precio" -> Column(Modifier.fillMaxWidth().clip(forma).background(C.superficie)) {
-                    Box(Modifier.padding(12.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), d.moneda, { alCambiar(d.copy(moneda = it)) }) }
+                    Box(Modifier.padding(12.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), d.moneda, { alCambiar(d.copy(moneda = it)) }, descripcion = "Moneda") }
                     LineaEditor()
                     RenglonEditor {
                         Entrada(precio, { t ->

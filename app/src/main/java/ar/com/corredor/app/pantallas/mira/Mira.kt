@@ -1070,7 +1070,7 @@ fun EditorCampoMira(campo: String, f: FormMira, alCambiar: (FormMira) -> Unit, a
                 "precio" -> {
                     var texto by remember { mutableStateOf(f.precio?.let { if (it == Math.floor(it)) it.toLong().toString() else it.toString() } ?: "") }
                     Box(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), f.moneda, { alCambiar(f.copy(moneda = it)) }, Modifier.fillMaxWidth())
+                        Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), f.moneda, { alCambiar(f.copy(moneda = it)) }, Modifier.fillMaxWidth(), descripcion = "Moneda")
                     }
                     Separador()
                     Entrada(texto, { t ->

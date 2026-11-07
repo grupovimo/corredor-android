@@ -131,7 +131,7 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
             Separador()
             FilaForm { Entrada(fondo, { fondo = it }, "Fondo m", Modifier.fillMaxWidth(), teclado = KeyboardType.Decimal) }
             Separador()
-            FilaForm { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }, Modifier.fillMaxWidth()) }
+            FilaForm { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }, Modifier.fillMaxWidth(), descripcion = "Moneda") }
             Separador()
             FilaForm { Entrada(precio, { precio = it }, "Precio", Modifier.fillMaxWidth(), teclado = KeyboardType.Decimal) }
         }

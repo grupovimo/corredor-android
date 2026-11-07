@@ -123,7 +123,7 @@ fun FormTarifa(t0: TarifaAPI, guardar: (TarifaAPI) -> Unit) {
             RenglonFecha("Hasta", diaTemporada(t.hasta), { t = t.copy(hasta = it.toString()) })
             Separador()
             Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), t.moneda ?: "USD", { t = t.copy(moneda = it) })
+                Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), t.moneda ?: "USD", { t = t.copy(moneda = it) }, descripcion = "Moneda")
             }
             Separador()
             RenglonPesos("Precio", t.precio.takeIf { it != 0.0 }, { t = t.copy(precio = it ?: 0.0) }, moneda = "")
@@ -239,7 +239,7 @@ fun HojaTarifasTemporada(casas: List<CasaTemporada>) {
                 RenglonFecha("Hasta", hasta, { hasta = it }, minimo = desde)
                 (errores["desde"] ?: errores["hasta"])?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { MensajeError(it) } }
                 Separador()
-                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }) }
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }, descripcion = "Moneda") }
                 Separador()
                 RenglonPesos("Precio", precio, { precio = it }, moneda = "")
                 errores["precio"]?.let { Box(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) { MensajeError(it) } }

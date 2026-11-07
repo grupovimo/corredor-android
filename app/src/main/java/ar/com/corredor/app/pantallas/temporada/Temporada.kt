@@ -629,7 +629,7 @@ fun NuevaReservaTemporada(casas: List<CasaTemporada>, casaInicial: String, entra
         confirmarHabilitado = !(enviando || elegida == null), alConfirmar = { alcance.launch { crear() } },
     ) {
         Bloque(pie = if (motivo == "dueno") "Las noches quedan bloqueadas en el calendario, sin huésped ni cobro." else "Con seña queda confirmada y ocupa la casa; sin seña, pendiente.") {
-            Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("huesped" to "Huésped", "dueno" to "Uso del dueño"), motivo, { motivo = it }) }
+            Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("huesped" to "Huésped", "dueno" to "Uso del dueño"), motivo, { motivo = it }, descripcion = "Para quién") }
         }
         Bloque {
             RenglonSelector("Casa", casas.map { it.id to it.direccion }, casa, { casa = it })
@@ -667,7 +667,7 @@ fun NuevaReservaTemporada(casas: List<CasaTemporada>, casaInicial: String, entra
                 error("huespedes")
             }
             Bloque("Plata") {
-                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }) }
+                Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { Segmentado(listOf("USD" to "USD", "ARS" to "ARS"), moneda, { moneda = it }, descripcion = "Moneda") }
                 Separador()
                 RenglonPesos("Total", total, { total = it; totalPropio = true }, moneda = "")
                 error("monto")
