@@ -52,8 +52,8 @@ import coil3.compose.AsyncImage
  *  cancelar a la izquierda (`.cancellationAction`) y lo de confirmar a la derecha (`.confirmationAction`). */
 @Composable
 fun BarraHoja(titulo: String, izquierda: (@Composable RowScope.() -> Unit)? = null, derecha: (@Composable RowScope.() -> Unit)? = null) {
-    // Como la barra de iOS: el título centrado en el ancho que dejan los botones (el mismo a cada lado, el del más
-    // ancho) y con «…» si no entra; antes se montaba sobre «Seguir después».
+    // Como la barra de iOS: el título centrado si entra entre los botones; si no, corrido hacia el lado libre y con
+    // «…» sólo si tampoco entra así (antes se montaba sobre «Seguir después»).
     androidx.compose.ui.layout.Layout(
         content = {
             Row(verticalAlignment = Alignment.CenterVertically) { izquierda?.invoke(this) }
@@ -65,13 +65,17 @@ fun BarraHoja(titulo: String, izquierda: (@Composable RowScope.() -> Unit)? = nu
         val libre = limites.copy(minWidth = 0, minHeight = 0)
         val izq = medibles[0].measure(libre)
         val der = medibles[2].measure(libre)
-        val lado = maxOf(izq.width, der.width) + 8.dp.roundToPx()
+        val hueco = 8.dp.roundToPx()
         val ancho = limites.maxWidth
-        val tit = medibles[1].measure(libre.copy(maxWidth = (ancho - 2 * lado).coerceAtLeast(0)))
+        val desde = izq.width + (if (izq.width > 0) hueco else 0)
+        val hasta = ancho - der.width - (if (der.width > 0) hueco else 0)
+        // Todo el espacio entre los botones; centrado si entra, y si no, corrido hacia el lado libre.
+        val tit = medibles[1].measure(libre.copy(maxWidth = (hasta - desde).coerceAtLeast(0)))
+        val x = ((ancho - tit.width) / 2).coerceIn(desde, (hasta - tit.width).coerceAtLeast(desde))
         val alto = limites.maxHeight
         layout(ancho, alto) {
             izq.placeRelative(0, (alto - izq.height) / 2)
-            tit.placeRelative((ancho - tit.width) / 2, (alto - tit.height) / 2)
+            tit.placeRelative(x, (alto - tit.height) / 2)
             der.placeRelative(ancho - der.width, (alto - der.height) / 2)
         }
     }
