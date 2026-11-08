@@ -43,6 +43,13 @@ que falte. Nada sale a las tiendas hasta que esté. Reglas del clon: `CLON.md`. 
 Nunca corrió en un aparato real: ingreso con Clerk, push FCM, notificación en curso, cámara y escáner, dictado,
 Play Billing, widgets y atajos. Con la prueba interna de Play.
 
+## Repaso visual (7/11), a revisar por Nahuel
+- Galería: https://claude.ai/artifact/YPKy1fwbd8W6PXhUVgPKYS
+- Arreglado: pestañas y tarjetas cortadas, alturas desparejas, títulos con «…», renglones viudos, pantallas que no cargaban, «Guardado hace N h» y el Reglamento con error y «Reintentar».
+- También en el iPhone (a4c4aac); TestFlight subido. La galería es de la compilación anterior a los dos últimos arreglos.
+- Para retomar: Nahuel mira la galería y hace un repaso profundo de todo. Lo que marque se arregla en Android y,
+  si también pasa en el iPhone, en los dos lados, con TestFlight después.
+
 ## Falta
 1. Cuenta de Play: crear la app, productos de suscripción, RTDN, cuenta de servicio, SHA-256 de Play en
    `assetlinks.json`, cliente OAuth Android de Google. Después, prueba interna.
