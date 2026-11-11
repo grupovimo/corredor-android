@@ -97,7 +97,11 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                 t = t.removePrefix("corredor://")
             } else if (t.startsWith("https://")) {
                 val resto = t.removePrefix("https://")
+                val host = resto.substringBefore('/')
+                if (host != "corredor.com.ar" && host != "www.corredor.com.ar") return null
                 t = if (resto.contains('/')) "/" + resto.substringAfter('/') else ""
+                // Un link del panel: lo que es sólo de la web (o `?web=1`) se abre en la web dentro de la app (Vinculos).
+                if (Vinculos.soloWeb(t) || items.any { it.first == "web" }) return Vinculos.web(texto)
             }
             val p = t.split('/').filter { it.isNotEmpty() }
             val a = p.firstOrNull() ?: return null
@@ -122,7 +126,8 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                 } else {
                     Ruta(Pestana.mensajes, APreguntaML(id))
                 }
-                "agenda" -> Ruta(Pestana.inicio, id?.let { ACita(it) } ?: AAgendaDia())
+                // `/agenda/<id>` o `/agenda?cita=<id>` (los avisos): esa cita; si no, el día.
+                "agenda" -> Ruta(Pestana.inicio, (id ?: param("cita"))?.let { ACita(it) } ?: AAgendaDia())
                 "mas" -> Ruta(Pestana.mas)
                 "contacto", "contactos" -> Ruta(Pestana.inicio, id?.let { AFichaContacto(it) } ?: AContactos(agente = if (param("agente") == "libre") "libre" else null))
                 "operacion", "operaciones" -> Ruta(Pestana.inicio, id?.let { AFichaOperacion(it) } ?: AOperaciones())
@@ -152,8 +157,10 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                     id != null -> Ruta(Pestana.inicio, AInventario(id))
                     else -> Ruta(Pestana.mas, ASeccion("inventarios"))
                 }
-                // `/avisos?aviso=<id>&responder=<accion>`: ese aviso (y su respuesta) en vez de la lista.
-                "avisos" -> Ruta(Pestana.inicio, AAvisos(aviso = param("aviso"), responder = param("responder")))
+                // `/avisos/configurar` (el mail del informe): qué avisos llegan. `/avisos?aviso=<id>&responder=<accion>`:
+                // ese aviso (y su respuesta) en vez de la lista.
+                "avisos" -> if (id == "configurar") Ruta(Pestana.inicio, AConfigAvisos())
+                    else Ruta(Pestana.inicio, AAvisos(aviso = param("aviso"), responder = param("responder")))
                 "perfil" -> Ruta(Pestana.inicio, APerfil())
                 "buscar" -> Ruta(Pestana.inicio, ABuscar(param("q") ?: ""))
                 "reserva", "reservas" -> Ruta(Pestana.mas, id?.let { AReserva(id = it) } ?: ASeccion("reservas"))
@@ -193,7 +200,8 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                 // `/importar?id=<vista previa>`: retomarla.
                 "importar" -> Ruta(Pestana.mas, ASeccion("importar", param("id")))
                 "emprendimientos", "emprendimiento" -> Ruta(Pestana.mas, ASeccion(if (id == null) "emprendimientos" else "emprendimiento", id))
-                else -> Ruta(Pestana.mas, ASeccion(a, id))
+                // Otra sección de Más por su nombre; si la app no la tiene, la web dentro de la app.
+                else -> if (a in Vinculos.secciones) Ruta(Pestana.mas, ASeccion(a, id)) else Vinculos.web(Vinculos.base + "/" + p.joinToString("/"))
             }
         }
 

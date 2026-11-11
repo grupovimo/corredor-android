@@ -115,6 +115,12 @@ fun Seccion(clave: String, id: String? = null) {
         "invitacion" -> if (id != null) VerInvitacion(token = id)
         "invitaciones" -> PegarInvitacion()
         "empezar" -> CrearOtraInmobiliaria()
+        // Un link del panel que la app no tiene (Vinculos): la web dentro de la app (pestaña personalizada) y se vuelve.
+        "en-la-web" -> if (id != null) {
+            val estado = LocalEstado.current
+            LaunchedEffect(id) { estado.abrirPestana(id); estado.volver() }
+            Box(Modifier.fillMaxSize()) { FondoApp() }
+        }
         else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             FondoApp()
             EstadoVacio("questionmark.folder", "No encontramos esta sección")

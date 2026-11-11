@@ -75,13 +75,63 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="corredor" />
             </intent-filter>
-            <!-- Los links de corredor.com.ar (applinks:corredor.com.ar en iOS): invitaciones, fichas, el ingreso. -->
+            <!-- App Links del panel (Universal Links en iOS). Los mismos patrones que enlaces.json de la web (EnlacesTest lo
+                 controla): «app» como path/pathPrefix/pathPattern y «web» como grupos que no abren la app (Android 15+;
+                 antes, si llega uno, Vinculos lo abre en la web dentro de la app). Sólo corredor.com.ar: www redirige y
+                 Android no sigue redirecciones; las webs de las inmobiliarias nunca abren la app. -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="corredor.com.ar" />
-                <data android:scheme="https" android:host="www.corredor.com.ar" />
+                <data android:pathPrefix="/propiedades" />
+                <data android:pathPrefix="/contactos" />
+                <data android:pathPrefix="/operaciones" />
+                <data android:pathPrefix="/contratos" />
+                <data android:pathPrefix="/mensajes" />
+                <data android:pathPrefix="/whatsapp/" />
+                <data android:pathPrefix="/mercadolibre" />
+                <data android:pathPrefix="/agenda" />
+                <data android:pathPrefix="/cobranzas" />
+                <data android:pathPrefix="/avisos" />
+                <data android:pathPrefix="/consorcios" />
+                <data android:pathPrefix="/inventarios" />
+                <data android:pathPrefix="/rendiciones/" />
+                <data android:pathPrefix="/reservas/" />
+                <data android:pathPrefix="/temporada" />
+                <data android:pathPrefix="/emprendimientos" />
+                <data android:pathPrefix="/configuracion" />
+                <data android:pathPrefix="/mira" />
+                <data android:pathPrefix="/difusion" />
+                <data android:pathPrefix="/objetivos" />
+                <data android:pathPrefix="/indices" />
+                <data android:pathPrefix="/informe" />
+                <data android:pathPrefix="/actividad" />
+                <data android:pathPrefix="/papelera" />
+                <data android:pathPrefix="/perfil" />
+                <data android:path="/web" />
+                <data android:pathPrefix="/web/" />
+                <data android:pathPrefix="/revision" />
+                <data android:pathPrefix="/importar" />
+                <data android:pathPrefix="/invitacion/" />
+                <data android:pathPrefix="/invitaciones" />
+                <data android:pathPrefix="/conectar-ia/" />
+                <data android:pathPrefix="/buscar" />
+                <uri-relative-filter-group android:allow="false"><data android:queryPattern=".*web=1.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/ficha" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/tarjeta" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/imprimir" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/imprimir/.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/excel" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/excel/.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/api/.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/hacer" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern="/contratos/.*/documentos/.*" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/mercadolibre/sugerencia" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/avisos/marcar" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/avisos/lista" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:pathPattern="/avisos/.*/accion" /></uri-relative-filter-group>
+                <uri-relative-filter-group android:allow="false"><data android:path="/difusion/publicar" /></uri-relative-filter-group>
             </intent-filter>
             <!-- 14F: el menú del ícono. -->
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
