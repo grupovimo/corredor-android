@@ -13,6 +13,8 @@ coil = "3.3.0"
 datastore = "1.1.7"
 tink = "1.18.0"
 billing = "8.0.0"
+# Billing arrastra Fragment 1.1 y el lint de release pide 1.3+ por registerForActivityResult.
+fragment = "1.8.9"
 firebaseBom = "34.4.0"
 browser = "1.9.0"
 glance = "1.1.1"
@@ -51,6 +53,7 @@ coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink" }
 billing = { module = "com.android.billingclient:billing-ktx", version.ref = "billing" }
+androidx-fragment = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }

@@ -114,6 +114,7 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.androidx.browser)
     implementation(libs.billing)
+    implementation(libs.androidx.fragment)
     implementation(libs.glance.appwidget)
     implementation(libs.zxing.core)
     // Face ID → huella o cara del teléfono; el escáner de Venta con CameraX y el lector de códigos de Google.
