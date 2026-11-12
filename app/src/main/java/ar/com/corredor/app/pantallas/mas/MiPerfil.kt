@@ -452,7 +452,7 @@ fun MiPerfil() {
                                 Texto("Borrar mi cuenta", Estilo(16f, Peso.semibold), C.error)
                             }
                         }
-                        Texto(Formato.sinViudas("Al borrar tu cuenta se eliminan tus datos personales. Las operaciones y contratos quedan en la inmobiliaria."),
+                        Texto(Formato.sinViudas("Al borrar tu cuenta se desactiva al instante y tus datos personales se borran a los 30 días. Las operaciones y contratos quedan en la inmobiliaria."),
                             Estilo.footnote, C.texto3, Modifier.fillMaxWidth(), alinear = TextAlign.Center)
                         Texto("Corredor ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", Estilo.footnote, C.texto3, Modifier.fillMaxWidth(), alinear = TextAlign.Center)
                     }

@@ -7,6 +7,7 @@ import ar.com.corredor.app.nucleo.AFichaPropiedad
 import ar.com.corredor.app.nucleo.ASeccion
 import ar.com.corredor.app.nucleo.Api
 import ar.com.corredor.app.nucleo.Clerk
+import ar.com.corredor.app.nucleo.ClerkMail
 import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.nucleo.Lugares
 import ar.com.corredor.app.nucleo.Pestana
@@ -96,5 +97,20 @@ class NucleoTest {
         assertEquals("12,4${Formato.fino}%", Formato.porcentaje(12.4))
         assertEquals("AL", Formato.iniciales("Almacén Lumbre"))
         assertEquals("1 propiedad", Formato.cantidad(1, "propiedad", "propiedades"))
+    }
+
+    @Test fun claveDeOchoCaracteres() {
+        assertEquals(true to true, ClerkMail.requisitos("luna2026"))
+        assertFalse(ClerkMail.requisitos("luna202").first)
+        assertFalse(ClerkMail.requisitos("12345678").second)
+    }
+
+    @Test fun planPagadoConOtroMedio() {
+        val s = Suscripcion(estado = "activa", plan = "inicial", medio = "apple", renueva = true)
+        assertTrue(s.pagaAfuera)
+        assertEquals("Se administra donde lo contrataste.", s.comoSePaga)
+        assertFalse(s.copy(medio = "google").pagaAfuera)
+        assertTrue(s.copy(medio = "mercadopago").pagaAfuera)
+        assertFalse(s.copy(renueva = false).pagaAfuera)
     }
 }

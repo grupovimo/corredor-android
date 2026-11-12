@@ -527,7 +527,7 @@ fun MiraRaiz() {
 
     LaunchedEffect(Unit) {
         camara.arrancar(ctx) { estado.alPedirPermiso(Manifest.permission.CAMERA) }
-        ubicacion.pedir(ctx) { estado.alPedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION) }
+        ubicacion.pedir(ctx) { estado.alPedirPermisos(Ubicacion.permisos) }
         cola.leerPendientes(estado.api)
         abrirPedida()
     }
@@ -1374,13 +1374,22 @@ class Ubicacion {
     var ultima by mutableStateOf<Location?>(null)
     var direccion by mutableStateOf<String?>(null)
 
+    companion object {
+        /** Se piden juntas: desde Android 12, pedir sólo la precisa no muestra el diálogo. La persona puede dar sólo la
+         *  aproximada, y alcanza. */
+        val permisos = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
+
     @SuppressLint("MissingPermission")
     suspend fun pedir(ctx: Context, permiso: suspend () -> Boolean) {
-        val dado = ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!dado && !permiso()) return
+        fun dada(p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
+        if (!dada(Manifest.permission.ACCESS_FINE_LOCATION) && !dada(Manifest.permission.ACCESS_COARSE_LOCATION) && !permiso()) return
+        val precisa = dada(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (!precisa && !dada(Manifest.permission.ACCESS_COARSE_LOCATION)) return
         val lm = ctx.getSystemService(LocationManager::class.java) ?: return
-        val proveedor = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER).firstOrNull { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) } ?: return
+        // Con la aproximada sola, el GPS no está permitido: la red (wifi y antenas).
+        val candidatos = if (precisa) listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER) else listOf(LocationManager.NETWORK_PROVIDER)
+        val proveedor = candidatos.firstOrNull { runCatching { lm.isProviderEnabled(it) }.getOrDefault(false) } ?: return
         val l: Location? = runCatching {
             if (Build.VERSION.SDK_INT >= 30) suspendCancellableCoroutine { c ->
                 lm.getCurrentLocation(proveedor, null, ContextCompat.getMainExecutor(ctx)) { x -> if (c.isActive) c.resume(x) }

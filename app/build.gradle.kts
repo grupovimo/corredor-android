@@ -25,7 +25,8 @@ android {
         applicationId = "ar.com.corredor.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        // Play no acepta dos paquetes con el mismo versionCode: sale del número de corrida del CI (+100).
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 0) + 100
         versionName = "1.0.0"
 
         buildConfigField("String", "API", cadena(local("cr.api", "https://api.corredor.com.ar")))

@@ -94,6 +94,17 @@ data class Suscripcion(
 
     /** Se paga con Mercado Pago desde la web (no se puede cambiar desde el teléfono). */
     val conMercadoPago: Boolean get() = medio == "mercadopago" && renueva && !soloLectura
+
+    /** Se renueva con un medio que no es Google Play (Mercado Pago u otra tienda): desde acá no se compra, porque Play
+     *  cobraría y la API rechazaría la compra. Se administra donde se contrató. */
+    val pagaAfuera: Boolean get() = renueva && !soloLectura && !medio.isNullOrEmpty() && medio != "google"
+
+    /** Con qué se paga, dicho como en la cabecera de «Tu plan». */
+    val comoSePaga: String get() = when (medio) {
+        "google" -> "Se paga con Google Play, desde el teléfono."
+        "mercadopago" -> "Se debita solo con Mercado Pago."
+        else -> "Se administra donde lo contrataste."
+    }
 }
 
 /** Un producto de Google Play (el Product de StoreKit): su id, el precio como lo escribe Play y los días gratis de la
@@ -111,6 +122,8 @@ data class Producto(
     val moneda: String = "ARS",
     /** La prueba gratis (`P14D`, `P1M`): Play sólo la devuelve si la cuenta puede usarla. */
     val periodoGratis: String? = null,
+    /** Cada cuánto se cobra (`P1M`, `P1Y`): para saber si un cambio de plan sube o baja. */
+    val periodoCobro: String = "P1M",
 ) {
     val precioTexto: String get() = displayPrice
     val precio: Double get() = micros / 1_000_000.0
@@ -188,7 +201,7 @@ class Tienda private constructor() {
                 val fase = fases.lastOrNull() ?: return@forEach
                 val periodo = fases.firstOrNull { it.priceAmountMicros == 0L }?.billingPeriod
                 productos[d.productId] = Producto(d.productId, fase.formattedPrice, fase.priceAmountMicros, o.offerToken, periodo?.let { diasDe(it) }, d,
-                    moneda = fase.priceCurrencyCode, periodoGratis = periodo)
+                    moneda = fase.priceCurrencyCode, periodoGratis = periodo, periodoCobro = fase.billingPeriod)
             }
         } finally {
             cargando = false
@@ -224,11 +237,19 @@ class Tienda private constructor() {
     suspend fun comprar(producto: Producto, inmobiliaria: String): Resultado {
         val act = actividad?.get() ?: return Resultado.cancelada
         val c = conectado() ?: throw ErrorApi.desconocido
+        // Cambiar de plan o de ciclo reemplaza la suscripción vigente de esta inmobiliaria: si no, quedan dos cobrando.
+        val anterior = vigente(c, inmobiliaria, salvo = producto.id)?.also { cargar(it.products) }
         val e = CompletableDeferred<Pair<BillingResult, List<Purchase>?>>().also { esperando = it }
-        val params = BillingFlowParams.newBuilder()
+        val armado = BillingFlowParams.newBuilder()
             .setProductDetailsParamsList(listOf(BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(producto.detalle).setOfferToken(producto.oferta).build()))
             .setObfuscatedAccountId(inmobiliaria)
-            .build()
+        if (anterior != null) {
+            armado.setSubscriptionUpdateParams(BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                .setOldPurchaseToken(anterior.purchaseToken)
+                .setSubscriptionReplacementMode(modoDeCambio(anterior, producto))
+                .build())
+        }
+        val params = armado.build()
         val inicio = c.launchBillingFlow(act, params)
         if (inicio.responseCode != BillingClient.BillingResponseCode.OK) { esperando = null; return Resultado.cancelada }
         val (r, compras) = e.await()
@@ -238,6 +259,27 @@ class Tienda private constructor() {
         if (compra.purchaseState == Purchase.PurchaseState.PENDING) return Resultado.pendiente
         val s = procesar(compra) ?: return Resultado.pendiente
         return Resultado.listo(s)
+    }
+
+    /** La suscripción de Google Play vigente de esta inmobiliaria con otro producto (otro plan u otro ciclo). Sólo la
+     *  de esta inmobiliaria: con la misma cuenta de Google se puede pagar más de una. */
+    private suspend fun vigente(c: BillingClient, inmobiliaria: String, salvo: String): Purchase? {
+        val compras = runCatching {
+            c.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()).purchasesList
+        }.getOrNull().orEmpty()
+        return compras.firstOrNull {
+            it.purchaseState == Purchase.PurchaseState.PURCHASED && it.accountIdentifiers?.obfuscatedAccountId == inmobiliaria && salvo !in it.products
+        }
+    }
+
+    /** Subir (cuesta más por día): se cobra ya la diferencia y sigue la fecha de cobro (CHARGE_PRORATED_PRICE).
+     *  Bajar o pasar a anual: lo pagado se acredita como tiempo del plan nuevo (WITH_TIME_PRORATION). Si no se sabe el
+     *  precio del plan anterior, lo segundo, que Play acepta siempre. */
+    private fun modoDeCambio(anterior: Purchase, nuevo: Producto): Int {
+        val viejo = anterior.products.firstNotNullOfOrNull { productos[it] }
+        val porDia = { p: Producto -> p.micros.toDouble() / (diasDe(p.periodoCobro) ?: 30) }
+        return if (viejo != null && porDia(nuevo) > porDia(viejo)) BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.CHARGE_PRORATED_PRICE
+        else BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.WITH_TIME_PRORATION
     }
 
     /** «Restaurar compras»: vuelve a mandar a la API lo que Google Play tiene vigente en esta cuenta. */

@@ -450,7 +450,7 @@ fun Inventario(
                                     alSacarFoto = {
                                         elegido = it.id; camaraPara = it.id
                                         alcance.launch {
-                                            val listo = estado.alPedirPermiso("camara") && runCatching {
+                                            val listo = estado.alPedirPermiso(android.Manifest.permission.CAMERA) && runCatching {
                                                 val (_, u) = Fotos.archivoCamara(ctx)
                                                 fotoCamara = u.toString(); camaraDe = it.id
                                                 camara.launch(u)

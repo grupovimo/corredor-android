@@ -108,11 +108,13 @@ import ar.com.corredor.app.pantallas.entrada.CrearOtraInmobiliaria
 import ar.com.corredor.app.pantallas.entrada.ElegirInmobiliaria
 import ar.com.corredor.app.pantallas.entrada.Entrada
 import ar.com.corredor.app.pantallas.entrada.IngresoMail
+import ar.com.corredor.app.pantallas.entrada.RequisitosClave
 import ar.com.corredor.app.pantallas.entrada.PegarInvitacion
 import ar.com.corredor.app.pantallas.entrada.RecuperarAcceso
 import ar.com.corredor.app.pantallas.entrada.VerInvitacion
 import ar.com.corredor.app.pantallas.informes.EditarMetas
 import ar.com.corredor.app.pantallas.inicio.Avisos
+import ar.com.corredor.app.pantallas.inicio.BorrarCuenta
 import ar.com.corredor.app.pantallas.inicio.BuscarTodo
 import ar.com.corredor.app.pantallas.inicio.ConfigAvisos
 import ar.com.corredor.app.pantallas.inicio.HojaResponderAviso
@@ -123,6 +125,7 @@ import ar.com.corredor.app.pantallas.mas.CarteraAgente
 import ar.com.corredor.app.pantallas.mas.FirmaYSesiones
 import ar.com.corredor.app.pantallas.mas.MasRaiz
 import ar.com.corredor.app.pantallas.mas.MiPerfil
+import ar.com.corredor.app.pantallas.mas.PantallaPlan
 import ar.com.corredor.app.pantallas.mas.TarjetaAgente
 import ar.com.corredor.app.pantallas.mas.TusInmobiliarias
 import ar.com.corredor.app.pantallas.mensajes.Chat
@@ -162,6 +165,8 @@ import ar.com.corredor.app.tema.TemaCorredor
 import ar.com.corredor.app.tema.Texto
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -495,6 +500,25 @@ class PantallasTest {
     @Test fun firmaYSesiones() = montar("FirmaYSesiones") { FirmaYSesiones() }
     @Test fun recuperarAcceso() = montar("RecuperarAcceso") { RecuperarAcceso(email = "") }
     @Test fun ingresoMail() = montar("IngresoMail") { IngresoMail() }
+
+    // MARK: Lo que cambió para la prueba cerrada de Play (12/11)
+
+    /** «Creá tu cuenta»: 14 días gratis, en la bienvenida y en el mail. */
+    @Test fun entradaAlta() = montar("EntradaAlta", estado().also { it.fase = Estado.Fase.afuera; it.ingresoAlta = true }) { Entrada() }
+    @Test fun ingresoMailAlta() = montar("IngresoMailAlta", estado().also { it.fase = Estado.Fase.afuera; it.ingresoAlta = true }) { IngresoMail() }
+    /** La contraseña nueva: 8 caracteres o más. */
+    @Test fun requisitosClave() = montar("RequisitosClave") { Column(Modifier.padding(20.dp)) { RequisitosClave(clave = "luna2026") } }
+    /** Borrar la cuenta: se desactiva ya y los datos personales se borran a los 30 días. */
+    @Test fun borrarCuenta() = montar("BorrarCuenta") { BorrarCuenta() }
+    /** Tu plan pagado con otra tienda: sin compra por Google Play, se administra donde se contrató. */
+    @Test fun planPagadoAfuera() {
+        val base = Api.json.parseToJsonElement(ApiDePrueba.respuestas["/v1/suscripcion"]!!).jsonObject
+        val s = JsonObject(base + mapOf(
+            "estado" to JsonPrimitive("activa"), "plan" to JsonPrimitive("inicial"), "medio" to JsonPrimitive("apple"),
+            "renueva" to JsonPrimitive(true), "enPrueba" to JsonPrimitive(false), "diasRestantes" to JsonPrimitive(20),
+        ))
+        montar("PlanPagadoAfuera", estado(extra = mapOf("/v1/suscripcion" to s.toString()))) { PantallaPlan() }
+    }
 
     // MARK: Toda la navegación
 

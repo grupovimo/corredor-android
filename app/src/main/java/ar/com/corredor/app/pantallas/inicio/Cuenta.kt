@@ -749,7 +749,8 @@ fun HorarioSilencio(desde: Int, hasta: Int, domingos: Boolean, guardar: (Int, In
     }
 }
 
-/** Borrar la cuenta (lo pide Apple; Google Play también): se confirma escribiendo BORRAR. */
+/** Borrar la cuenta (lo pide Google Play): se confirma escribiendo BORRAR. La API la desactiva al instante y borra
+ *  los datos personales a los 30 días. */
 @Composable
 fun BorrarCuenta() {
     val estado = LocalEstado.current
@@ -760,7 +761,11 @@ fun BorrarCuenta() {
     Column(Modifier.fillMaxSize().background(C.fondo).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Texto("¿Borrás tu cuenta?", Estilo.titulo, C.texto)
         Texto(
-            Formato.sinViudas("Se eliminan tu nombre, tu mail, tu teléfono y tus sesiones. Las operaciones, contratos y conversaciones quedan en la inmobiliaria, sin tu nombre. Esto no se puede deshacer."),
+            Formato.sinViudas("Tu cuenta se desactiva ahora y tus datos personales se borran a los 30 días. Las operaciones, contratos y conversaciones quedan en la inmobiliaria, sin tu nombre."),
+            Estilo.subhead, C.texto2,
+        )
+        Texto(
+            Formato.sinViudas("En esos 30 días la recuperás escribiendo a hola@corredor.com.ar. Después no se puede deshacer."),
             Estilo.subhead, C.texto2,
         )
         Texto("Términos y privacidad", Estilo.subheadFuerte, C.accion, Modifier.clickable { abrirUrl(ctx, Api.web().trimEnd('/') + "/terminos") })

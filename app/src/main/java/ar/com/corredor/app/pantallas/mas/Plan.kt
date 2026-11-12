@@ -203,6 +203,8 @@ fun PantallaPlan() {
                         NotaPlan("person.badge.key", "El plan lo elige y lo paga el dueño de la inmobiliaria. Si necesitás algo que tu plan no trae, pedíselo.")
                     } else if (s.conMercadoPago) {
                         NotaPlan("creditcard", "Tu plan se paga con Mercado Pago. Para pasarlo a Google Play, primero da de baja el débito acá abajo.")
+                    } else if (s.pagaAfuera) {
+                        NotaPlan("creditcard", "Tu plan se administra donde lo contrataste. Para pasarlo a Google Play, primero dalo de baja ahí.")
                     }
                     Segmentado(listOf("mes" to "Mensual", "anio" to "Anual · 2 meses gratis"), ciclo, { ciclo = it })
                     s.planes.forEach { p ->
@@ -211,7 +213,8 @@ fun PantallaPlan() {
                             Haptico.seleccion()
                         }
                     }
-                    if (estado.esDuenio && s.planes.isNotEmpty()) {
+                    // Con otro medio no se compra acá: sin ticket ni letra chica de Google Play.
+                    if (estado.esDuenio && s.planes.isNotEmpty() && !s.pagaAfuera) {
                         // El ticket
                         val plan = s.planes.firstOrNull { it.id == elegido } ?: s.planes[0]
                         val prod = producto(plan, ciclo)
@@ -253,7 +256,7 @@ fun PantallaPlan() {
                                         Estilo.footnote, C.oroTinta)
                                 }
                             }
-                            if (!s.conMercadoPago) {
+                            if (!s.pagaAfuera) {
                                 BotonPrincipal(
                                     if (mismo) "Es tu plan actual" else if (gratis != null) "Empezar gratis" else "Suscribirme por $precioTxt",
                                     { alcance.launch { comprar(plan) } }, Modifier.padding(top = 4.dp),
@@ -309,11 +312,7 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
     }
     val detalle = when (s.estado) {
         "prueba" -> "Elegí tu plan cuando quieras. Si no elegís, después queda en sólo lectura: nada se borra."
-        "activa" -> when (s.medio) {
-            "google" -> "Se paga con Google Play, desde el teléfono."
-            "apple" -> "Se paga con el App Store, desde el iPhone."
-            else -> "Se debita solo con Mercado Pago."
-        }
+        "activa" -> s.comoSePaga
         "baja" -> "Elegí un plan para seguir sin cortes. Lo que ya pagaste no se pierde."
         else -> "Todo lo tuyo sigue acá y lo podés ver. Para volver a cargar, elegí un plan: se activa en el momento."
     }

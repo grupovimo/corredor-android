@@ -171,6 +171,8 @@ class Estado(api: Api? = null) {
     var alPedirPermisoPush: suspend () -> Boolean = { true }
     /** Un permiso del sistema (la cámara, el micrófono, la ubicación, los contactos). */
     var alPedirPermiso: suspend (String) -> Boolean = { true }
+    /** Varios permisos en un solo diálogo (la ubicación: precisa y aproximada); true si dio al menos uno. */
+    var alPedirPermisos: suspend (Array<String>) -> Boolean = { true }
     /** La huella, la cara o el PIN del teléfono (LAContext.evaluatePolicy). */
     var alConfirmarIdentidad: suspend (String) -> Boolean = { true }
 
@@ -230,15 +232,22 @@ class Estado(api: Api? = null) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: ErrorApi) {
-            if (e.sinConexion) {
-                // Sin señal se entra igual con lo guardado (E4: «Sin conexión»).
-                sesion = Guardado.leer<Sesion>("sesion")?.first
-                if (conFaceID) bloqueada = true
-                fase = if (sesion?.inmobiliariaId == null) Fase.afuera else Fase.adentro
-            } else { olvidarSesion(); fase = Fase.afuera }
+            // Sólo un 401 cierra la sesión. Sin señal, o si la API falla (500, 502, un corte), se entra igual con lo
+            // guardado (E4: «Sin conexión»); con la API caída, además se avisa.
+            if (e.estado == 401) { olvidarSesion(); fase = Fase.afuera } else entrarConLoGuardado(conAviso = !e.sinConexion)
         } catch (e: Exception) {
-            olvidarSesion(); fase = Fase.afuera
+            entrarConLoGuardado(conAviso = true)
         }
+    }
+
+    /** El arranque sin la sesión fresca de la API: la última guardada, sin borrar el token. */
+    private fun entrarConLoGuardado(conAviso: Boolean) {
+        sesion = Guardado.leer<Sesion>("sesion")?.first
+        if (conFaceID) bloqueada = true
+        fase = if (sesion?.inmobiliariaId == null) Fase.afuera else Fase.adentro
+        if (!conAviso) return
+        if (fase == Fase.adentro) avisar("No pudimos conectar con Corredor. Ves lo último guardado.", ok = false)
+        else avisar("Corredor no responde. Probá de nuevo en un rato.", ok = false)
     }
 
     private suspend fun cargarSesion() {

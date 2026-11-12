@@ -1067,7 +1067,7 @@ fun MapaCartera(
     }
 
     // Ubicacion de Mira (CLLocationManager en iOS): pide el permiso la primera vez.
-    LaunchedEffect(Unit) { ubicacion.pedir(ctx) { estado.alPedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION) } }
+    LaunchedEffect(Unit) { ubicacion.pedir(ctx) { estado.alPedirPermisos(Ubicacion.permisos) } }
     LaunchedEffect(props.map { it.id }, tamano) { elegida = null; encuadrar() }
 
     val forma = RoundedCornerShape(M.rDestacada)
@@ -1095,7 +1095,7 @@ fun MapaCartera(
             Tocable({
                 val yo = ubicacion.ultima
                 if (yo != null) { camara.lat = yo.latitude; camara.lng = yo.longitude; camara.zoom = max(camara.zoom, 15.0) }
-                else estado.tarea { ubicacion.pedir(ctx) { estado.alPedirPermiso(Manifest.permission.ACCESS_FINE_LOCATION) } }
+                else estado.tarea { ubicacion.pedir(ctx) { estado.alPedirPermisos(Ubicacion.permisos) } }
             }, descripcion = "Mi ubicación") {
                 Box(Modifier.size(40.dp).e1(RoundedCornerShape(10.dp)).clip(RoundedCornerShape(10.dp)).background(C.superficie), contentAlignment = Alignment.Center) {
                     Icono("location", 17f, C.accion)

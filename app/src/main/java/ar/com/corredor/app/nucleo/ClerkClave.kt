@@ -112,16 +112,17 @@ class ClerkMail private constructor(val fapi: String, private val http: OkHttpCl
         private val comunes = setOf(
             "1234567890", "12345678910", "qwertyuiop", "contraseña", "contrasena", "password12", "password123", "argentina1",
             "0123456789", "1111111111", "abcdefghij", "corredor123", "inmobiliaria", "iloveyou12", "boca123456", "river12345",
+            "12345678", "87654321", "password", "qwertyui", "abcdefgh", "asdfghjk", "corredor",
         )
 
         /** Los requisitos de la contraseña nueva que se tildan solos (2c): (largo, comun). */
-        fun requisitos(clave: String): Pair<Boolean, Boolean> = (clave.length >= 10) to (clave.isNotEmpty() && !esComun(clave))
+        fun requisitos(clave: String): Pair<Boolean, Boolean> = (clave.length >= 8) to (clave.isNotEmpty() && !esComun(clave))
 
         private fun esComun(c: String): Boolean {
             val x = c.lowercase()
             if (x in comunes) return true
             if (x.length > 1 && x.all { it == x[0] }) return true
-            return x.startsWith("0123456789") || x.startsWith("1234567890") || x.startsWith("9876543210")
+            return x.startsWith("01234567") || x.startsWith("12345678") || x.startsWith("98765432")
         }
 
         /** El error de Clerk como lo lee la persona. */

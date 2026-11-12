@@ -90,6 +90,8 @@ object Entrada {
         }
         if (e is ErrorApi) {
             if (e.sinConexion) return e.detalle
+            // La cuenta se borró (sigue desactivada los 30 días): el detalle de la API dice cómo recuperarla.
+            if (e.estado == 409 && e.codigo == "cuenta_borrada") return e.detalle.ifEmpty { e.titulo }
             return api[e.codigo] ?: "No pudimos completar el ingreso. Probá de nuevo."
         }
         return "No pudimos completar el ingreso. Probá de nuevo."
@@ -97,7 +99,7 @@ object Entrada {
 }
 
 /** 1A–1B Bienvenida: «De la consulta al contrato firmado.», Google y mail (en Android no va Apple). En modo «Creá tu
- *  cuenta» (el link de crear la web) dice que es gratis los primeros 30 días. */
+ *  cuenta» (el link de crear la web) dice que es gratis los primeros 14 días. */
 @Composable
 fun Entrada() {
     val estado = LocalEstado.current
@@ -135,7 +137,7 @@ fun Entrada() {
                 if (estado.ingresoAlta) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Texto("Creá tu cuenta", Estilo(20f, Peso.bold), Color.White)
-                        Texto("Gratis los primeros 30 días. Sin tarjeta.", Estilo.subhead, hex(0xCFE0D8))
+                        Texto("Gratis los primeros 14 días. Sin tarjeta.", Estilo.subhead, hex(0xCFE0D8))
                     }
                 }
             }
@@ -262,7 +264,7 @@ fun IngresoMail() {
         if (p == null) {
             // El mail
             Texto(if (estado.ingresoAlta) "Creá tu cuenta" else "Entrar con mail", Estilo.titulo, C.texto)
-            Texto(if (estado.ingresoAlta) "Gratis los primeros 30 días. Sin tarjeta." else "Si es tu primera vez, se crea tu cuenta.", Estilo.subhead, C.texto2)
+            Texto(if (estado.ingresoAlta) "Gratis los primeros 14 días. Sin tarjeta." else "Si es tu primera vez, se crea tu cuenta.", Estilo.subhead, C.texto2)
             CampoCorredor(email, { email = it }, "tu@mail.com", teclado = KeyboardType.Email, mayusculas = KeyboardCapitalization.None, enfoque = foco,
                 accion = ImeAction.Go, alAccion = { seguir() })
             BotonPrincipal(if (ocupado) "Un segundo…" else "Seguir", { seguir() }, habilitado = !(ocupado || !email.contains("@") || flujo == null))
@@ -317,7 +319,7 @@ fun RequisitosClave(clave: String, distinta: Boolean = false) {
         }
     }
     Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        fila(largo, "10 caracteres o más")
+        fila(largo, "8 caracteres o más")
         fila(comun, "No es una de las más usadas")
         if (distinta) fila(false, "Distinta a la anterior")
     }

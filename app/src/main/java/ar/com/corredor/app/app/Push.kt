@@ -1,5 +1,6 @@
 package ar.com.corredor.app.app
 
+import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -19,6 +20,7 @@ import ar.com.corredor.app.compartido.SesionCompartida
 import ar.com.corredor.app.nucleo.AChat
 import ar.com.corredor.app.nucleo.ACita
 import ar.com.corredor.app.nucleo.APreguntaML
+import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.nucleo.Ruta
 import ar.com.corredor.app.widgets.Widgets
 import com.google.firebase.FirebaseApp
@@ -30,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 import ar.com.corredor.app.nucleo.Api
 import kotlinx.serialization.Serializable
@@ -134,8 +137,8 @@ object Push {
     }
 
     /** Arma y muestra un aviso. Llega sólo con datos: {titulo, cuerpo, ruta, tipo, categoria, avisoId, acciones}.
-     *  Los botones son los de su categoría, como las categorías de iOS: mensaje (Responder, Abrir), consulta (Responder,
-     *  Llamar, Abrir), cobro (Registrar cobro, Abrir) y visita (Abrir, Marcar como hecha). Un aviso sin categoría con
+     *  Los botones son los de su categoría, como las categorías de iOS: mensaje (Responder, Abrir), consulta (Llamar,
+     *  Abrir), cobro (Registrar cobro, Abrir) y visita (Abrir, Marcar como hecha). Un aviso sin categoría con
      *  `acciones` muestra las que pide la API (hasta tres, lo que deja Android). */
     fun mostrar(ctx: Context, d: Map<String, String>) {
         val titulo = d["titulo"] ?: return
@@ -160,8 +163,9 @@ object Push {
             .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build()
         when (d["categoria"]) {
             "mensaje" -> { b.addAction(responder); b.addAction(ver) }
-            // Llamar: el marcador con el `telefono` de la consulta (tel:// en iOS); sin él, abre la app.
-            "consulta" -> { b.addAction(responder); b.addAction(0, "Llamar", llamar(ctx, d["telefono"], ruta, id + 2, aviso)); b.addAction(ver) }
+            // La consulta (`/contactos/<id>`) no tiene un canal donde mandar una respuesta: se llama o se abre, sin
+            // «Responder». Llamar: el marcador con el `telefono` de la consulta (tel:// en iOS); sin él, el contacto.
+            "consulta" -> { b.addAction(0, "Llamar", llamar(ctx, d["telefono"], ruta, id + 2, aviso)); b.addAction(ver) }
             // Un cobro se registra abriendo la app (en iOS pide desbloquear el teléfono).
             "cobro" -> { b.addAction(0, "Registrar cobro", abrir(ctx, ruta, id + 3, "cobrar", aviso)); b.addAction(ver) }
             "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso, citaId = d["citaId"])) }
@@ -223,10 +227,11 @@ class AccionesPush : BroadcastReceiver() {
                 when (que) {
                     "responder" -> {
                         if (texto.isNullOrEmpty()) return@runCatching
+                        // Sólo un chat de WhatsApp o una pregunta de ML reciben la respuesta: sin destino no se da por mandada.
                         when (val d = ruta?.destino) {
                             is AChat -> api.hacer("POST", "/v1/whatsapp/conversaciones/${d.id}/mensajes", Mensaje(texto))
                             is APreguntaML -> api.hacer("POST", "/v1/mercadolibre/preguntas/${d.id}/respuesta", Mensaje(texto))
-                            else -> {}
+                            else -> throw IllegalStateException("sin destino")
                         }
                     }
                     "hecha" -> {
@@ -245,14 +250,39 @@ class AccionesPush : BroadcastReceiver() {
                     }
                 }
             }.isSuccess
+            val respuesta = que == "responder" || (que == "api" && texto != null)
             if (ok && aviso != 0) NotificationManagerCompat.from(ctx).cancel(aviso)
-            // Si no se mandó, se abre el chat con lo escrito para mandarlo a mano.
-            if (!ok && (que == "responder" || (que == "api" && texto != null))) {
-                runCatching { Push.abrir(ctx, rutaTexto, aviso + 9, accion = "fallo-respuesta").send() }
-            }
+            if (!ok && respuesta) noSeMando(ctx, rutaTexto, texto.orEmpty(), aviso)
             Widgets.actualizar(ctx)
             EnPrimerPlano.alAviso?.invoke()
             pendiente.finish()
         }
+    }
+
+    /** La respuesta no salió (sin destino o la API no la tomó). Con la app adelante, el chat y el aviso de abajo; en
+     *  segundo plano (Android 14 no deja abrir la app desde acá), una notificación con lo escrito en lugar del aviso,
+     *  que al tocarla abre la conversación para mandarlo a mano. */
+    private suspend fun noSeMando(ctx: Context, rutaTexto: String, texto: String, aviso: Int) {
+        val estado = ActivityManager.RunningAppProcessInfo().also { ActivityManager.getMyMemoryState(it) }
+        if (estado.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+            if (aviso != 0) NotificationManagerCompat.from(ctx).cancel(aviso)
+            withContext(Dispatchers.Main) {
+                val e = CorredorApp.estado
+                Ruta.de(rutaTexto)?.let { e.ir(it) }
+                e.avisar("No se mandó la respuesta. Probá desde el chat.", ok = false)
+            }
+            return
+        }
+        val n = NotificationCompat.Builder(ctx, Push.CANAL_AVISOS)
+            .setSmallIcon(R.drawable.ic_aviso)
+            .setColor(0xFF16443B.toInt())
+            .setContentTitle("No se mandó tu respuesta")
+            .setContentText(Formato.sinViudas("Escribiste: «$texto». Tocá acá para mandarla desde Corredor."))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(Formato.sinViudas("Escribiste: «$texto». Tocá acá para mandarla desde Corredor.")))
+            .setAutoCancel(true)
+            .setContentIntent(Push.abrir(ctx, rutaTexto, aviso + 9))
+            .build()
+        // Con el mismo id: reemplaza al aviso que quedó esperando la respuesta.
+        if (Push.hayPermiso(ctx)) runCatching { NotificationManagerCompat.from(ctx).notify(if (aviso != 0) aviso else rutaTexto.hashCode(), n) }
     }
 }

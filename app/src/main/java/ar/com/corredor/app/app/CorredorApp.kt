@@ -54,6 +54,12 @@ class CorredorApp : Application() {
         Consejos.configurar()
         Push.iniciar(applicationContext)
     }
+
+    companion object {
+        /** El Estado vive en el proceso (como en iOS), no en la actividad: si Android la rehace (modo oscuro, tamaño de
+         *  letra, multiventana) no se pierden la sesión, las pilas de navegación ni el ingreso con Google a medias. */
+        val estado: Estado by lazy { Estado() }
+    }
 }
 
 /** Un link que abre la app (App Link de corredor.com.ar o `corredor://`).
@@ -99,7 +105,8 @@ fun Raiz(estado: Estado) {
         val i = estado.invitacionAbierta
         Hoja(i != null, { estado.invitacionAbierta = null }) { i?.let { VerInvitacion(token = it.token) } }
     }
-    LaunchedEffect(Unit) { estado.arrancar() }
+    // Una sola vez por proceso: el Estado sobrevive a la actividad, y rehacerla no es volver a arrancar.
+    LaunchedEffect(Unit) { if (estado.fase == Estado.Fase.arrancando) estado.arrancar() }
     LaunchedEffect(estado.fase) {
         val f = estado.fase
         if (f == Estado.Fase.adentro) Abrir.pendiente?.let { Abrir.pendiente = null; estado.ir(it) }
