@@ -29,6 +29,7 @@ import ar.com.corredor.app.app.ModoPrueba
 import ar.com.corredor.app.app.Principal
 import ar.com.corredor.app.app.Sesion
 import ar.com.corredor.app.nucleo.AAgendaDia
+import ar.com.corredor.app.nucleo.Suscripcion
 import ar.com.corredor.app.nucleo.AAltaPropiedad
 import ar.com.corredor.app.nucleo.AAvisos
 import ar.com.corredor.app.nucleo.ABuscar
@@ -518,6 +519,17 @@ class PantallasTest {
             "renueva" to JsonPrimitive(true), "enPrueba" to JsonPrimitive(false), "diasRestantes" to JsonPrimitive(20),
         ))
         montar("PlanPagadoAfuera", estado(extra = mapOf("/v1/suscripcion" to s.toString()))) { PantallaPlan() }
+    }
+
+    /** Plan vencido con la fecha de borrado que manda la API: el detalle dice hasta cuándo se pueden exportar. */
+    @Test fun planVencidoBorraEn() {
+        val base = Api.json.parseToJsonElement(ApiDePrueba.respuestas["/v1/suscripcion"]!!).jsonObject
+        val s = JsonObject(base + mapOf(
+            "estado" to JsonPrimitive("vencida"), "soloLectura" to JsonPrimitive(true), "enPrueba" to JsonPrimitive(false),
+            "renueva" to JsonPrimitive(false), "diasRestantes" to JsonPrimitive(0), "borraEn" to JsonPrimitive("2027-02-10T12:00:00Z"),
+        ))
+        montar("PlanVencidoBorraEn", estado(extra = mapOf("/v1/suscripcion" to s.toString()))) { PantallaPlan() }
+        assertEquals(java.time.Instant.parse("2027-02-10T12:00:00Z"), Api.json.decodeFromString<Suscripcion>(s.toString()).borraEn)
     }
 
     // MARK: Toda la navegación

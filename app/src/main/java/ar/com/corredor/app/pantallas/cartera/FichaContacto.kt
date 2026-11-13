@@ -114,6 +114,7 @@ fun FichaContacto(id: String) {
     var editando by remember { mutableStateOf<String?>(null) }
     var agendar by remember { mutableStateOf<FichaContacto.AgendarDesdeFicha?>(null) }
     var nuevaOp by remember { mutableStateOf(false) }
+    var suprimir by remember { mutableStateOf(false) }
     val dictado = rememberDictado()
     var base by remember { mutableStateOf("") }
     var dictandoDesde by remember { mutableStateOf<Instant?>(null) }
@@ -289,6 +290,31 @@ fun FichaContacto(id: String) {
         } finally {
             contando = false
         }
+    }
+
+    /** Cuando la persona lo pide (ley de datos personales): a la papelera y de ahí, del todo. Sólo el dueño.
+     *  Si algo depende todavía del contacto (una operación), queda en la papelera y se avisa por qué. */
+    suspend fun borrarDatos() {
+        try {
+            estado.api.hacer("DELETE", "/v1/contactos/$id")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            estado.avisar(e); return
+        }
+        try {
+            estado.api.hacer("DELETE", "/v1/papelera/contacto/$id")
+            cerrar()
+            estado.avisar("Borramos sus datos")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: ErrorApi) {
+            cerrar()
+            estado.avisar("Quedó en la papelera: ${e.detalle}")
+        } catch (e: Exception) {
+            estado.avisar(e)
+        }
+        estado.version += 1
     }
 
     /** A la papelera; «Deshacer» la restaura. */
@@ -589,11 +615,12 @@ fun FichaContacto(id: String) {
         acciones = {
             if (estado.escribe && cc != null) {
                 MenuBoton(
-                    opciones = listOf(
+                    opciones = listOfNotNull(
                         OpcionDeMenu("Editar", "pencil") { editando = "todo" },
                         OpcionDeMenu("Agendar visita", "calendar") { agendar = FichaContacto.AgendarDesdeFicha(dia = Instant.now(), hora = null) },
                         OpcionDeMenu("Nueva operación", "rectangle.split.3x1") { nuevaOp = true },
                         OpcionDeMenu("Mandar a la papelera", "trash", destructiva = true) { alcance.launch { borrar() } },
+                        if (estado.esDuenio) OpcionDeMenu("Borrar sus datos", "person.crop.circle.badge.xmark", destructiva = true) { suprimir = true } else null,
                     ),
                     descripcion = "Más",
                 ) { Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("ellipsis.circle", 20f, C.accion) } }
@@ -640,6 +667,14 @@ fun FichaContacto(id: String) {
     Hoja(visible = nuevaOp && cc != null, alCerrar = { nuevaOp = false }, alturas = listOf(Altura.grande)) {
         if (cc != null) NuevaOperacion(contacto = Resultado(id = cc.id, tipo = "contacto", titulo = cc.nombre, subtitulo = null))
     }
+    Confirmacion(
+        visible = suprimir,
+        titulo = "¿Borrar los datos de ${cc?.nombre ?: "este contacto"}?",
+        mensaje = "Es para cuando te lo pide. Borramos su ficha y todo lo suyo, y en el historial queda que se borró, sin sus datos. No se puede deshacer.",
+        opciones = listOf(OpcionConfirmacion("Borrar sus datos", destructiva = true) { alcance.launch { borrarDatos() } }),
+        alCerrar = { suprimir = false },
+        volver = "No",
+    )
 }
 
 // MARK: - Alta y edición

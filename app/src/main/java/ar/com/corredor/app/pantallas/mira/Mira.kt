@@ -933,7 +933,7 @@ private fun SinPermiso(elegirFoto: () -> Unit, cargarAMano: () -> Unit, cerrar: 
             }
             Texto("MIRA necesita la cámara", Estilo(24f, Peso.bold, -0.02f, Relativo.title2), Color.White, alinear = TextAlign.Center)
             // En iOS: «Ajustes › Corredor › Cámara»; en Android el permiso está en la ficha de la app.
-            Texto("Activala en Ajustes › Apps › Corredor › Permisos › Cámara. Sólo la usamos para leer carteles.", Estilo.body16, claroVerde, alinear = TextAlign.Center)
+            Texto("Activala en Ajustes › Apps › Corredor › Permisos › Cámara. Sólo la usamos para leer carteles y sacarles fotos a las propiedades.", Estilo.body16, claroVerde, alinear = TextAlign.Center)
             Tocable({
                 runCatching {
                     ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", ctx.packageName, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

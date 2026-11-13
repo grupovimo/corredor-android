@@ -314,7 +314,10 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
         "prueba" -> "Elegí tu plan cuando quieras. Si no elegís, queda en sólo lectura 90 días para que exportes tus datos, y después se borran."
         "activa" -> s.comoSePaga
         "baja" -> "Elegí un plan para seguir sin cortes. Lo que ya pagaste no se pierde."
-        else -> "Todo lo tuyo sigue acá y lo podés ver y exportar durante 90 días; después se borra. Para volver a cargar, elegí un plan: se activa en el momento."
+        else -> {
+            val hasta = s.borraEn?.let { "hasta el ${Formato.fechaLarga(it)}, cuando se borra" } ?: "durante 90 días; después se borra"
+            "Todo lo tuyo sigue acá y lo podés ver y exportar $hasta. Para volver a cargar, elegí un plan: se activa en el momento."
+        }
     }
     val personas = s.agentes.cupo?.let { c -> "${s.agentes.usados} de $c ${if (c == 1) "persona" else "personas"} que cargan" }
         ?: Formato.cantidad(s.agentes.usados, "persona carga", "personas cargan")
@@ -452,7 +455,11 @@ fun AvisoPlan() {
     val vencida = s.estado == "vencida"
     val tono = if (vencida) Tono.rojo else if (s.diasRestantes <= 3 || s.estado == "baja") Tono.oro else Tono.verde
     val texto = when (s.estado) {
-        "vencida" -> if (estado.esDuenio) "Tu prueba terminó: estás en sólo lectura. Tus datos quedan 90 días." else "La inmobiliaria está en sólo lectura."
+        "vencida" -> when {
+            !estado.esDuenio -> "La inmobiliaria está en sólo lectura."
+            s.borraEn != null -> "Estás en sólo lectura. Si no elegís un plan, el ${Formato.fechaLarga(s.borraEn)} se borran tus datos."
+            else -> "Tu prueba terminó: estás en sólo lectura. Tus datos quedan 90 días."
+        }
         "baja" -> "Tu plan no se renueva: termina el ${Formato.dia(s.vigenteHasta)}."
         else -> if (s.diasRestantes <= 1) "Hoy es el último día de tu prueba gratis." else "Te quedan ${s.diasRestantes} días de prueba gratis."
     }

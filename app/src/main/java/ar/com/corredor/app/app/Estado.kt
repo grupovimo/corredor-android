@@ -316,8 +316,26 @@ class Estado(api: Api? = null) {
         return r
     }
 
-    /** MainActivity: llegó la vuelta (`ar.com.corredor.app://callback`). */
-    fun vueltaClerk(url: String) { vuelta?.complete(url) }
+    /** MainActivity: llegó la vuelta (`ar.com.corredor.app://callback`). Si nadie la espera porque Android mató el
+     *  proceso mientras estaba la Custom Tab, se retoma el ingreso con Google que quedó guardado. */
+    fun vueltaClerk(url: String) {
+        val v = vuelta
+        if (v != null) { v.complete(url); return }
+        if (!url.startsWith(Clerk.VUELTA)) return
+        val clerk = Clerk.crear(BuildConfig.CLERK_PUBLICABLE, api.http) ?: return
+        if (!clerk.retomar()) return
+        tarea {
+            try {
+                canjear(clerk.completar(Uri.parse(url).getQueryParameter("rotating_token_nonce") ?: ""))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Clerk.ErrorClerk) {
+                if (e.codigo != "cancelado") avisar(ErrorApi.desconocido)
+            } catch (e: Exception) {
+                avisar(e)
+            }
+        }
+    }
 
     /** MainActivity: la Custom Tab se cerró sin vuelta (ASWebAuthenticationSessionError.canceledLogin). */
     fun clerkCancelado() { vuelta?.complete(CANCELADO) }

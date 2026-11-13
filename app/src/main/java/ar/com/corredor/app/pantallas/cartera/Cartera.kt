@@ -324,7 +324,7 @@ fun SelectorAgendaVarios(alElegir: (List<ContactoAgenda>) -> Unit) {
     var elegidos by remember { mutableStateOf<Set<Int>>(emptySet()) }
     var q by remember { mutableStateOf("") }
     val pedir = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> permiso = ok }
-    LaunchedEffect(Unit) { if (!permiso) pedir.launch(Manifest.permission.READ_CONTACTS) }
+    // El permiso se pide recién después de explicar qué se sube (divulgación destacada de Play), no al abrir.
     LaunchedEffect(permiso) {
         if (!permiso) return@LaunchedEffect
         todos = withContext(Dispatchers.IO) {
@@ -368,9 +368,9 @@ fun SelectorAgendaVarios(alElegir: (List<ContactoAgenda>) -> Unit) {
         if (!permiso) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 EstadoVacio(
-                    icono = "person.crop.circle", titulo = "Corredor necesita ver tus contactos",
-                    texto = "Para elegir a quiénes traer de la agenda del teléfono.",
-                    accion = "Dar permiso" to { pedir.launch(Manifest.permission.READ_CONTACTS) },
+                    icono = "person.crop.circle", titulo = "Traé contactos de tu agenda",
+                    texto = "Vas a ver tu agenda para elegir a quiénes traer. Sólo los que tildes se suben a tu cartera de Corredor; el resto no sale del teléfono.",
+                    accion = "Seguir" to { pedir.launch(Manifest.permission.READ_CONTACTS) },
                 )
             }
             return@Column

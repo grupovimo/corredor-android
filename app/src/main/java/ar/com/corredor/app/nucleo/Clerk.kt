@@ -72,7 +72,17 @@ class Clerk private constructor(val fapi: String, private val http: OkHttpClient
         if (url.isNullOrBlank() || i == null || !Regex("^sia_[A-Za-z0-9]+$").matches(i)) throw ErrorClerk("clerk_no_responde")
         cliente = c
         intento = i
+        // Si Android mata el proceso con la Custom Tab abierta, a la vuelta se retoma desde acá (retomar).
+        Preferencias.ponerTexto(GUARDADO_CLIENTE, c)
+        Preferencias.ponerTexto(GUARDADO_INTENTO, i)
         return url
+    }
+
+    /** El intento guardado por [iniciar], para completar la vuelta en un proceso nuevo. False si no hay ninguno. */
+    fun retomar(): Boolean {
+        cliente = Preferencias.texto(GUARDADO_CLIENTE) ?: return false
+        intento = Preferencias.texto(GUARDADO_INTENTO) ?: return false
+        return intento.isNotEmpty()
     }
 
     /** Google, paso 2: con el nonce de la vuelta (`rotating_token_nonce`), el JWT de sesión de Clerk. */
@@ -89,6 +99,8 @@ class Clerk private constructor(val fapi: String, private val http: OkHttpClient
             terminar(r3, c3)
         } finally {
             intento = ""
+            Preferencias.ponerTexto(GUARDADO_CLIENTE, null)
+            Preferencias.ponerTexto(GUARDADO_INTENTO, null)
         }
     }
 
@@ -96,6 +108,8 @@ class Clerk private constructor(val fapi: String, private val http: OkHttpClient
         const val VERSION_FAPI = "2025-11-10"
         const val ESQUEMA = "ar.com.corredor.app"
         const val VUELTA = "ar.com.corredor.app://callback"
+        private const val GUARDADO_CLIENTE = "clerk.cliente"
+        private const val GUARDADO_INTENTO = "clerk.intento"
 
         /** Clerk(publicable:) de iOS: null si la clave no sirve. */
         fun crear(publicable: String?, http: OkHttpClient = Api.cliente()): Clerk? = fapiDe(publicable)?.let { Clerk(it, http) }

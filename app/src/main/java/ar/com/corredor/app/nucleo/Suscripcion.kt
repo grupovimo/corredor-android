@@ -50,6 +50,8 @@ data class Suscripcion(
     val esperando: String? = null,
     val soloLectura: Boolean = false,
     val enPrueba: Boolean = false,
+    /** Cuándo se borran los datos si no elige un plan (sólo vencida y con la purga prendida; si no, null). */
+    val borraEn: FechaApi? = null,
     val agentes: Agentes = Agentes(),
     val planes: List<Plan> = emptyList(),
     val mercadoPago: Boolean = false,
@@ -158,6 +160,7 @@ class Tienda private constructor() {
     private var cliente: BillingClient? = null
     private var esperando: CompletableDeferred<Pair<BillingResult, List<Purchase>?>>? = null
     private var escuchando = false
+    private var conectando: CompletableDeferred<Boolean>? = null
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private suspend fun conectado(): BillingClient? {
@@ -173,11 +176,15 @@ class Tienda private constructor() {
             .enableAutoServiceReconnection()
             .build().also { cliente = it }
         if (c.isReady) return c
-        val listo = CompletableDeferred<Boolean>()
-        c.startConnection(object : BillingClientStateListener {
-            override fun onBillingSetupFinished(r: BillingResult) { listo.complete(r.responseCode == BillingClient.BillingResponseCode.OK) }
-            override fun onBillingServiceDisconnected() { if (!listo.isCompleted) listo.complete(false) }
-        })
+        // Si ya hay una conexión en curso (escuchar() al entrar y enseguida Tu plan), se espera esa:
+        // un segundo startConnection lo rechaza BillingClient.
+        val listo = conectando?.takeIf { !it.isCompleted } ?: CompletableDeferred<Boolean>().also { d ->
+            conectando = d
+            c.startConnection(object : BillingClientStateListener {
+                override fun onBillingSetupFinished(r: BillingResult) { d.complete(r.responseCode == BillingClient.BillingResponseCode.OK) }
+                override fun onBillingServiceDisconnected() { if (!d.isCompleted) d.complete(false) }
+            })
+        }
         return if (listo.await()) c else null
     }
 

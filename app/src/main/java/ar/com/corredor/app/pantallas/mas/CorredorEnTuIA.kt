@@ -229,7 +229,7 @@ fun CorredorEnTuIA() {
             Separador()
             paso(2, "Pegala en tu asistente como «conector» o «servidor MCP»")
             Separador()
-            Texto(Formato.sinViudas("Te va a pedir que entres a Corredor y autorices. Usás tu cuenta de siempre: Google, Apple o mail."),
+            Texto(Formato.sinViudas("Te va a pedir que entres a Corredor y autorices. Usás la misma cuenta con la que entrás a Corredor."),
                 Estilo.footnote, C.texto2, Modifier.padding(horizontal = 16.dp, vertical = 11.dp))
             Separador()
             paso(3, "Elegí qué puede hacer")
