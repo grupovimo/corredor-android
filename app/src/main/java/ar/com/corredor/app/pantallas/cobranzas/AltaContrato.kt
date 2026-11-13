@@ -42,10 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -71,7 +67,6 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import java.io.ByteArrayOutputStream
-import java.text.Normalizer
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -194,11 +189,6 @@ private class AltaEstado {
     var ultimoGuardado = ""
     val fila = Mutex()
     val envioAlta = UUID.randomUUID().toString()
-    // Leer el PDF.
-    var leyendo by mutableStateOf(false)
-    var leidoDe by mutableStateOf<String?>(null)
-    var dudosos by mutableStateOf<List<String>>(emptyList())
-    var sugeridos by mutableStateOf<Map<String, String>>(emptyMap())
     // Elegir y subir.
     var eligiendo by mutableStateOf<String?>(null)
     var subiendoDoc by mutableStateOf(false)
@@ -216,9 +206,6 @@ private class AltaEstado {
     val fin: String? get() = AltaContrato.finDe(d.inicio, d.meses)
     val kicker: String get() = d.renueva?.let { "Renovación · ${it.titulo}" } ?: (if (d.alquiler) "Contrato nuevo" else "Venta nueva")
     val titulo: String get() = if (d.renueva != null) "Renovar contrato" else "Nuevo contrato"
-    val yaLeido: Boolean get() = dudosos.isNotEmpty() || sugeridos.isNotEmpty() || d.documentos.any { it.id == leidoDe }
-    val dudososAca: List<String> get() = if (paso == 0) emptyList() else dudosos.filter { AltaContrato.pasoDe[it] == paso }
-
     fun textosDesdeDatos() {
         tHonorarios = AltaContrato.textoPorcentaje(d.honorarios)
         tComision = AltaContrato.textoPorcentaje(d.comision)
@@ -280,8 +267,6 @@ private class AltaEstado {
 @Serializable private data class PropAlta(val propietarioId: String? = null)
 @Serializable private data class CtAlta(val id: String, val nombre: String)
 @Serializable private data class DocAlta(val archivoId: String, val contratoId: String, val nombre: String)
-@Serializable private data class LecturaAlta(val datos: AltaContrato.Leido, val prueba: Boolean? = null)
-@Serializable private data class ArchivoAlta(val archivoId: String)
 
 @Serializable
 private data class CuerpoAlta(
@@ -294,11 +279,11 @@ private data class CuerpoAlta(
 
 /** El alta de un contrato (/contratos/nuevo): pasos cortos (Partes → Plazo y monto → Ajuste →
  *  Condiciones → Documentos; una venta saltea Ajuste), validación por paso, guardado solo en un
- *  borrador de /v1/borradores?clase=contrato («Guardado hace 2 s», «Seguir después») y «Subir el PDF y
- *  que lo lea». Con `renovar` arranca desde el contrato anterior; con `operacion`, desde la operación. */
+ *  borrador de /v1/borradores?clase=contrato («Guardado hace 2 s», «Seguir después»). Con `renovar`
+ *  arranca desde el contrato anterior; con `operacion`, desde la operación. El contrato se carga a
+ *  mano: no se manda a ninguna IA. */
 @Composable
 fun AltaContrato(
-    leer: Boolean = false,
     renovar: String? = null,
     operacion: String? = null,
     /** Seguir un borrador (el de la web, el de otro aparato). */
@@ -400,52 +385,6 @@ fun AltaContrato(
         crear()
     }
 
-    suspend fun leerDatos(datos: ByteArray, nombre: String, tipo: String) {
-        if (s.leyendo) return
-        s.leyendo = true
-        try {
-            val sub = estado.api.subir(datos, nombre = nombre, tipo = tipo, uso = "documento")
-            val r: LecturaAlta = estado.api.enviar("POST", "/v1/contratos/leer", ArchivoAlta(sub.id))
-            val l = r.datos
-            var nuevo = AltaContrato.aplicarLectura(s.d, l)
-            if (nuevo.documentos.none { it.id == sub.id }) {
-                nuevo = nuevo.copy(documentos = nuevo.documentos + DocumentoAlta(sub.id, sub.nombre ?: nombre, sub.tipo ?: tipo, sub.bytes ?: datos.size))
-            }
-            if (s.d.propiedad == null && l.direccion != null) nuevo = nuevo.copy(propiedad = encontrarAlta(estado.api, "propiedad", l.direccion, null))
-            if (s.d.inquilino == null && l.inquilino?.nombre != null) nuevo = nuevo.copy(inquilino = encontrarAlta(estado.api, "contacto", l.inquilino.nombre, l.inquilino.nombre))
-            if (s.d.propietario == null && l.propietario?.nombre != null) nuevo = nuevo.copy(propietario = encontrarAlta(estado.api, "contacto", l.propietario.nombre, l.propietario.nombre))
-            val antes = s.d
-            val antesTextos = listOf(s.tHonorarios, s.tComision, s.tPunitorio, s.tPorcentaje, s.tDia, s.tMeses)
-            s.d = nuevo
-            s.textosDesdeDatos()
-            s.leidoDe = sub.id
-            val sug = mutableMapOf<String, String>()
-            if (nuevo.propiedad == null) l.direccion?.let { sug["propiedad"] = it }
-            if (nuevo.inquilino == null) l.inquilino?.nombre?.let { sug["inquilino"] = it }
-            if (nuevo.propietario == null) l.propietario?.nombre?.let { sug["propietario"] = it }
-            s.sugeridos = sug
-            s.dudosos = (l.dudosos ?: emptyList()).filter { AltaContrato.pasoDe[it] != null }
-            if (antes.propiedad == null) nuevo.propiedad?.let { propietarioDe(it) }
-            val texto = if (r.prueba == true) "Datos de prueba: la lectura no está configurada"
-            else if (s.dudosos.isEmpty()) "Lo leímos. Revisá y seguí"
-            else "Lo leímos. Revisá ${if (s.dudosos.size == 1) "lo marcado" else "las ${s.dudosos.size} cosas marcadas"}"
-            estado.avisar(texto) {
-                s.d = antes
-                s.tHonorarios = antesTextos[0]; s.tComision = antesTextos[1]; s.tPunitorio = antesTextos[2]
-                s.tPorcentaje = antesTextos[3]; s.tDia = antesTextos[4]; s.tMeses = antesTextos[5]
-                s.dudosos = emptyList()
-                s.sugeridos = emptyMap()
-                s.leidoDe = null
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            estado.avisar("No se pudo leer · ${(e as? ErrorApi)?.detalle ?: "probá de nuevo"}", ok = false)
-        } finally {
-            s.leyendo = false
-        }
-    }
-
     suspend fun subirDoc(datos: ByteArray, nombre: String, tipo: String) {
         s.subiendoDoc = true
         try {
@@ -461,18 +400,6 @@ fun AltaContrato(
     }
 
     // .fileImporter y PhotosPicker: el selector de documentos y el de fotos del sistema.
-    val elegirLectura = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { u ->
-        if (u != null) alcance.launch {
-            val a = leerUriAlta(ctx, u)
-            if (a == null) estado.avisar("No se pudo leer el archivo.", ok = false) else leerDatos(a.first, a.second, a.third)
-        }
-    }
-    val fotoLectura = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { u ->
-        if (u != null) alcance.launch {
-            val a = leerUriAlta(ctx, u) ?: return@launch
-            leerDatos(aJpegAlta(a.first), "Contrato.jpg", "image/jpeg")
-        }
-    }
     val elegirDocs = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { us ->
         alcance.launch {
             for (u in us) {
@@ -516,7 +443,6 @@ fun AltaContrato(
         s.tDia = s.d.diaVencimiento.toString()
         s.ultimoGuardado = s.firma()
         s.cargado = true
-        if (leer) elegirLectura.launch(tiposArchivo)
     }
     // .onChange(of: d) / .onChange(of: paso): se guarda solo a los 700 ms.
     LaunchedEffect(s.d, s.paso) {
@@ -542,15 +468,8 @@ fun AltaContrato(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         CabezaAlta(s) { programarGuardado(ya = true) }
-                        if (s.dudososAca.isNotEmpty()) {
-                            Etiqueta("No se lee bien en el contrato: ${s.dudososAca.mapNotNull { AltaContrato.nombreDato[it] }.joinToString(", ")}. Revisalo.",
-                                "questionmark.circle", Estilo.footnote, C.avisoTinta,
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(C.avisoFondo).padding(12.dp))
-                        }
                         when (s.paso) {
-                            0 -> PasoPartesAlta(s, renovar, operacion,
-                                leerArchivo = { elegirLectura.launch(tiposArchivo) },
-                                leerFoto = { fotoLectura.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+                            0 -> PasoPartesAlta(s, renovar, operacion)
                             1 -> PasoPlazoAlta(s)
                             2 -> PasoAjusteAlta(s)
                             3 -> PasoCondicionesAlta(s)
@@ -583,20 +502,17 @@ fun AltaContrato(
 
     HojaDe(s.eligiendo, { s.eligiendo = null }) { clave ->
         when (clave) {
-            "propiedad" -> ElegirPropiedadAlta(s.d.tipo, s.sugeridos["propiedad"]) { p ->
+            "propiedad" -> ElegirPropiedadAlta(s.d.tipo) { p ->
                 s.d = s.d.copy(propiedad = p)
-                s.sugeridos = s.sugeridos - "propiedad"
                 s.errores = s.errores - "propiedadId"
                 alcance.launch { propietarioDe(p) }
             }
-            "inquilino" -> ElegirParteAlta(if (s.d.alquiler) "inquilino" else "comprador", s.sugeridos["inquilino"]) { c ->
+            "inquilino" -> ElegirParteAlta(if (s.d.alquiler) "inquilino" else "comprador") { c ->
                 s.d = s.d.copy(inquilino = c)
-                s.sugeridos = s.sugeridos - "inquilino"
                 s.errores = s.errores - "contactoId"
             }
-            else -> ElegirParteAlta("propietario", s.sugeridos["propietario"]) { c ->
+            else -> ElegirParteAlta("propietario") { c ->
                 s.d = s.d.copy(propietario = c)
-                s.sugeridos = s.sugeridos - "propietario"
             }
         }
     }
@@ -681,13 +597,6 @@ private suspend fun desdeOperacionAlta(s: AltaEstado, api: Api, id: String) {
     s.d.propiedad?.let { propietarioDeAlta(s, api, it) }
 }
 
-/** Una sola coincidencia, o la que se llama igual: se elige sola. Si no, queda sugerida. */
-private suspend fun encontrarAlta(api: Api, tipo: String, q: String, igual: String?): ElegidoAlta? {
-    val r: List<Resultado> = api.opcional("/v1/buscar", listOf("tipo" to tipo, "q" to q)) ?: return null
-    val x = igual?.let { n -> r.firstOrNull { AltaContrato.mismoNombre(it.titulo, n) } } ?: (if (r.size == 1) r.first() else null)
-    return x?.let { ElegidoAlta(it.id, it.titulo, it.subtitulo) }
-}
-
 // MARK: Cabecera y pie
 
 @Composable
@@ -753,15 +662,14 @@ private fun TextoErrorAlta(e: String) {
 // MARK: Paso 0 · Partes
 
 @Composable
-private fun PasoPartesAlta(s: AltaEstado, renovar: String?, operacion: String?, leerArchivo: () -> Unit, leerFoto: () -> Unit) {
+private fun PasoPartesAlta(s: AltaEstado, renovar: String?, operacion: String?) {
     if (s.idBorrador == null && renovar == null && operacion == null && s.paraSeguir.isNotEmpty() && s.d == DatosContratoAlta()) AMedioCargarAlta(s)
-    TarjetaLeerAlta(s, leerArchivo, leerFoto)
     Etiquetado("Contrato de") {
         Segmentado(listOf("alquiler" to "Alquiler", "venta" to "Venta"), s.d.tipo, { s.d = s.d.copy(tipo = it) })
     }
-    CampoElegirAlta(s, "Propiedad", s.d.propiedad, s.sugeridos["propiedad"], "direccion" in s.dudosos, s.errores["propiedadId"], "propiedad", false)
-    CampoElegirAlta(s, if (s.d.alquiler) "Inquilino" else "Comprador", s.d.inquilino, s.sugeridos["inquilino"], "inquilino" in s.dudosos, s.errores["contactoId"], "inquilino", false)
-    CampoElegirAlta(s, "Propietario", s.d.propietario, s.sugeridos["propietario"], "propietario" in s.dudosos, s.errores["propietarioId"], "propietario", true)
+    CampoElegirAlta(s, "Propiedad", s.d.propiedad, s.errores["propiedadId"], "propiedad", false)
+    CampoElegirAlta(s, if (s.d.alquiler) "Inquilino" else "Comprador", s.d.inquilino, s.errores["contactoId"], "inquilino", false)
+    CampoElegirAlta(s, "Propietario", s.d.propietario, s.errores["propietarioId"], "propietario", true)
     if (s.d.alquiler) {
         Etiquetado("Garante (opcional)") {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -775,36 +683,7 @@ private fun PasoPartesAlta(s: AltaEstado, renovar: String?, operacion: String?, 
 }
 
 @Composable
-private fun TarjetaLeerAlta(s: AltaEstado, leerArchivo: () -> Unit, leerFoto: () -> Unit) {
-    val forma = RoundedCornerShape(16.dp)
-    val linea2 = C.linea2
-    val opciones = listOf(OpcionDeMenu("Un archivo (PDF)", "doc") { leerArchivo() }, OpcionDeMenu("Una foto", "camera") { leerFoto() })
-    Box(Modifier.alpha(if (s.leyendo) 0.6f else 1f)) {
-        MenuBoton(if (s.leyendo) emptyList() else opciones, "Subir el PDF y que lo lea") {
-            Row(
-                Modifier.fillMaxWidth().clip(forma).background(if (s.yaLeido) C.okFondo else C.superficie)
-                    .drawBehind {
-                        drawRoundRect(linea2, cornerRadius = CornerRadius(16.dp.toPx()),
-                            style = Stroke(1.dp.toPx(), pathEffect = if (s.yaLeido) null else PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 5.dp.toPx()))))
-                    }
-                    .padding(14.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.width(32.dp), contentAlignment = Alignment.Center) {
-                    if (s.leyendo) CargandoCobro() else Icono(if (s.yaLeido) "checkmark.circle.fill" else "sparkles", 22f, if (s.yaLeido) C.okTinta else C.accion)
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Texto(if (s.leyendo) "Leyendo el contrato…" else if (s.yaLeido) "Leímos el contrato" else "Subir el PDF y que lo lea", Estilo.subheadFuerte, C.texto)
-                    Texto(if (s.leyendo) "Tarda unos segundos." else if (s.yaLeido) "Revisá cada paso. Podés subir otro." else "O una foto. Completamos lo que se lea.",
-                        Estilo.footnote, C.texto2)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CampoElegirAlta(s: AltaEstado, etiqueta: String, v: ElegidoAlta?, sugerido: String?, dudoso: Boolean, error: String?, clave: String, opcional: Boolean) {
+private fun CampoElegirAlta(s: AltaEstado, etiqueta: String, v: ElegidoAlta?, error: String?, clave: String, opcional: Boolean) {
     Etiquetado(etiqueta + if (opcional) " (opcional)" else "") {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             val forma = RoundedCornerShape(12.dp)
@@ -815,15 +694,9 @@ private fun CampoElegirAlta(s: AltaEstado, etiqueta: String, v: ElegidoAlta?, su
             ) {
                 Icono(if (clave == "propiedad") "house" else "person", 17f, C.texto2)
                 Column(Modifier.weight(1f).padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Texto(v?.nombre ?: (sugerido?.let { "¿$it?" } ?: "Elegí"), Estilo.body, if (v == null) C.texto3 else C.texto)
+                    Texto(v?.nombre ?: "Elegí", Estilo.body, if (v == null) C.texto3 else C.texto)
                     val det = v?.detalle
                     if (det != null) Texto(det, Estilo.footnote, C.texto2)
-                    else if (v == null && sugerido != null) Texto("Lo leímos del contrato: tocá para buscarlo o cargarlo", Estilo.footnote, C.avisoTinta)
-                }
-                if (dudoso) {
-                    Box(Modifier.height(22.dp).clip(RoundedCornerShape(50)).background(C.avisoFondo).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
-                        Texto("Revisá", Estilo(12f, Peso.bold), C.avisoTinta)
-                    }
                 }
                 Chevron()
             }
@@ -1054,11 +927,6 @@ object AltaContrato {
     val titulos = listOf("¿Quiénes firman?", "Plazo y monto", "¿Cómo se ajusta?", "Condiciones", "Documentos")
     val indices: List<Triple<String?, String, String>> = listOf(Triple("icl", "ICL", "BCRA, diario"), Triple("ipc", "IPC", "INDEC, mensual"), Triple("uva", "UVA", "BCRA, diario"),
         Triple("fijo", "Fijo", "un porcentaje"), Triple(null, "Sin ajuste", "monto fijo"))
-    /** En qué paso se revisa cada dato leído (para marcar «No se lee bien» donde corresponde). */
-    val pasoDe: Map<String, Int> = mapOf("tipo" to 0, "direccion" to 0, "inquilino" to 0, "propietario" to 0, "garante" to 0, "inicio" to 1, "fin" to 1, "meses" to 1,
-        "monto" to 1, "moneda" to 1, "diaVencimiento" to 1, "ajusteIndice" to 2, "ajusteMeses" to 2, "ajustePorcentaje" to 2,
-        "garantia" to 3, "deposito" to 3, "honorarios" to 3, "punitorioDiario" to 3, "notas" to 3)
-
     /** En qué paso está cada campo que rechaza la API: partes 0, ajuste 2, condiciones 3, notas 4 y el
      *  resto (plazo y monto) 1. */
     fun pasoDelCampo(c: String): Int {
@@ -1067,54 +935,6 @@ object AltaContrato {
         if (c in listOf("comision", "honorarios", "punitorioDiario", "deposito")) return 3
         if (c == "notas") return 4
         return 1
-    }
-
-    val nombreDato: Map<String, String> = mapOf("tipo" to "el tipo", "direccion" to "la dirección", "inquilino" to "el inquilino", "propietario" to "el propietario",
-        "garante" to "el garante", "garantia" to "la garantía", "inicio" to "el inicio", "fin" to "el fin", "meses" to "la duración",
-        "monto" to "el monto", "moneda" to "la moneda", "diaVencimiento" to "el día de vencimiento", "ajusteIndice" to "el índice",
-        "ajusteMeses" to "cada cuánto ajusta", "ajustePorcentaje" to "el porcentaje", "deposito" to "el depósito",
-        "honorarios" to "los honorarios", "punitorioDiario" to "el punitorio", "notas" to "las notas")
-
-    @Serializable data class ParteLeida(val nombre: String, val telefono: String? = null)
-
-    @Serializable
-    data class Leido(
-        val tipo: String? = null, val inquilino: ParteLeida? = null, val propietario: ParteLeida? = null, val garante: ParteLeida? = null,
-        val garantia: String? = null, val direccion: String? = null, val inicio: String? = null, val fin: String? = null, val meses: Int? = null,
-        val monto: Double? = null, val moneda: String? = null, val ajusteIndice: String? = null, val ajusteMeses: Int? = null,
-        val ajustePorcentaje: Double? = null, val deposito: Double? = null, val honorarios: Double? = null, val punitorioDiario: Double? = null,
-        val diaVencimiento: Int? = null, val notas: String? = null, val dudosos: List<String>? = null,
-    )
-
-    /** Lo leído pisa lo cargado sólo donde se leyó algo; las partes y la propiedad se buscan aparte. */
-    fun aplicarLectura(d: DatosContratoAlta, l: Leido): DatosContratoAlta {
-        var x = d
-        val positivo: (Double?) -> Double? = { v -> v?.takeIf { it.isFinite() && it > 0 } }
-        if (l.tipo == "alquiler" || l.tipo == "venta") x = x.copy(tipo = l.tipo)
-        if (l.inicio != null && Fecha.fecha(l.inicio) != null) x = x.copy(inicio = l.inicio)
-        var meses: Double? = positivo(l.meses?.toDouble())
-        if (meses == null) {
-            val i = Fecha.fecha(l.inicio)
-            val f = Fecha.fecha(l.fin)
-            if (i != null && f != null) meses = max(1.0, Math.round(ChronoUnit.DAYS.between(i, f) / 30.44).toDouble())
-        }
-        meses?.let { x = x.copy(meses = it.roundToInt()) }
-        positivo(l.monto)?.let { x = x.copy(monto = it) }
-        if (l.moneda == "ARS" || l.moneda == "USD") x = x.copy(moneda = l.moneda)
-        l.diaVencimiento?.let { if (it in 1..28) x = x.copy(diaVencimiento = it) }
-        l.ajusteIndice?.let { if (it in listOf("icl", "ipc", "uva", "fijo")) x = x.copy(indice = it) }
-        positivo(l.ajusteMeses?.toDouble())?.let { x = x.copy(ajusteMeses = it.roundToInt()) }
-        positivo(l.ajustePorcentaje)?.let { x = x.copy(ajustePorcentaje = it) }
-        positivo(l.deposito)?.let { x = x.copy(deposito = it) }
-        positivo(l.honorarios)?.let { x = x.copy(honorarios = it) }
-        positivo(l.punitorioDiario)?.let { x = x.copy(punitorioDiario = it) }
-        l.garante?.nombre?.takeIf { it.isNotBlank() }?.let { g ->
-            x = x.copy(garanteNombre = g)
-            l.garante.telefono?.takeIf { it.isNotBlank() }?.let { x = x.copy(garanteTelefono = it) }
-        }
-        val notas = listOfNotNull(l.garantia?.let { "Garantía: $it" }, l.notas?.takeIf { it.isNotBlank() }).joinToString("\n")
-        if (notas.isNotEmpty() && !x.notas.contains(notas)) x = x.copy(notas = listOf(x.notas.trim(), notas).filter { it.isNotEmpty() }.joinToString("\n\n"))
-        return x
     }
 
     /** Meses enteros entre dos fechas (del 01/07/2024 al 30/06/2027 → 36): el último día cuenta. */
@@ -1155,20 +975,12 @@ object AltaContrato {
         return (if (Math.rint(n) == n) n.toLong().toString() else n.toString()).replace(".", ",")
     }
 
-    /** «Martín  Ríos» y «martin rios» son el mismo nombre. */
-    fun mismoNombre(a: String, b: String): Boolean {
-        val n: (String) -> String = {
-            Normalizer.normalize(it, Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "").lowercase()
-                .split(Regex("\\s+")).filter { p -> p.isNotEmpty() }.joinToString(" ")
-        }
-        return n(a) == n(b)
-    }
 }
 
 /** El alta apilada desde una ruta (`/contratos/nuevo?borrador=` o `?renovar=`). */
 @Composable
 fun AltaContratoPantalla(destino: AAltaContrato) {
-    AltaContrato(leer = destino.leer, renovar = destino.renovar, borrador = destino.borrador, apilada = true)
+    AltaContrato(renovar = destino.renovar, borrador = destino.borrador, apilada = true)
 }
 
 // MARK: - Elegir propiedad y partes
@@ -1177,10 +989,10 @@ fun AltaContratoPantalla(destino: AAltaContrato) {
 
 /** Elegir la propiedad del contrato: sin texto, las de la operación del contrato (alquiler o venta). */
 @Composable
-fun ElegirPropiedadAlta(operacion: String, sugerido: String?, alElegir: (ElegidoAlta) -> Unit) {
+fun ElegirPropiedadAlta(operacion: String, alElegir: (ElegidoAlta) -> Unit) {
     val estado = LocalEstado.current
     val cerrar = LocalCerrarHoja.current
-    var q by remember { mutableStateOf(sugerido ?: "") }
+    var q by remember { mutableStateOf("") }
     var res by remember { mutableStateOf<List<ElegidoAlta>>(emptyList()) }
     var cargando by remember { mutableStateOf(true) }
 
@@ -1229,11 +1041,11 @@ fun ElegirPropiedadAlta(operacion: String, sugerido: String?, alElegir: (Elegido
 /** Elegir una parte: sin texto, los más recientes del tipo (inquilino, comprador o propietario), con
  *  tipo y teléfono; «Cargar «…» como contacto nuevo» con ese tipo. */
 @Composable
-fun ElegirParteAlta(tipo: String, sugerido: String?, alElegir: (ElegidoAlta) -> Unit) {
+fun ElegirParteAlta(tipo: String, alElegir: (ElegidoAlta) -> Unit) {
     val estado = LocalEstado.current
     val cerrar = LocalCerrarHoja.current
     val alcance = rememberCoroutineScope()
-    var q by remember { mutableStateOf(sugerido ?: "") }
+    var q by remember { mutableStateOf("") }
     var res by remember { mutableStateOf<List<ElegidoAlta>>(emptyList()) }
     var creando by remember { mutableStateOf(false) }
 
@@ -1330,7 +1142,7 @@ internal fun leerPlataAlta(t: String): Double? {
 
 /** El campo de plata del alta (monto y depósito): acepta decimales con coma, como iOS. Guarda lo que se escribe
  *  («1500,» a medio escribir) y sólo lo reescribe cuando el valor cambia por otro lado («Un mes de alquiler»,
- *  la lectura del PDF, «Deshacer»). */
+ *  un borrador, «Deshacer»). */
 @Composable
 private fun CampoPlataAlta(valor: Double?, alCambiar: (Double?) -> Unit, modifier: Modifier = Modifier, marco: Boolean = true) {
     var t by remember { mutableStateOf(montoTextoAlta(valor)) }

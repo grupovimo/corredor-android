@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -165,7 +164,6 @@ fun Contratos(
     var vencimientos by remember { mutableStateOf<Map<String, EventoContrato>>(emptyMap()) }
     var filtro by remember { mutableStateOf("vigentes") }
     var nuevo by remember { mutableStateOf(false) }
-    var leerPDF by remember { mutableStateOf(false) }
     var cobrando by remember { mutableStateOf<ACobrar?>(null) }
     var mensaje by remember { mutableStateOf<PedidoMensaje?>(null) }
     var error by remember { mutableStateOf<ErrorApi?>(null) }
@@ -325,16 +323,7 @@ fun Contratos(
     }
     LaunchedEffect(estado.version) { cargar() }
 
-    PantallaApilada("Contratos de alquiler", grande = true, acciones = {
-        if (estado.escribe) {
-            MenuBoton(listOf(
-                OpcionDeMenu("Nuevo contrato", "square.and.pencil") { leerPDF = false; nuevo = true },
-                OpcionDeMenu("Subir el PDF y que lo lea", "doc.viewfinder") { leerPDF = true; nuevo = true },
-            ), "Nuevo contrato") {
-                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) { Icono("plus", 19f, C.accion, descripcion = "Nuevo contrato") }
-            }
-        }
-    }) {
+    PantallaApilada("Contratos de alquiler", grande = true, acciones = if (estado.escribe) ({ BotonBarraIcono("plus", "Nuevo contrato") { nuevo = true } }) else null) {
         Refrescable({ cargar() }) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
@@ -346,8 +335,7 @@ fun Contratos(
                         Box(Modifier.padding(top = 30.dp)) {
                             EstadoVacio("doc.text", "Todavía no hay contratos",
                                 texto = "Corredor calcula cada ajuste y arma los cobros.",
-                                accion = if (estado.escribe) ("Cargar contrato" to { leerPDF = false; nuevo = true }) else null,
-                                secundaria = if (estado.escribe) ("Subir el PDF y que lo lea" to { leerPDF = true; nuevo = true }) else null)
+                                accion = if (estado.escribe) ("Cargar contrato" to { nuevo = true }) else null)
                         }
                     } else {
                         // Tarjetas de arriba
@@ -440,7 +428,7 @@ fun Contratos(
         }
     }
 
-    Hoja(nuevo, { nuevo = false }) { AltaContrato(leer = leerPDF) }
+    Hoja(nuevo, { nuevo = false }) { AltaContrato() }
     HojaDe(cobrando, { cobrando = null }) { c -> HojaCobro(c) }
     hojaMensaje(mensaje) { mensaje = null }
 }

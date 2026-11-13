@@ -134,7 +134,7 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                 // `/cobranzas?registrar=1&contrato=<id>`: la hoja de «Registrar cobro» abierta.
                 "cobranzas" -> if (param("registrar") == "1") Ruta(Pestana.inicio, ARegistrarCobro(contrato = param("contrato"))) else Ruta(Pestana.inicio, ACobranzas())
                 "contrato", "contratos" -> when {
-                    id == "nuevo" -> Ruta(Pestana.inicio, AAltaContrato(borrador = borrador, renovar = param("renovar"), leer = param("leer") == "1"))
+                    id == "nuevo" -> Ruta(Pestana.inicio, AAltaContrato(borrador = borrador, renovar = param("renovar")))
                     // `/contratos/<id>?recordar=AAAA-MM`: el recordatorio de ese mes.
                     id != null && param("recordar") != null -> Ruta(Pestana.inicio, ARecordarMes(contrato = id, periodo = param("recordar")!!))
                     id != null -> Ruta(Pestana.inicio, AFichaContrato(id))

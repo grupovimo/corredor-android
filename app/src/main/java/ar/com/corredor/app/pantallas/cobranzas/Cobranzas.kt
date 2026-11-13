@@ -82,7 +82,7 @@ import kotlin.math.roundToInt
 @Serializable data class AContratosFiltro(val vista: String? = null, val indice: String? = null)
 /** El alta de un contrato a pantalla completa: seguir un borrador (`/contratos/nuevo?borrador=`) o
  *  renovar (`?renovar=`). */
-@Serializable data class AAltaContrato(val borrador: String? = null, val renovar: String? = null, val leer: Boolean = false)
+@Serializable data class AAltaContrato(val borrador: String? = null, val renovar: String? = null)
 /** La rendición «como la ve el propietario» (`/rendiciones/<id>?contrato=<c>&vista=1`). */
 @Serializable data class ARendicionVista(val contrato: String, val id: String)
 
