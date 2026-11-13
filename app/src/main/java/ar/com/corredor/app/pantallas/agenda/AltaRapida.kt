@@ -385,8 +385,8 @@ fun LicenciasAgenda() {
 
 /** Los textos de `LicenciasAgenda` (sus `static let` en iOS). */
 object LicenciasAgendaTextos {
-    val tipos = listOf("licencia" to "Licencia", "vacaciones" to "Vacaciones", "enfermedad" to "Enfermedad", "tramite" to "Trámite")
-    val nombre = mapOf("licencia" to "De licencia", "vacaciones" to "De vacaciones", "enfermedad" to "Por enfermedad", "tramite" to "Trámite")
+    val tipos = listOf("licencia" to "Licencia", "vacaciones" to "Vacaciones", "personal" to "Personal", "tramite" to "Trámite")
+    val nombre = mapOf("licencia" to "De licencia", "vacaciones" to "De vacaciones", "personal" to "Por motivos personales", "tramite" to "Trámite")
 
     fun corta(d: String): String = Fecha.dia(d)?.let { Formato.dia(it) } ?: d
 }

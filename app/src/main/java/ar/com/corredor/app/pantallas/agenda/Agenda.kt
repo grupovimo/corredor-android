@@ -243,7 +243,7 @@ fun AgendaRaiz(diaInicial: Instant? = null, apilada: Boolean = false) {
         val hoyT = Formato.hoy().toString()
         val hasta60 = Formato.hoy().plusDays(60).toString()
         val lics = estado.api.opcional<List<Licencia>>("/v1/licencias", listOf("desde" to minOf(desde, hoyT), "hasta" to maxOf(hasta, hasta60))) ?: emptyList()
-        val ausente = mapOf("licencia" to "de licencia", "vacaciones" to "de vacaciones", "enfermedad" to "de licencia", "tramite" to "de trámite")
+        val ausente = mapOf("licencia" to "de licencia", "vacaciones" to "de vacaciones", "personal" to "ausente", "tramite" to "de trámite")
         for (l in lics) {
             var d = maxOf(l.desde, desde)
             var vueltas = 0

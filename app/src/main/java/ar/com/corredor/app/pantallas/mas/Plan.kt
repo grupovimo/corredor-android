@@ -268,7 +268,7 @@ fun PantallaPlan() {
                                 if (restaurando) Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) { Rueda() }
                                 else BotonTexto("Restaurar compras", { alcance.launch { restaurar() } }, alto = 40.dp)
                             }
-                            Texto(Formato.sinViudas("La suscripción se cobra a tu cuenta de Google y se renueva sola cada $cada al mismo precio, salvo que la des de baja al menos 24 horas antes de que termine el período, desde Google Play › Pagos y suscripciones › Suscripciones. Al vencer, tu inmobiliaria queda en sólo lectura y nada se borra."),
+                            Texto(Formato.sinViudas("La suscripción se cobra a tu cuenta de Google y se renueva sola cada $cada al mismo precio, salvo que la des de baja al menos 24 horas antes de que termine el período, desde Google Play › Pagos y suscripciones › Suscripciones. Al vencer, tu inmobiliaria queda en sólo lectura 90 días para que exportes tus datos; después se borran."),
                                 Estilo.caption, C.texto3)
                             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Texto("Términos de uso", Estilo.caption, C.primarioTexto, Modifier.clickable { abrirEnNavegador(ctx, Api.web().toString().trimEnd('/') + "/terminos") })
@@ -311,10 +311,10 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
         else -> "Tu inmobiliaria está en sólo lectura."
     }
     val detalle = when (s.estado) {
-        "prueba" -> "Elegí tu plan cuando quieras. Si no elegís, después queda en sólo lectura: nada se borra."
+        "prueba" -> "Elegí tu plan cuando quieras. Si no elegís, queda en sólo lectura 90 días para que exportes tus datos, y después se borran."
         "activa" -> s.comoSePaga
         "baja" -> "Elegí un plan para seguir sin cortes. Lo que ya pagaste no se pierde."
-        else -> "Todo lo tuyo sigue acá y lo podés ver. Para volver a cargar, elegí un plan: se activa en el momento."
+        else -> "Todo lo tuyo sigue acá y lo podés ver y exportar durante 90 días; después se borra. Para volver a cargar, elegí un plan: se activa en el momento."
     }
     val personas = s.agentes.cupo?.let { c -> "${s.agentes.usados} de $c ${if (c == 1) "persona" else "personas"} que cargan" }
         ?: Formato.cantidad(s.agentes.usados, "persona carga", "personas cargan")
@@ -452,7 +452,7 @@ fun AvisoPlan() {
     val vencida = s.estado == "vencida"
     val tono = if (vencida) Tono.rojo else if (s.diasRestantes <= 3 || s.estado == "baja") Tono.oro else Tono.verde
     val texto = when (s.estado) {
-        "vencida" -> if (estado.esDuenio) "Tu prueba terminó: estás en sólo lectura. Todo sigue acá." else "La inmobiliaria está en sólo lectura."
+        "vencida" -> if (estado.esDuenio) "Tu prueba terminó: estás en sólo lectura. Tus datos quedan 90 días." else "La inmobiliaria está en sólo lectura."
         "baja" -> "Tu plan no se renueva: termina el ${Formato.dia(s.vigenteHasta)}."
         else -> if (s.diasRestantes <= 1) "Hoy es el último día de tu prueba gratis." else "Te quedan ${s.diasRestantes} días de prueba gratis."
     }

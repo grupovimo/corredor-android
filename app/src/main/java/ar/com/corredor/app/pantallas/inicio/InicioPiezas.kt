@@ -676,7 +676,7 @@ object EquipoHoyInicio {
         "tasacion" to ("tasación" to "tasaciones"), "otro" to ("cita" to "citas"),
     )
     val ausente: Map<String, String> = mapOf(
-        "licencia" to "de licencia", "vacaciones" to "de vacaciones", "enfermedad" to "de licencia por enfermedad", "tramite" to "de trámite",
+        "licencia" to "de licencia", "vacaciones" to "de vacaciones", "personal" to "ausente", "tramite" to "de trámite",
     )
 }
 
