@@ -708,7 +708,7 @@ fun MiWeb() {
                             val principal = registros.firstOrNull()
                             Separador()
                             FilaLista {
-                                ConIcono("2. Cargaste ${if (principal["tipo"].texto == "A") "el registro A" else "el CNAME"} ${principal["valor"].texto ?: ""}",
+                                ConIcono("2. Cargaste ${if (principal["tipo"].texto == "A") "el registro A" else "el CNAME"} ${principal["valor"].texto ?: ""} y el TXT",
                                     if (verificado) "checkmark.circle.fill" else "circle", color = if (verificado) C.okTinta else C.texto)
                             }
                             if (!verificado) {
