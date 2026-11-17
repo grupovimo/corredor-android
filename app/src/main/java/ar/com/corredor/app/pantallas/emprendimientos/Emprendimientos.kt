@@ -89,6 +89,8 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
     var fondo by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var moneda by remember { mutableStateOf("USD") }
+    /** Mientras manda, «Crear» no se puede volver a tocar (no se crean los lotes dos veces). */
+    var mandando by remember { mutableStateOf(false) }
 
     @Serializable data class CuerpoLotes(val manzana: String, val desde: Int, val hasta: Int, val superficie: Double? = null, val frente: Double? = null, val fondo: Double? = null, val precio: Double? = null, val moneda: String)
     @Serializable data class R(val creados: Int? = null, val salteados: Int? = null)
@@ -97,7 +99,8 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
         "Lotes en serie",
         izquierda = { BotonBarra("Cancelar") { cerrar() } },
         derecha = {
-            BotonBarra("Crear", fuerte = true) {
+            BotonBarra("Crear", fuerte = true, habilitado = !mandando) {
+                mandando = true
                 estado.tarea {
                     try {
                         val r: R = estado.api.enviar("POST", "/v1/emprendimientos/$emprendimiento/lotes",
@@ -106,7 +109,7 @@ fun NuevosLotes(emprendimiento: String, cerrar: () -> Unit = LocalCerrarHoja.cur
                         estado.avisar("Creamos ${Formato.cantidad(r.creados ?: 0, "lote", "lotes")}${if (salteados > 0) " · $salteados ya estaban" else ""}")
                         estado.version += 1
                         cerrar()
-                    } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) }
+                    } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { mandando = false }
                 }
             }
         },

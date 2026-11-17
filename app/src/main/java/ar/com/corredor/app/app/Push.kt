@@ -136,6 +136,10 @@ object Push {
         return PendingIntent.getBroadcast(ctx, (que + ruta + (api?.accion ?: "")).hashCode(), i, mutable or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
+    /** Un botón del aviso que sólo anda con el teléfono desbloqueado (.authenticationRequired en iOS). */
+    private fun conClave(titulo: String, intento: PendingIntent): NotificationCompat.Action =
+        NotificationCompat.Action.Builder(0, titulo, intento).setAuthenticationRequired(true).build()
+
     /** Arma y muestra un aviso. Llega sólo con datos: {titulo, cuerpo, ruta, tipo, categoria, avisoId, acciones}.
      *  Los botones son los de su categoría, como las categorías de iOS: mensaje (Responder, Abrir), consulta (Llamar,
      *  Abrir), cobro (Registrar cobro, Abrir) y visita (Abrir, Marcar como hecha). Un aviso sin categoría con
@@ -158,23 +162,27 @@ object Push {
             .setGroup(tipo.ifEmpty { "corredor" })
             .setContentIntent(abrir(ctx, ruta, id, aviso = aviso))
         val ver = NotificationCompat.Action(0, "Abrir", abrir(ctx, ruta, id + 1, "ver", aviso))
-        // 14C: un WhatsApp o una pregunta de ML se responden sin abrir la app.
+        // 14C: un WhatsApp o una pregunta de ML se responden sin abrir la app (con el teléfono desbloqueado, como
+        // .authenticationRequired en iOS).
         val responder = NotificationCompat.Action.Builder(0, "Responder", accion(ctx, "responder", ruta, id, aviso))
-            .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build()
+            .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false)
+            .setAuthenticationRequired(true).build()
         when (d["categoria"]) {
             "mensaje" -> { b.addAction(responder); b.addAction(ver) }
             // La consulta (`/contactos/<id>`) no tiene un canal donde mandar una respuesta: se llama o se abre, sin
             // «Responder». Llamar: el marcador con el `telefono` de la consulta (tel:// en iOS); sin él, el contacto.
             "consulta" -> { b.addAction(0, "Llamar", llamar(ctx, d["telefono"], ruta, id + 2, aviso)); b.addAction(ver) }
             // Un cobro se registra abriendo la app (en iOS pide desbloquear el teléfono).
-            "cobro" -> { b.addAction(0, "Registrar cobro", abrir(ctx, ruta, id + 3, "cobrar", aviso)); b.addAction(ver) }
-            "visita" -> { b.addAction(ver); b.addAction(0, "Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso, citaId = d["citaId"])) }
+            "cobro" -> { b.addAction(conClave("Registrar cobro", abrir(ctx, ruta, id + 3, "cobrar", aviso))); b.addAction(ver) }
+            "visita" -> { b.addAction(ver); b.addAction(conClave("Marcar como hecha", accion(ctx, "hecha", ruta, id, aviso, citaId = d["citaId"]))) }
             else -> acciones(d).take(3).forEachIndexed { n, a ->
                 when {
                     a.ruta.isNullOrEmpty() -> b.addAction(0, a.titulo, abrir(ctx, ruta, id + 10 + n, a.accion, aviso))
                     a.entrada == "texto" -> b.addAction(NotificationCompat.Action.Builder(0, a.titulo, accion(ctx, "api", ruta, id, aviso, a))
-                        .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false).build())
-                    else -> b.addAction(0, a.titulo, accion(ctx, "api", ruta, id, aviso, a))
+                        .addRemoteInput(RemoteInput.Builder("respuesta").setLabel("Escribí tu respuesta").build()).setAllowGeneratedReplies(false)
+                        .setAuthenticationRequired(true).build())
+                    // Las que llaman a la API sin abrir la app también piden desbloquear.
+                    else -> b.addAction(conClave(a.titulo, accion(ctx, "api", ruta, id, aviso, a)))
                 }
             }
         }
@@ -189,9 +197,22 @@ class ServicioPush : FirebaseMessagingService() {
     private val alcance = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onNewToken(token: String) {
-        val api = SesionCompartida.api(this) ?: return
-        if (ar.com.corredor.app.nucleo.Preferencias.bool("pushApagado")) return
-        alcance.launch { runCatching { api.hacer("POST", "/v1/push/dispositivos", Estado.Dispositivo(token)) } }
+        // El Estado de la app sabe el token anterior (lo que registró al entrar): ese se borra de la API y queda el nuevo,
+        // así no quedan dos dispositivos (y el de antes no recibe avisos de balde).
+        val estado = CorredorApp.estadoSiHay
+        alcance.launch {
+            if (estado != null) {
+                withContext(Dispatchers.Main) { estado.cambiarTokenPush(token) }
+                return@launch
+            }
+            // Sin la app abierta: con la sesión compartida y el último token anotado (Preferencias «tokenPush»).
+            val api = SesionCompartida.api(this@ServicioPush) ?: return@launch
+            val viejo = ar.com.corredor.app.nucleo.Preferencias.texto("tokenPush")
+            if (viejo != null && viejo != token) runCatching { api.hacer("DELETE", "/v1/push/dispositivos/$viejo") }
+            ar.com.corredor.app.nucleo.Preferencias.ponerTexto("tokenPush", token)
+            if (ar.com.corredor.app.nucleo.Preferencias.bool("pushApagado")) return@launch
+            runCatching { api.hacer("POST", "/v1/push/dispositivos", Estado.Dispositivo(token)) }
+        }
     }
 
     override fun onMessageReceived(m: RemoteMessage) {

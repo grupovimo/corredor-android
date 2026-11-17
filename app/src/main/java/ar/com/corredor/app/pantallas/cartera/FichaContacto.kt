@@ -229,8 +229,10 @@ fun FichaContacto(id: String) {
         if (t.isEmpty()) return false
         @Serializable data class Cuerpo(val tipo: String = "nota", val texto: String)
         guardando = true
+        // La misma Idempotency-Key directo y en la cola: si la primera llegó sin respuesta, no queda dos veces.
+        val envio = UUID.randomUUID().toString()
         try {
-            val n: NotaContacto = estado.api.enviar("POST", "/v1/contactos/$id/notas", Cuerpo(texto = t.take(5000)))
+            val n: NotaContacto = estado.api.enviar("POST", "/v1/contactos/$id/notas", Cuerpo(texto = t.take(5000)), envio = envio)
             nota = ""
             estado.avisar("Nota guardada") {
                 alcance.launch {
@@ -249,7 +251,7 @@ fun FichaContacto(id: String) {
         } catch (e: ErrorApi) {
             if (e.sinConexion) {
                 return try {
-                    estado.cola.enviar("POST", "/v1/contactos/$id/notas", Cuerpo(texto = t), etiqueta = "Nota en ${c?.nombre ?: ""}")
+                    estado.cola.enviar("POST", "/v1/contactos/$id/notas", Cuerpo(texto = t.take(5000)), etiqueta = "Nota en ${c?.nombre ?: ""}", envio = envio)
                     nota = ""
                     estado.avisar("Sin señal · la nota se guarda cuando vuelva")
                     true
@@ -774,9 +776,11 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
         )
         val metodo = if (contacto == null) "POST" else "PUT"
         val ruta = contacto?.let { "/v1/contactos/${it.id}" } ?: "/v1/contactos"
+        // La misma Idempotency-Key en el primer intento y en la cola (el alta no se duplica).
+        val envio = UUID.randomUUID().toString()
         try {
             // Primero directo (para ver los errores por campo); sin señal, a la cola.
-            val campos = estado.api.hacerValidando(metodo, ruta, cuerpo)
+            val campos = estado.api.hacerValidando(metodo, ruta, cuerpo, envio)
             if (campos.isNotEmpty()) {
                 errores = campos
                 error = "Revisá los datos marcados."
@@ -788,7 +792,7 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
         } catch (e: ErrorApi) {
             if (e.sinConexion) {
                 try {
-                    estado.cola.enviar(metodo, ruta, cuerpo, etiqueta = if (contacto == null) "Alta de ${c.nombre}" else "Cambios en ${c.nombre}")
+                    estado.cola.enviar(metodo, ruta, cuerpo, etiqueta = if (contacto == null) "Alta de ${c.nombre}" else "Cambios en ${c.nombre}", envio = envio)
                     estado.avisar("Sin señal · se guarda cuando vuelva")
                     estado.version += 1
                     cerrar()
@@ -910,9 +914,9 @@ fun EditarContacto(contacto: Contacto? = null, soloBusca: Boolean = false) {
 /** Como `hacer`, pero si la API rechaza los datos (400/422) devuelve los errores por campo
  *  (problem+json `issues`: path → message) en vez de tirar el error. Sin señal tira `ErrorApi.sinRed`.
  *  En iOS es una extensión de Api que vive en esta pantalla (FichaContacto.swift). */
-suspend inline fun <reified C> Api.hacerValidando(metodo: String, ruta: String, cuerpo: C): Map<String, String> =
+suspend inline fun <reified C> Api.hacerValidando(metodo: String, ruta: String, cuerpo: C, envio: String = UUID.randomUUID().toString()): Map<String, String> =
     try {
-        pedir(metodo, ruta, cuerpo = Api.json.encodeToString(cuerpo).toByteArray(), envio = UUID.randomUUID().toString())
+        pedir(metodo, ruta, cuerpo = Api.json.encodeToString(cuerpo).toByteArray(), envio = envio)
         emptyMap()
     } catch (e: ErrorApi) {
         if ((e.estado == 400 || e.estado == 422) && e.campos.isNotEmpty()) e.campos else throw e

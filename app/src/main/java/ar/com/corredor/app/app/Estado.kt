@@ -34,6 +34,7 @@ import ar.com.corredor.app.nucleo.intentar
 import ar.com.corredor.app.nucleo.opcional
 import ar.com.corredor.app.nucleo.ponerAcento
 import ar.com.corredor.app.pantallas.entrada.ElegirInmobiliaria
+import ar.com.corredor.app.pantallas.mira.ColaMira
 import ar.com.corredor.app.tema.Acento
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -194,6 +195,7 @@ class Estado(api: Api? = null) {
 
     init {
         this.api.alPerderSesion = { alcance.launch { sesionPerdida() } }
+        this.api.alPerderInmobiliaria = { alcance.launch { inmobiliariaPerdida() } }
         cola = Cola(this.api, alcance)
         cola.alSubir = { version += 1 }
     }
@@ -280,7 +282,9 @@ class Estado(api: Api? = null) {
             invitacionAbierta = InvitacionAbierta(t)
         }
         // Las compras de Google Play que llegan solas (renovaciones, otro teléfono) van a la API.
+        // Sólo con el dueño: el plan lo paga él (con otro rol la API las rechaza).
         Tienda.compartida.api = api
+        Tienda.compartida.esDuenio = esDuenio
         Tienda.compartida.escuchar()
         cargarEstructura()
         cargarSuscripcion()
@@ -402,6 +406,8 @@ class Estado(api: Api? = null) {
             pilas.values.forEach { it.clear() }
             estructura = null
             ponerAcento(null)
+            // Lo pendiente de la anterior no se sube a la nueva (la cola, MIRA) ni se ven sus números.
+            olvidarInmobiliaria()
         }
         sesion = s
         Guardado.guardar(s, "sesion")
@@ -430,12 +436,55 @@ class Estado(api: Api? = null) {
         fase = Fase.afuera
     }
 
+    /** Borrar la cuenta: primero se saca este teléfono de los avisos (después ya no hay sesión para hacerlo), después el
+     *  DELETE, y la sesión se olvida acá (la API ya la cerró: no se llama a salir). */
+    suspend fun borrarCuenta() {
+        tokenPush?.let { t -> intentar { api.hacer("DELETE", "/v1/push/dispositivos/$t") } }
+        api.hacer("DELETE", "/v1/auth/cuenta")
+        olvidarSesion()
+        fase = Fase.afuera
+    }
+
     private fun sesionPerdida() {
         olvidarSesion()
         fase = Fase.afuera
         avisar("Tu sesión venció. Entrá de nuevo.", ok = false)
     }
 
+    /** 409 sin_inmobiliaria en cualquier pedido (lo sacaron del equipo, la borraron): se recarga la sesión y se va a
+     *  elegir otra (o a crear una), sin nada de la anterior. */
+    private fun inmobiliariaPerdida() {
+        if (fase != Fase.adentro) return
+        fase = Fase.eligiendo
+        Guardado.borrarTodo()
+        pilas.values.forEach { it.clear() }
+        estructura = null
+        ponerAcento(null)
+        altaAbierta = null
+        olvidarInmobiliaria()
+        avisar("Elegí o creá una inmobiliaria para seguir.", ok = false)
+        tarea {
+            api.opcional<Sesion>("/v1/auth/sesion")?.let { s ->
+                sesion = s
+                Guardado.guardar(s, "sesion")
+            }
+        }
+    }
+
+    /** Lo que es de una inmobiliaria y no puede pasar a otra cuenta ni a otra inmobiliaria: la cola sin conexión, las
+     *  fotos de MIRA, las insignias y la suscripción. */
+    private fun olvidarInmobiliaria() {
+        cola.vaciar()
+        contexto?.let { ColaMira.compartida.usar(it) }
+        ColaMira.compartida.olvidar()
+        Insignias.compartidas.olvidar()
+        sinLeer = 0
+        avisosPendientes = 0
+        suscripcion = null
+        Tienda.compartida.esDuenio = false
+    }
+
+    /** Olvida la sesión en este teléfono (sin avisarle a la API): el token, lo guardado y lo pendiente. */
     private fun olvidarSesion() {
         estructura = null
         ponerAcento(null)
@@ -445,8 +494,7 @@ class Estado(api: Api? = null) {
         sesion = null
         pilas.values.forEach { it.clear() }
         Guardado.borrarTodo()
-        cola.vaciar()
-        Insignias.compartidas.olvidar()
+        olvidarInmobiliaria()
         SesionCompartida.guardar(null, api.base)
     }
 
@@ -583,9 +631,20 @@ class Estado(api: Api? = null) {
 
     suspend fun registrarTokenPush(token: String) {
         tokenPush = token
+        // El último token, para borrarlo de la API si FCM lo cambia con la app cerrada (ServicioPush.onNewToken).
+        Preferencias.ponerTexto("tokenPush", token)
         // Apagados en este teléfono desde el perfil: no se vuelve a anotar solo.
         if (pushApagado) return
         intentar { api.hacer("POST", "/v1/push/dispositivos", Dispositivo(token)) }
+    }
+
+    /** FCM cambió el token (ServicioPush.onNewToken): el anterior se borra de la API y se anota el nuevo, así no quedan
+     *  dos dispositivos para el mismo teléfono. */
+    suspend fun cambiarTokenPush(nuevo: String) {
+        val viejo = tokenPush ?: Preferencias.texto("tokenPush")
+        if (viejo != null && viejo != nuevo && api.token != null) intentar { api.hacer("DELETE", "/v1/push/dispositivos/$viejo") }
+        if (api.token == null) { tokenPush = nuevo; Preferencias.ponerTexto("tokenPush", nuevo); return }
+        registrarTokenPush(nuevo)
     }
 
     companion object {
@@ -611,7 +670,11 @@ class Cola(private val api: Api, private val alcance: CoroutineScope) {
         val creado: Long = Instant.now().toEpochMilli(),
         val intentos: Int = 0,
         val error: String? = null,
-    )
+        /** La Idempotency-Key con que se mandó la primera vez (si la pantalla ya probó con una); si no, el id. */
+        val envio: String? = null,
+    ) {
+        val clave: String get() = envio ?: id
+    }
 
     var cambios by mutableStateOf(Guardado.leer<List<Cambio>>(CLAVE)?.first ?: emptyList())
         private set
@@ -619,14 +682,15 @@ class Cola(private val api: Api, private val alcance: CoroutineScope) {
         private set
     var alSubir: (() -> Unit)? = null
 
-    /** Manda el cambio ya; si no hay señal, queda en la cola y devuelve `false`. */
-    suspend inline fun <reified C> enviar(metodo: String, ruta: String, cuerpo: C?, etiqueta: String): Boolean =
-        enviarCrudo(metodo, ruta, cuerpo?.let { Api.json.encodeToString(it) }, etiqueta)
+    /** Manda el cambio ya; si no hay señal, queda en la cola y devuelve `false`. `envio`: la Idempotency-Key del primer
+     *  intento, si la pantalla ya lo mandó por su lado (así el reintento de la cola no lo duplica). */
+    suspend inline fun <reified C> enviar(metodo: String, ruta: String, cuerpo: C?, etiqueta: String, envio: String? = null): Boolean =
+        enviarCrudo(metodo, ruta, cuerpo?.let { Api.json.encodeToString(it) }, etiqueta, envio)
 
-    suspend fun enviarCrudo(metodo: String, ruta: String, cuerpo: String?, etiqueta: String): Boolean {
-        val c = Cambio(metodo = metodo, ruta = ruta, cuerpo = cuerpo, etiqueta = etiqueta)
+    suspend fun enviarCrudo(metodo: String, ruta: String, cuerpo: String?, etiqueta: String, envio: String? = null): Boolean {
+        val c = Cambio(metodo = metodo, ruta = ruta, cuerpo = cuerpo, etiqueta = etiqueta, envio = envio)
         return try {
-            api.pedir(metodo, ruta, cuerpo = cuerpo?.toByteArray(), envio = c.id)
+            api.pedir(metodo, ruta, cuerpo = cuerpo?.toByteArray(), envio = c.clave)
             true
         } catch (e: ErrorApi) {
             if (!e.sinConexion) throw e
@@ -643,7 +707,7 @@ class Cola(private val api: Api, private val alcance: CoroutineScope) {
             try {
                 for (c in cambios.toList()) {
                     try {
-                        api.pedir(c.metodo, c.ruta, cuerpo = c.cuerpo?.toByteArray(), envio = c.id)
+                        api.pedir(c.metodo, c.ruta, cuerpo = c.cuerpo?.toByteArray(), envio = c.clave)
                         cambios = cambios.filter { it.id != c.id }
                         alSubir?.invoke()
                     } catch (e: ErrorApi) {

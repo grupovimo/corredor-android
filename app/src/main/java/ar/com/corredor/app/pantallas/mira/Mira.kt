@@ -238,6 +238,16 @@ class ColaMira private constructor() {
         }
     }
 
+    /** Al cerrar sesión o cambiar de inmobiliaria: no queda nada de la anterior, ni las fotos en disco ni lo pendiente de
+     *  leer. */
+    fun olvidar() {
+        fotos = emptyList()
+        abrir = null
+        cargada = true
+        carpeta?.let { runCatching { it.deleteRecursively() } }
+        persistir()
+    }
+
     private fun persistir() { Guardado.guardar(fotos, "mira") }
 }
 

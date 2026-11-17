@@ -156,6 +156,9 @@ class Tienda private constructor() {
         private set
     /** Quién recibe las compras (la API de la sesión). */
     var api: Api? = null
+    /** Sólo el dueño paga el plan: con otro rol, la API rechaza la compra (403) y quedaría sin reconocer dando vueltas.
+     *  Se pone al entrar a cada inmobiliaria. */
+    var esDuenio = false
 
     private var cliente: BillingClient? = null
     private var esperando: CompletableDeferred<Pair<BillingResult, List<Purchase>?>>? = null
@@ -169,8 +172,8 @@ class Tienda private constructor() {
             .setListener { r, compras ->
                 val e = esperando
                 if (e != null && !e.isCompleted) e.complete(r to compras)
-                // Compras que llegan solas (pendientes que se aprobaron): se registran igual.
-                else if (r.responseCode == BillingClient.BillingResponseCode.OK) alcance.launch { compras?.forEach { runCatching { procesar(it) } } }
+                // Compras que llegan solas (pendientes que se aprobaron): se registran igual (si es el dueño).
+                else if (r.responseCode == BillingClient.BillingResponseCode.OK && esDuenio) alcance.launch { compras?.forEach { runCatching { procesar(it) } } }
             }
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
             .enableAutoServiceReconnection()
@@ -224,7 +227,7 @@ class Tienda private constructor() {
 
     /** Escucha las compras que no vienen de una compra hecha acá (y las que quedaron sin reconocer). */
     fun escuchar() {
-        if (escuchando || ModoPrueba.activo) return
+        if (escuchando || ModoPrueba.activo || !esDuenio) return
         escuchando = true
         alcance.launch {
             runCatching {
@@ -235,8 +238,9 @@ class Tienda private constructor() {
         }
     }
 
+    /** `listo`: la API ya la registró; la suscripción se vuelve a pedir (GET /v1/suscripcion). */
     sealed class Resultado {
-        data class listo(val s: Suscripcion) : Resultado()
+        data object listo : Resultado()
         data object cancelada : Resultado()
         data object pendiente : Resultado()
     }
@@ -264,8 +268,7 @@ class Tienda private constructor() {
         if (r.responseCode != BillingClient.BillingResponseCode.OK) return Resultado.cancelada
         val compra = compras?.firstOrNull { it.products.contains(producto.id) } ?: return Resultado.cancelada
         if (compra.purchaseState == Purchase.PurchaseState.PENDING) return Resultado.pendiente
-        val s = procesar(compra) ?: return Resultado.pendiente
-        return Resultado.listo(s)
+        return if (procesar(compra)) Resultado.listo else Resultado.pendiente
     }
 
     /** La suscripción de Google Play vigente de esta inmobiliaria con otro producto (otro plan u otro ciclo). Sólo la
@@ -289,24 +292,26 @@ class Tienda private constructor() {
         else BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.WITH_TIME_PRORATION
     }
 
-    /** «Restaurar compras»: vuelve a mandar a la API lo que Google Play tiene vigente en esta cuenta. */
-    suspend fun restaurar(): Suscripcion? {
+    /** «Restaurar compras»: vuelve a mandar a la API lo que Google Play tiene vigente en esta cuenta. `true` si la API
+     *  registró alguna (la suscripción se vuelve a pedir después). */
+    suspend fun restaurar(): Boolean {
         val c = conectado() ?: throw ErrorApi.desconocido
         val r = c.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build())
-        var ultima: Suscripcion? = null
-        r.purchasesList.forEach { p -> runCatching { procesar(p) }.getOrNull()?.let { ultima = it } }
-        return ultima
+        var alguna = false
+        r.purchasesList.forEach { p -> if (runCatching { procesar(p) }.getOrDefault(false)) alguna = true }
+        return alguna
     }
 
     @Serializable private data class Cuerpo(val producto: String, val token: String)
 
-    /** Manda a la API una compra de Play y la reconoce (si no, Play la devuelve a los tres días). */
-    private suspend fun procesar(compra: Purchase): Suscripcion? {
-        if (compra.purchaseState != Purchase.PurchaseState.PURCHASED) return null
-        val api = api ?: return null
-        val producto = compra.products.firstOrNull() ?: return null
-        val s: Suscripcion = api.enviar("POST", "/v1/suscripcion/google", Cuerpo(producto, compra.purchaseToken))
+    /** Manda a la API una compra de Play y la reconoce (si no, Play la devuelve a los tres días). Lo que devuelve la API
+     *  no se lee acá: que no se entienda la respuesta no puede dejar la compra sin reconocer. */
+    private suspend fun procesar(compra: Purchase): Boolean {
+        if (compra.purchaseState != Purchase.PurchaseState.PURCHASED) return false
+        val api = api ?: return false
+        val producto = compra.products.firstOrNull() ?: return false
+        api.pedir("POST", "/v1/suscripcion/google", cuerpo = Api.json.encodeToString(Cuerpo(producto, compra.purchaseToken)).toByteArray())
         if (!compra.isAcknowledged) cliente?.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(compra.purchaseToken).build())
-        return s
+        return true
     }
 }

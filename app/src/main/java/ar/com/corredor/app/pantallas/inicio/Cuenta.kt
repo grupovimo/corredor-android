@@ -774,8 +774,8 @@ fun BorrarCuenta() {
             borrando = true
             alcance.launch {
                 try {
-                    estado.api.hacer("DELETE", "/v1/auth/cuenta")
-                    estado.salir()
+                    estado.borrarCuenta()
+                    estado.avisar("Tu cuenta quedó desactivada.")
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

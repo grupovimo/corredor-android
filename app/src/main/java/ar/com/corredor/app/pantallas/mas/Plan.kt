@@ -147,8 +147,8 @@ fun PantallaPlan() {
         comprando = true
         try {
             when (val r = tienda.comprar(p, inmo)) {
-                is Tienda.Resultado.listo -> {
-                    estado.suscripcion = r.s
+                Tienda.Resultado.listo -> {
+                    estado.cargarSuscripcion()
                     Haptico.exito()
                     estado.avisar("¡Listo! Tu plan ${plan.nombre} quedó activo.")
                 }
@@ -163,9 +163,8 @@ fun PantallaPlan() {
     suspend fun restaurar() {
         restaurando = true
         try {
-            val x = tienda.restaurar()
-            if (x != null) {
-                estado.suscripcion = x
+            if (tienda.restaurar()) {
+                estado.cargarSuscripcion()
                 estado.avisar("Listo, recuperamos tu plan.")
             } else {
                 estado.avisar("No encontramos compras de Corredor en esta cuenta de Google.", ok = false)
@@ -178,9 +177,12 @@ fun PantallaPlan() {
     suspend fun darDeBaja() {
         bajando = true
         try {
-            val n: Suscripcion = estado.api.enviar("POST", "/v1/suscripcion/baja", emptyMap<String, String>())
-            estado.suscripcion = n
-            estado.avisar("Listo, no se renueva más. Seguís con todo hasta el ${Formato.fechaLarga(n.vigenteHasta)}.")
+            estado.api.hacer("POST", "/v1/suscripcion/baja", emptyMap<String, String>())
+            // La respuesta puede ser sólo el estado: la suscripción entera se vuelve a pedir.
+            estado.cargarSuscripcion()
+            val n = estado.suscripcion
+            if (n != null) estado.avisar("Listo, no se renueva más. Seguís con todo hasta el ${Formato.fechaLarga(n.vigenteHasta)}.")
+            else estado.avisar("Listo, no se renueva más.")
         } catch (e: CancellationException) { throw e } catch (e: Exception) { estado.avisar(e) } finally { bajando = false; confirmarBaja = false }
     }
 

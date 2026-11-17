@@ -55,6 +55,7 @@ import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.UUID
 import kotlin.math.roundToInt
 
 // Los destinos de Cobranzas, contratos, rendiciones y actas (`destinosCobranzas()` en iOS). Los registra
@@ -708,9 +709,12 @@ object Cobrar {
         val cuerpo = Cuerpo(periodo = a.periodo.take(7), monto = if (conceptos.isEmpty()) monto else null, medio = medio,
             conceptos = if (conceptos.isEmpty()) null else conceptos, pagadoEl = pagadoEl)
         val ruta = "/v1/contratos/${a.contratoId}/cobros"
+        // La misma Idempotency-Key en el primer intento y en la cola: si el primero llegó y se cortó la respuesta, la cola
+        // no lo cobra dos veces.
+        val envio = UUID.randomUUID().toString()
         val pedido = CompletableDeferred<Cobro>()
         estado.tarea {
-            try { pedido.complete(estado.api.enviar<Cobro, Cuerpo>("POST", ruta, cuerpo)) } catch (e: Throwable) { pedido.completeExceptionally(e) }
+            try { pedido.complete(estado.api.enviar<Cobro, Cuerpo>("POST", ruta, cuerpo, envio = envio)) } catch (e: Throwable) { pedido.completeExceptionally(e) }
         }
         val caja = CajaCobro()
         estado.avisar(texto, deshacer = {
@@ -745,7 +749,7 @@ object Cobrar {
                 if (caja.deshecho) { resultado.complete(null); return@tarea }
                 if (e.sinConexion) {
                     try {
-                        estado.cola.enviar("POST", ruta, cuerpo, etiqueta = "Cobro de ${a.nombre ?: a.propiedad ?: ""}")
+                        estado.cola.enviar("POST", ruta, cuerpo, etiqueta = "Cobro de ${a.nombre ?: a.propiedad ?: ""}", envio = envio)
                         estado.avisar("Sin señal · el cobro queda en cola")
                     } catch (e2: CancellationException) { throw e2 } catch (e2: Exception) { mostrar?.invoke(); estado.avisar(e2) }
                 } else {

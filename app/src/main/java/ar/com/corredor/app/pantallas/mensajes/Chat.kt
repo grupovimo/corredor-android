@@ -104,6 +104,9 @@ fun Chat(id: String) {
     var mensajes by remember { mutableStateOf<List<MensajeWA>>(emptyList()) }
     var enviados by remember { mutableStateOf<List<MensajeWA>>(emptyList()) }
     var ocultos by remember { mutableStateOf<Set<String>>(emptySet()) }
+    /** Los mensajes locales que quedaron en la cola sin señal (su id → la Idempotency-Key del cambio): cuando la cola los
+     *  sube, el real llega con la lista y el local se saca (no se ve dos veces). */
+    var encolados by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var texto by remember { mutableStateOf("") }
     var chip by remember { mutableStateOf<String?>(null) }
     var adjunto by remember { mutableStateOf<Archivo?>(null) }
@@ -143,7 +146,10 @@ fun Chat(id: String) {
         val m = estado.api.opcional<List<MensajeWA>>("/v1/whatsapp/conversaciones/$id/mensajes", listOf("limite" to "200")) ?: return
         mensajes = m.sortedBy { it.ocurrioEn }
         val ids = mensajes.map { it.id }.toSet()
-        enviados = enviados.filter { it.id !in ids && (if (it.local) it.estado != "enviado" else true) }
+        val enCola = estado.cola.cambios.map { it.clave }.toSet()
+        val subidos = encolados.filterValues { it !in enCola }.keys
+        encolados = encolados.filterKeys { it !in subidos }
+        enviados = enviados.filter { it.id !in ids && it.id !in subidos && (if (it.local) it.estado != "enviado" else true) }
     }
 
     suspend fun cargar() {
@@ -215,8 +221,12 @@ fun Chat(id: String) {
                 enviados = enviados.filter { it.id != tmp.id } + m
             } else {
                 @Serializable data class Cuerpo(val texto: String)
-                val subio = estado.cola.enviar("POST", "/v1/whatsapp/conversaciones/$id/mensajes", Cuerpo(texto = t), etiqueta = "Mensaje a $nombre")
-                if (subio) enviados = enviados.filter { it.id != tmp.id } else estado.avisar("Sin señal: lo que escribas sale cuando vuelva.")
+                val clave = UUID.randomUUID().toString()
+                val subio = estado.cola.enviar("POST", "/v1/whatsapp/conversaciones/$id/mensajes", Cuerpo(texto = t), etiqueta = "Mensaje a $nombre", envio = clave)
+                if (subio) enviados = enviados.filter { it.id != tmp.id } else {
+                    encolados = encolados + (tmp.id to clave)
+                    estado.avisar("Sin señal: lo que escribas sale cuando vuelva.")
+                }
             }
             cargarMensajes()
         } catch (e: CancellationException) {

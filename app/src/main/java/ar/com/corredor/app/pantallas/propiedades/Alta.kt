@@ -710,9 +710,9 @@ fun AltaPropiedad(
                 return
             } catch (e: ErrorApi) {
                 if (e.sinConexion) {
-                    // Sin señal, el alta queda en la cola y se sube sola.
+                    // Sin señal, el alta queda en la cola y se sube sola (con la misma clave: no se carga dos veces).
                     try {
-                        estado.cola.enviar("POST", ruta, d.cuerpo(), etiqueta = "Alta de ${d.direccion}")
+                        estado.cola.enviar("POST", ruta, d.cuerpo(), etiqueta = "Alta de ${d.direccion}", envio = envioAlta)
                         estado.avisar("En cola · se publica cuando vuelva la señal")
                         estado.version += 1
                         cerrar()

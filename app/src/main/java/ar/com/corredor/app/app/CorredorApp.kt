@@ -58,7 +58,10 @@ class CorredorApp : Application() {
     companion object {
         /** El Estado vive en el proceso (como en iOS), no en la actividad: si Android la rehace (modo oscuro, tamaño de
          *  letra, multiventana) no se pierden la sesión, las pilas de navegación ni el ingreso con Google a medias. */
-        val estado: Estado by lazy { Estado() }
+        private val estadoPerezoso = lazy { Estado() }
+        val estado: Estado by estadoPerezoso
+        /** El Estado si ya se armó (el servicio de avisos no lo arma de balde). */
+        val estadoSiHay: Estado? get() = if (estadoPerezoso.isInitialized()) estado else null
     }
 }
 

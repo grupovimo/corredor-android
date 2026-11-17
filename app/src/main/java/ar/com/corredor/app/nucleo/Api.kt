@@ -68,6 +68,9 @@ typealias Consulta = List<Pair<String, String>>
 class Api(val base: String, @Volatile var token: String? = null, val http: OkHttpClient = cliente()) {
     /** Se llama cuando la API dice que la sesión ya no vale (401 sin_sesion): la app vuelve al ingreso. */
     var alPerderSesion: (suspend () -> Unit)? = null
+    /** Se llama cuando la API dice que no hay inmobiliaria elegida (409 sin_inmobiliaria: se fue del equipo o la
+     *  borraron): la app recarga la sesión y lleva a elegir otra. */
+    var alPerderInmobiliaria: (suspend () -> Unit)? = null
 
     @Serializable
     private data class Problema(
@@ -103,8 +106,16 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
             .groupBy({ it.first }, { it.second }).mapValues { it.value.first() }
         val e = ErrorApi(codigo, p.code ?: "interno", p.title ?: "Algo salió mal", p.detail ?: "Probá de nuevo en un rato.", p.restantes,
             reintentar?.toIntOrNull(), campos)
-        if (e.sinSesion && token != null) alPerderSesion?.invoke()
+        reaccionar(e.estado, e.codigo)
         throw e
+    }
+
+    /** Lo que la app hace sola con ciertos errores, en cualquier pedido: 401 sin_sesion → al ingreso; 409
+     *  sin_inmobiliaria → a elegir la inmobiliaria. */
+    internal suspend fun reaccionar(estado: Int, codigo: String) {
+        if (token == null) return
+        if (estado == 401 && codigo == "sin_sesion") alPerderSesion?.invoke()
+        if (estado == 409 && codigo == "sin_inmobiliaria") alPerderInmobiliaria?.invoke()
     }
 
     suspend inline fun <reified T> get(ruta: String, query: Consulta = emptyList()): T = decodificar(pedir("GET", ruta, query))
@@ -123,8 +134,9 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
         return todos
     }
 
-    suspend inline fun <reified T, reified B> enviar(metodo: String, ruta: String, cuerpo: B): T =
-        decodificar(pedir(metodo, ruta, cuerpo = json.encodeToString(cuerpo).toByteArray()))
+    /** `envio`: la Idempotency-Key (la misma que se usa si después va a la cola sin conexión). */
+    suspend inline fun <reified T, reified B> enviar(metodo: String, ruta: String, cuerpo: B, envio: String? = null): T =
+        decodificar(pedir(metodo, ruta, cuerpo = json.encodeToString(cuerpo).toByteArray(), envio = envio))
 
     /** Un pedido sin respuesta (204). */
     suspend inline fun <reified B> hacer(metodo: String, ruta: String, cuerpo: B) {
@@ -213,7 +225,7 @@ suspend fun Api.subir(datos: ByteArray, nombre: String, tipo: String, uso: Strin
 }
 
 @Serializable
-private data class ProblemaArchivo(val detail: String? = null, val title: String? = null)
+private data class ProblemaArchivo(val detail: String? = null, val title: String? = null, val code: String? = null)
 
 /** Un POST multipart (campo `archivo`) a cualquier ruta: la respuesta cruda. */
 suspend fun Api.multipart(ruta: String, query: Consulta, datos: ByteArray, nombre: String, tipo: String): ByteArray {
@@ -231,6 +243,8 @@ suspend fun Api.multipart(ruta: String, query: Consulta, datos: ByteArray, nombr
     }
     if (codigo !in 200..299) {
         val p = runCatching { Api.json.decodeFromString<ProblemaArchivo>(String(d)) }.getOrNull()
+        // La sesión vencida (o sin inmobiliaria) también se nota al subir un archivo, como en los demás pedidos.
+        reaccionar(codigo, p?.code ?: "")
         throw ErrorApi(codigo, "archivo", p?.title ?: "No se subió", p?.detail ?: "No se pudo subir el archivo.")
     }
     return d

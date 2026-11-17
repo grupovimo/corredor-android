@@ -70,6 +70,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.time.Instant
+import java.util.UUID
 
 // Clon de Pantallas/Propiedades/FichaHojas.swift.
 
@@ -112,8 +113,10 @@ fun HojaCompartir(
     }
 
     suspend fun anotar(contactoId: String, primero: String) {
+        // La misma Idempotency-Key directo y en la cola: el envío no se anota dos veces.
+        val clave = UUID.randomUUID().toString()
         try {
-            val e: EnvioFicha = estado.api.enviar("POST", "/v1/propiedades/${propiedad.id}/envios", CuerpoEnvioFicha(contactoId))
+            val e: EnvioFicha = estado.api.enviar("POST", "/v1/propiedades/${propiedad.id}/envios", CuerpoEnvioFicha(contactoId), envio = clave)
             mandadas[contactoId] = e.enviadaEn ?: Instant.now()
             estado.version += 1
             estado.avisar("Anotamos que se la mandaste a $primero") {
@@ -130,7 +133,7 @@ fun HojaCompartir(
         } catch (x: ErrorApi) {
             // Sin señal, el envío se anota cuando vuelva (el WhatsApp igual salió).
             if (x.sinConexion) {
-                try { estado.cola.enviar("POST", "/v1/propiedades/${propiedad.id}/envios", CuerpoEnvioFicha(contactoId), etiqueta = "Ficha a $primero") } catch (y: CancellationException) { throw y } catch (y: Exception) {}
+                try { estado.cola.enviar("POST", "/v1/propiedades/${propiedad.id}/envios", CuerpoEnvioFicha(contactoId), etiqueta = "Ficha a $primero", envio = clave) } catch (y: CancellationException) { throw y } catch (y: Exception) {}
             }
         } catch (x: Exception) {
             // Si no se anota, el WhatsApp igual salió.
