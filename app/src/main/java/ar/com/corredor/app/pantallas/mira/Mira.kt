@@ -809,7 +809,7 @@ private fun Revision(
             if (!nolee) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Top) {
                     Icono("info.circle", 13f, C.texto2)
-                    Texto("MIRA lee con Google Gemini y puede equivocarse. Revisá los datos antes de captar.", Estilo.footnote, C.texto2)
+                    Texto("MIRA lee con Claude, de Anthropic, y puede equivocarse. Revisá los datos antes de captar.", Estilo.footnote, C.texto2)
                 }
             }
             Tocable(captar, habilitado = listo && !captando) { _ ->
