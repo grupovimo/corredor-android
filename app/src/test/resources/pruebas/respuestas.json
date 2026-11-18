@@ -1,5 +1,5 @@
 {
- "_": "Las respuestas de la API simulada de CorredorTests/PantallasTests.swift (iOS), ruta → JSON. Lo que no está: 404.",
+ "_": "Las respuestas de la API simulada de CorredorTests/PantallasTests.swift (iOS), ruta → JSON («POST /v1/x» pisa a «/v1/x» para ese método). Lo que no está: 404.",
  "/v1/panel": {
   "numeros": {
    "citasHoy": 2,
@@ -2343,5 +2343,49 @@
   "url": "https://corredor.com.ar/mcp",
   "aviso": "Tus datos se tratan según la Ley 25.326."
  },
- "/v1/ia/conexiones": []
+ "/v1/ia/conexiones": [],
+ "/v1/asistente": {
+  "ia": false,
+  "aviso": "La IA viene con el plan Profesional. Sin ella contesto lo más común.",
+  "sugerencias": [
+   "¿Qué contratos ajustan este mes?",
+   "¿Quiénes deben el alquiler?",
+   "¿Qué tengo hoy?",
+   "Contratos por vencer",
+   "Armame un mensaje para los que deben",
+   "¿Quién busca un 3 ambientes en Palermo?"
+  ]
+ },
+ "POST /v1/asistente": {
+  "texto": "Debe el alquiler Lucía Méndez (Gorriti 4820): ARS 520.000 de octubre. Te dejo el mensaje para que lo confirmes.",
+  "origen": "ia",
+  "resultados": [
+   {
+    "tipo": "contrato",
+    "id": "k1",
+    "titulo": "Lucía Méndez · Gorriti 4820",
+    "subtitulo": "Debe ARS 520.000 desde octubre",
+    "ruta": "/cobranzas?registrar=1&contrato=k1"
+   }
+  ],
+  "propuestas": [
+   {
+    "herramienta": "mensajes_crear_borrador",
+    "titulo": "Armar un mensaje (borrador)",
+    "para": "Lucía Méndez",
+    "texto": "¡Hola Lucía! Te recuerdo que quedó pendiente el alquiler de octubre de Gorriti 4820. Cualquier cosa, avisame.",
+    "args": {
+     "contacto_id": "c1",
+     "canal": "whatsapp",
+     "texto": "¡Hola Lucía! Te recuerdo que quedó pendiente el alquiler de octubre de Gorriti 4820. Cualquier cosa, avisame."
+    }
+   }
+  ]
+ },
+ "POST /v1/asistente/confirmar": {
+  "resumen": "Armó el borrador de un mensaje para Lucía Méndez · espera revisión",
+  "datos": {
+   "id": "b1"
+  }
+ }
 }

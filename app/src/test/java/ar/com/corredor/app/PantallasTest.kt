@@ -31,6 +31,7 @@ import ar.com.corredor.app.app.Sesion
 import ar.com.corredor.app.nucleo.AAgendaDia
 import ar.com.corredor.app.nucleo.Suscripcion
 import ar.com.corredor.app.nucleo.AAltaPropiedad
+import ar.com.corredor.app.nucleo.AAsistente
 import ar.com.corredor.app.nucleo.AAvisos
 import ar.com.corredor.app.nucleo.ABuscar
 import ar.com.corredor.app.nucleo.ACaptadas
@@ -114,6 +115,7 @@ import ar.com.corredor.app.pantallas.entrada.PegarInvitacion
 import ar.com.corredor.app.pantallas.entrada.RecuperarAcceso
 import ar.com.corredor.app.pantallas.entrada.VerInvitacion
 import ar.com.corredor.app.pantallas.informes.EditarMetas
+import ar.com.corredor.app.pantallas.inicio.Asistente
 import ar.com.corredor.app.pantallas.inicio.Avisos
 import ar.com.corredor.app.pantallas.inicio.BorrarCuenta
 import ar.com.corredor.app.pantallas.inicio.BuscarTodo
@@ -186,12 +188,13 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.lang.ref.WeakReference
 
-/** La API simulada (ApiFalsa en CorredorTests/PantallasTests.swift): responde por ruta, sin mirar el método ni la query,
- *  con pruebas/respuestas.json (las mismas respuestas que iOS). Lo que no está: 404 con `{}`. */
+/** La API simulada (ApiFalsa en CorredorTests/PantallasTests.swift): responde por ruta, sin mirar la query, con
+ *  pruebas/respuestas.json (las mismas respuestas que iOS); «POST /v1/x» pisa a «/v1/x» para ese método. Lo que no está:
+ *  404 con `{}`. */
 class ApiDePrueba(private val tabla: Map<String, String?>) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val req = chain.request()
-        val cuerpo = tabla[req.url.encodedPath]
+        val cuerpo = tabla["${req.method} ${req.url.encodedPath}"] ?: tabla[req.url.encodedPath]
         val codigo = if (cuerpo == null) 404 else 200
         return Response.Builder().request(req).protocol(Protocol.HTTP_1_1).code(codigo).message(if (codigo == 200) "OK" else "No existe")
             .body((cuerpo ?: "{}").toResponseBody("application/json".toMediaType())).build()
@@ -293,6 +296,9 @@ class PantallasTest {
     @Test fun inicioAgente() = montar("InicioAgente", estado("agente")) { InicioRaiz() }
     @Test fun inicioSinNada() = montar("InicioSinNada", estado("agente", respuestas = mapOf("/v1/panel" to "{}"))) { InicioRaiz() }
     @Test fun buscar() = montar("Buscar") { BuscarTodo(texto = "Mendoza") }
+    @Test fun buscarVacio() = montar("BuscarVacio") { BuscarTodo(texto = "") }
+    @Test fun asistente() = montar("Asistente") { Asistente() }
+    @Test fun asistentePreguntando() = montar("AsistentePreguntando") { Asistente(pregunta = "¿Quiénes deben el alquiler?") }
     @Test fun avisos() = montar("Avisos") { Avisos() }
     @Test fun configAvisos() = montar("ConfigAvisos") { ConfigAvisos() }
     /** APerfil abre MiPerfil. */
@@ -556,7 +562,7 @@ class PantallasTest {
             "FichaOperacion" to AFichaOperacion(id = "o1"), "Cobranzas" to ACobranzas(), "Contratos" to AContratos(),
             "FichaContrato" to AFichaContrato(id = "t1"), "Recibo" to ARecibo(contrato = "t1", cobro = "b1"), "Rendicion" to ARendicion(contrato = "t1", id = "r1"),
             "Inventario" to AInventario(id = "p1"), "Firmas" to AFirmas(id = "a1"), "Avisos" to AAvisos(), "ConfigAvisos" to AConfigAvisos(),
-            "Perfil" to APerfil(), "Buscar" to ABuscar(texto = "Mendoza"),
+            "Perfil" to APerfil(), "Buscar" to ABuscar(texto = "Mendoza"), "Asistente" to AAsistente(),
             // Los de la tanda 2 (propiedades, cobranzas, inventarios, consorcios y secciones con id).
             "AltaPropiedad-borrador" to AAltaPropiedad(borrador = "b1"), "AvisoResponder" to AAvisos(aviso = "v1", responder = "responder"),
             "ArreglarPropiedad" to AArreglarPropiedad(id = "p1"), "MandarPropiedad" to AMandarPropiedad(id = "p1", contacto = "c1"),
