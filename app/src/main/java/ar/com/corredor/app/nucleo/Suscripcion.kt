@@ -55,6 +55,9 @@ data class Suscripcion(
     val agentes: Agentes = Agentes(),
     val planes: List<Plan> = emptyList(),
     val mercadoPago: Boolean = false,
+    /** Si la API confirma compras de Google Play (sin la cuenta de Play configurada, no: la compra daría 409
+     *  google_apagado después de cobrarse, y Play la reintegra). */
+    val googlePlay: Boolean = false,
     val cobros: List<Cobro> = emptyList(),
 ) {
     @Serializable

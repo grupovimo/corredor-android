@@ -142,6 +142,7 @@ fun PantallaPlan() {
     }
 
     suspend fun comprar(plan: Suscripcion.Plan) {
+        if (estado.suscripcion?.googlePlay != true) return
         val p = producto(plan, ciclo) ?: return
         val inmo = estado.sesion?.inmobiliariaId ?: return
         comprando = true
@@ -219,7 +220,9 @@ fun PantallaPlan() {
                     if (estado.esDuenio && s.planes.isNotEmpty() && !s.pagaAfuera) {
                         // El ticket
                         val plan = s.planes.firstOrNull { it.id == elegido } ?: s.planes[0]
-                        val prod = producto(plan, ciclo)
+                        // Sin Google Play del lado de la API no se ofrece comprar (como un producto que la tienda
+                        // todavía no da): el botón queda apagado con el «Pronto vas a poder…».
+                        val prod = if (s.googlePlay) producto(plan, ciclo) else null
                         val gratis = prod?.periodoGratis
                         val primerCobro = gratis?.let { despuesDe(it) } ?: Instant.now()
                         val cada = if (ciclo == "anio") "año" else "mes"
@@ -264,7 +267,7 @@ fun PantallaPlan() {
                                     { alcance.launch { comprar(plan) } }, Modifier.padding(top = 4.dp),
                                     habilitado = !(prod == null || mismo || sobran > 0 || comprando), cargando = comprando,
                                 )
-                                if (prod == null && !tienda.cargando) {
+                                if (prod == null && (!tienda.cargando || !s.googlePlay)) {
                                     Texto(Formato.sinViudas("Pronto vas a poder elegir tu plan desde el teléfono. Mientras, seguís usando Corredor como hasta ahora."), Estilo.caption, C.texto3)
                                 }
                                 if (restaurando) Box(Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) { Rueda() }
