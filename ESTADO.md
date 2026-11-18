@@ -29,6 +29,13 @@ que falte. Nada sale a las tiendas hasta que esté. Reglas del clon: `CLON.md`. 
   (migración 00171), compra con Google Play `POST /v1/suscripcion/google` (00172, apagada hasta tener la cuenta de
   Play: `CORREDOR_PLAY_CUENTA` y `CORREDOR_PLAY_CLAVE_WEBHOOK`), teléfono en el aviso de consulta.
 
+## Asistente (18/11)
+- Pantalla Asistente (`Pantallas/Inicio/Asistente.kt`, destino `AAsistente`, link `/asistente?q=`): la de `/asistente`
+  del panel con `GET/POST /v1/asistente` y `POST /v1/asistente/confirmar`. Se llega desde Buscar: sin nada escrito
+  («Preguntarle al asistente»), al final de las acciones con 3 letras o más, y desde «No encontramos…».
+- La charla vive en la pantalla (los últimos 8 turnos van a la API); las propuestas se confirman o se descartan con
+  «Deshacer»; el aviso «sin IA» o de tope sale de la API.
+
 ## Distinto a propósito (plataforma)
 - Ingreso sólo con Google (sin Apple). «Face ID» → «tu huella o tu cara»; «iPhone» → «teléfono».
 - Plan con Play Billing (mismos ids), textos de Google Play en vez de App Store.
