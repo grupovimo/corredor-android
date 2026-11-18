@@ -343,7 +343,7 @@ fun FichaTrabajoConsorcio(consorcio: String, id: String) {
                     }
                     t0.descripcion.noVacio()?.let { d ->
                         Column(Modifier.fillMaxWidth().tarjeta().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Texto(listOf(t0.unidad?.let { "Reclamó $it" } ?: "Lo cargó la administración", t0.creadoEn?.let { Cons.diaBarraMes(it.take(10)) } ?: "")
+                            Texto(listOf(t0.unidad?.let { "Reclamó $it" } ?: "Lo cargó la administración", t0.creadoEn?.let { Cons.diaBarraMes(Cons.diaLocal(it)) } ?: "")
                                 .filter { it.isNotEmpty() }.joinToString(" · "), Estilo.footnote, C.texto2)
                             Texto(d, Estilo.body16, C.texto)
                         }

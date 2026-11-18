@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.nucleo.Api
 import ar.com.corredor.app.nucleo.ErrorApi
+import ar.com.corredor.app.nucleo.Fecha
 import ar.com.corredor.app.nucleo.Formato
 import ar.com.corredor.app.tema.*
 import kotlinx.coroutines.Dispatchers
@@ -547,10 +548,15 @@ object Cons {
     /** `.rounded()` de iOS (la mitad se aleja del cero). */
     private fun redondeo(n: Double): Long = if (n < 0) -Math.round(-n) else Math.round(n)
 
+    /** El día (yyyy-MM-dd) de un instante de la API en la hora de Argentina: `creadoEn` llega en UTC y sus primeros
+     *  10 caracteres corren un día lo cargado a la noche. Una fecha sola queda igual. */
+    fun diaLocal(f: String): String =
+        if (f.length > 10) Fecha.iso(f)?.atZone(zona)?.toLocalDate()?.toString() ?: f.take(10) else f
+
     /** Los días enteros desde una fecha ISO hasta hoy. */
     fun diasDesde(f: String?): Int {
         if (f == null) return 0
-        val a = runCatching { LocalDate.parse(f.take(10)) }.getOrNull() ?: return 0
+        val a = runCatching { LocalDate.parse(diaLocal(f)) }.getOrNull() ?: return 0
         val b = LocalDate.parse(hoy)
         return maxOf(0, ChronoUnit.DAYS.between(a, b).toInt())
     }

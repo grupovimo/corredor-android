@@ -13,6 +13,7 @@ import ar.com.corredor.app.nucleo.Lugares
 import ar.com.corredor.app.nucleo.Pestana
 import ar.com.corredor.app.nucleo.Ruta
 import ar.com.corredor.app.nucleo.Suscripcion
+import ar.com.corredor.app.pantallas.consorcios.Cons
 import ar.com.corredor.app.tema.Acento
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,6 +51,14 @@ class NucleoTest {
         assertTrue(s.pideAtencion)
         assertEquals("ar.com.corredor.app.inicial.anio", s.planes.first().producto("anio"))
         assertFalse(s.conMercadoPago)
+        assertFalse(s.googlePlay)
+    }
+
+    @Test fun diaDeConsorciosEnHoraArgentina() {
+        // Cargado el 17 a las 22:30 en Buenos Aires: en UTC ya es el 18.
+        assertEquals("2026-11-17", Cons.diaLocal("2026-11-18T01:30:00.123456789Z"))
+        assertEquals("2026-11-17", Cons.diaLocal("2026-11-17T22:30:00-03:00"))
+        assertEquals("2026-11-18", Cons.diaLocal("2026-11-18"))
     }
 
     private val casosAcento: List<Triple<String?, String?, Acento?>> = listOf(
