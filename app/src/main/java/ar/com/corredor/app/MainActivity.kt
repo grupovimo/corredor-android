@@ -30,9 +30,13 @@ import ar.com.corredor.app.app.Estado
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.app.Raiz
 import ar.com.corredor.app.app.abrirLink
+import ar.com.corredor.app.nucleo.AAvisos
+import ar.com.corredor.app.nucleo.AFichaContrato
 import ar.com.corredor.app.nucleo.Clerk
+import ar.com.corredor.app.nucleo.Pestana
 import ar.com.corredor.app.nucleo.Ruta
 import ar.com.corredor.app.nucleo.Tienda
+import ar.com.corredor.app.pantallas.cobranzas.ARegistrarCobro
 import ar.com.corredor.app.pantallas.inicio.Avisos
 import ar.com.corredor.app.tema.Haptico
 import ar.com.corredor.app.tema.TemaCorredor
@@ -179,16 +183,27 @@ class MainActivity : FragmentActivity() {
         // «Llamar» de una consulta sin `telefono` (con él, el aviso abre el marcador): como iOS, el contacto, para
         // llamarlo desde ahí.
         if (accion == "llamar") { abrirLink(estado, u); return }
-        // Otra acción del aviso (las que pide la API): el aviso con esa acción abierta.
-        if (accion != null && aviso != null && estado.fase == Estado.Fase.adentro) {
+        // «Registrar cobro»: la hoja de cobro del contrato del aviso (corredor://contratos/<id>), como iOS. Con la app
+        // recién abierta, queda pendiente hasta entrar.
+        if (accion == "cobrar") {
+            irOGuardar(Ruta(Pestana.inicio, ARegistrarCobro(contrato = (Ruta(u.toString())?.destino as? AFichaContrato)?.id)))
+            return
+        }
+        // Otra acción del aviso (las que pide la API; «Abrir» es como el toque): el aviso con esa acción abierta.
+        if (accion != null && accion != "ver" && aviso != null && estado.fase == Estado.Fase.adentro) {
             Avisos.abrir(estado, aviso, accion)
             return
         }
-        if (aviso != null && (u.host == "inicio" && u.pathSegments.isEmpty()) && estado.fase == Estado.Fase.adentro) {
-            Avisos.abrir(estado, aviso, null)
+        // Un aviso sin ruta: ese aviso arriba en el centro de avisos.
+        if (aviso != null && (u.host == "inicio" && u.pathSegments.isEmpty())) {
+            irOGuardar(Ruta(Pestana.inicio, AAvisos(aviso = aviso)))
             return
         }
         abrirLink(estado, u)
+    }
+
+    private fun irOGuardar(r: Ruta) {
+        if (estado.fase == Estado.Fase.adentro) estado.ir(r) else Abrir.pendiente = r
     }
 
     /** Un permiso del sistema: true si ya estaba o si lo dio. */
