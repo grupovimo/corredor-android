@@ -7,12 +7,13 @@ import ar.com.corredor.app.pantallas.mas.*
 
 // Clon de Pantallas/Inicio/InicioDestinos.swift.
 
-/** Los destinos del Inicio: búsqueda, avisos, su configuración y el perfil (los `navigationDestination` de iOS).
+/** Los destinos del Inicio: búsqueda, asistente, avisos, su configuración y el perfil (los `navigationDestination` de iOS).
  *  app/Registro.kt lo llama con cada destino apilado: pinta la pantalla y devuelve true si es suyo. */
 @Composable
 fun destinosInicio(d: Any): Boolean {
     when (d) {
         is ABuscar -> BuscarTodo(texto = d.texto)
+        is AAsistente -> Asistente(pregunta = d.pregunta)
         is AAvisos -> {
             // Un aviso puntual (`/avisos?aviso=<id>&responder=<acción>`): arriba y con su hoja.
             remember(d) { d.aviso?.let { Avisos.foco = it to d.responder } }

@@ -42,6 +42,7 @@ Informes/Indices.swift
 Informes/Informe.swift
 Informes/InformeMensual.swift
 Informes/Objetivos.swift
+Inicio/Asistente.swift
 Inicio/BuscarTodo.swift
 Inicio/Cuenta.swift
 Inicio/Inicio.swift

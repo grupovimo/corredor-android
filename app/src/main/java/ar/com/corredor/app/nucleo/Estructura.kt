@@ -55,6 +55,7 @@ object Lugares {
         "agenda" to ("calendar" to AAgendaDia()),
         "avisos" to ("bell" to AAvisos()),
         "buscar" to ("magnifyingglass" to ABuscar()),
+        "asistente" to ("sparkles" to AAsistente()),
         "contactos" to ("person.2" to AContactos()),
         "operaciones" to ("rectangle.split.3x1" to AOperaciones()),
         "reservas" to ("hand.raised" to ASeccion("reservas")),

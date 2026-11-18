@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import ar.com.corredor.app.nucleo.AAgendaDia
 import ar.com.corredor.app.nucleo.AAltaPropiedad
 import ar.com.corredor.app.nucleo.AAvisos
+import ar.com.corredor.app.nucleo.AAsistente
 import ar.com.corredor.app.nucleo.ABuscar
 import ar.com.corredor.app.nucleo.ACaptadas
 import ar.com.corredor.app.nucleo.AChat
@@ -54,6 +55,7 @@ import ar.com.corredor.app.pantallas.consorcios.ATrabajoConsorcio
 import ar.com.corredor.app.pantallas.consorcios.FichaConsorcio
 import ar.com.corredor.app.pantallas.consorcios.FichaTrabajoConsorcio
 import ar.com.corredor.app.pantallas.consorcios.LiquidarConsorcio
+import ar.com.corredor.app.pantallas.inicio.Asistente
 import ar.com.corredor.app.pantallas.inicio.Avisos
 import ar.com.corredor.app.pantallas.inicio.BuscarTodo
 import ar.com.corredor.app.pantallas.inicio.ConfigAvisos
@@ -113,6 +115,7 @@ object Registro {
         when (d) {
             // destinosInicio (Pantallas/Inicio/InicioDestinos.swift)
             is ABuscar -> BuscarTodo(texto = d.texto)
+            is AAsistente -> Asistente(pregunta = d.pregunta)
             is AAvisos -> {
                 // Un aviso puntual (`/avisos?aviso=<id>&responder=<acción>`): arriba y con su hoja.
                 d.aviso?.let { Avisos.foco = it to d.responder }

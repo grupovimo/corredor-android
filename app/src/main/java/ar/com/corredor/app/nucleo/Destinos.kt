@@ -68,6 +68,8 @@ import java.net.URLDecoder
 @Serializable class APerfil { override fun equals(other: Any?) = other is APerfil; override fun hashCode() = 16 }
 /** 2C Búsqueda global. */
 @Serializable data class ABuscar(val texto: String = "")
+/** El asistente (`/asistente?q=`): con `pregunta`, arranca preguntando eso. */
+@Serializable data class AAsistente(val pregunta: String = "")
 /** Lo que el handoff no dibuja y el panel sí tiene (configuración, equipo, consorcios, Mi web, informe,
  *  emprendimientos, temporada…): una sección por `clave`, con un `id` opcional. */
 @Serializable data class ASeccion(val clave: String, val id: String? = null)
@@ -127,7 +129,8 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                     Ruta(Pestana.mensajes, APreguntaML(id))
                 }
                 // `/agenda/<id>` o `/agenda?cita=<id>` (los avisos): esa cita; si no, el día.
-                "agenda" -> Ruta(Pestana.inicio, (id ?: param("cita"))?.let { ACita(it) } ?: AAgendaDia())
+                // `/agenda?dia=AAAA-MM-DD` (lo que contesta el asistente): ese día.
+                "agenda" -> Ruta(Pestana.inicio, (id ?: param("cita"))?.let { ACita(it) } ?: AAgendaDia(dia = param("dia")))
                 "mas" -> Ruta(Pestana.mas)
                 "contacto", "contactos" -> Ruta(Pestana.inicio, id?.let { AFichaContacto(it) } ?: AContactos(agente = if (param("agente") == "libre") "libre" else null))
                 "operacion", "operaciones" -> Ruta(Pestana.inicio, id?.let { AFichaOperacion(it) } ?: AOperaciones())
@@ -163,6 +166,7 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                     else Ruta(Pestana.inicio, AAvisos(aviso = param("aviso"), responder = param("responder")))
                 "perfil" -> Ruta(Pestana.inicio, APerfil())
                 "buscar" -> Ruta(Pestana.inicio, ABuscar(param("q") ?: ""))
+                "asistente" -> Ruta(Pestana.inicio, AAsistente(param("q") ?: ""))
                 "reserva", "reservas" -> Ruta(Pestana.mas, id?.let { AReserva(id = it) } ?: ASeccion("reservas"))
                 "temporada" -> if (id == "reservas" && p.size > 2) Ruta(Pestana.mas, AReservaTemporada(id = p[2])) else Ruta(Pestana.mas, ASeccion("temporada"))
                 // Configuración: cada sección por su nombre (`/configuracion/equipo`, `/configuracion/ia`…).
