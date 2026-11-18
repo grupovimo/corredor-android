@@ -117,7 +117,8 @@ object BuscarTodo {
 /** 2C Buscar en todo (el ⌘K del panel, pantalla entera en el celular; lib/ui/shell/Buscador.svelte): los
  *  filtros por tipo, los resultados agrupados con lo escrito resaltado, las acciones que se pueden
  *  escribir («registrar cobro», «mira»), la acción rápida de cada resultado (mantener apretado o deslizar:
- *  mandar la ficha, escribirle, registrar el cobro), los recientes y las secciones de la app. */
+ *  mandar la ficha, escribirle, registrar el cobro), los recientes, las secciones de la app y el asistente (sin nada
+ *  escrito, al final de las acciones o si no se encontró nada). */
 @Composable
 fun BuscarTodo(texto: String) {
     val estado = LocalEstado.current
@@ -143,6 +144,14 @@ fun BuscarTodo(texto: String) {
         val base = if (q.isEmpty()) (if (filtro == "accion") BuscarTodo.acciones else emptyList()) else BuscarTodo.accionesPara(q)
         if (estado.escribe) base else base.filter { it.clave in listOf("inicio", "propiedades", "agenda") }
     }
+
+    /** Lo escrito como pregunta para el asistente (va última, como en ⌘K): «¿qué contratos ajustan?» no se encuentra
+     *  buscando, se contesta. Desde tres letras. */
+    val preguntaAsistente: BuscarTodo.Accion? =
+        if (filtro.isEmpty() && q.length >= 3) BuscarTodo.Accion("asistente", "Preguntarle al asistente: «${q.take(80)}»", "sparkles", "") else null
+
+    /** Las acciones del bloque «Acciones»: las escritas y, al final, preguntarle al asistente. */
+    val accionesConPregunta: List<BuscarTodo.Accion> = accionesVisibles + listOfNotNull(preguntaAsistente)
 
     val sinResultados: List<String> = if (q.length < 2 || buscando || fallo) emptyList()
     else BuscarTodo.filtros.filter { f -> f.first.isNotEmpty() && f.first != "accion" && resultados.none { r -> r.tipo == f.first } }.map { it.second }
@@ -201,6 +210,7 @@ fun BuscarTodo(texto: String) {
             }
             "propiedades" -> estado.ir(Ruta(Pestana.propiedades))
             "agenda" -> estado.abrir(AAgendaDia())
+            "asistente" -> estado.abrir(AAsistente(pregunta = q))
             else -> {}
         }
     }
@@ -354,8 +364,29 @@ fun BuscarTodo(texto: String) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Encabezado("Acciones")
             Column(Modifier.fillMaxWidth().tarjeta(16.dp)) {
-                accionesVisibles.forEachIndexed { i, a ->
+                accionesConPregunta.forEachIndexed { i, a ->
                     key(a.id) { Tocable(alTocar = { hacer(a) }, modifier = Modifier.lineaArriba(i > 0)) { FilaSimple(a.icono, a.texto) } }
+                }
+            }
+        }
+    }
+
+    /** Sin nada escrito: el asistente, para preguntar en vez de buscar. */
+    @Composable
+    fun BloqueAsistente() {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Encabezado("Asistente")
+            Tocable(alTocar = { estado.abrir(AAsistente()) }, modifier = Modifier.fillMaxWidth().tarjeta(16.dp)) {
+                Row(
+                    Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 14.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) { Icono("sparkles", 19f, C.accion) }
+                    Column(Modifier.weight(1f)) {
+                        Texto("Preguntarle al asistente", Estilo.filaLista, C.texto)
+                        Texto("«¿Qué contratos ajustan este mes?»", Estilo.footnote, C.texto2)
+                    }
+                    Chevron()
                 }
             }
         }
@@ -419,15 +450,21 @@ fun BuscarTodo(texto: String) {
                     ConIcono("No pudimos buscar. Revisá la conexión y probá de nuevo.", "exclamationmark.icloud", Estilo.footnote, C.errorTinta, Modifier.padding(horizontal = 4.dp))
                 }
                 if (q.isEmpty() && filtro != "accion" && recientes.isNotEmpty()) BloqueRecientes()
+                if (q.isEmpty() && filtro.isEmpty()) BloqueAsistente()
                 if (filtro.isEmpty()) SeccionesApp()
                 BuscarTodo.grupos.forEach { (tipo, titulo, icono) ->
                     val items = resultados.filter { it.tipo == tipo && (filtro.isEmpty() || filtro == tipo) }
                     if (items.isNotEmpty()) key(tipo) { Grupo(titulo, icono, items) }
                 }
-                if (accionesVisibles.isNotEmpty()) BloqueAcciones()
-                if (buscable && !buscando && !fallo && resultados.isEmpty() && accionesVisibles.isEmpty()) {
+                val vacio = buscable && !buscando && !fallo && resultados.isEmpty() && accionesVisibles.isEmpty()
+                if (!vacio && accionesConPregunta.isNotEmpty()) BloqueAcciones()
+                if (vacio) {
                     Box(Modifier.padding(top = 30.dp)) {
-                        EstadoVacio(icono = "magnifyingglass", titulo = "No encontramos «$q»", texto = "Probá con la calle, el apellido o el número de la propiedad.")
+                        EstadoVacio(
+                            icono = "magnifyingglass", titulo = "No encontramos «$q»",
+                            texto = "Probá con la calle, el apellido o el número de la propiedad. O preguntáselo al asistente.",
+                            accion = "Preguntarle al asistente" to { estado.abrir(AAsistente(pregunta = q)) },
+                        )
                     }
                 } else if (sinResultados.isNotEmpty() && resultados.isNotEmpty() && filtro.isEmpty()) {
                     Texto("Sin resultados en ${sinResultados.joinToString(", ")}", Estilo.footnote, C.texto3, Modifier.padding(horizontal = 4.dp))
