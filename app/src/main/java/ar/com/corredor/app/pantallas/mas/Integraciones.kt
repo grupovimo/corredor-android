@@ -379,7 +379,7 @@ fun HojaIntegracion(
                             if (ocupado) Rueda() else Texto("Generar otra clave", Estilo.body, C.accion)
                         }
                     clave == Integraciones.Clave.push ->
-                        FilaLista({ alCerrar(); estado.abrir(APerfil) }) { Texto("Ir a mi perfil", Estilo.body, C.accion) }
+                        FilaLista({ alCerrar(); estado.abrir(APerfil()) }) { Texto("Ir a mi perfil", Estilo.body, C.accion) }
                     else -> {}
                 }
             }

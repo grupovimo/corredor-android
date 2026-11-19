@@ -371,7 +371,7 @@ fun FichaContrato(
                     if (a != null && !a.cronograma.isNullOrEmpty()) HistorialFicha(k, a)
                     if (k.tipo == "alquiler") {
                         BloqueCobrosFicha(s, k, estado.escribe,
-                            verCobranzas = { estado.abrir(ACobranzas) },
+                            verCobranzas = { estado.abrir(ACobranzas()) },
                             rendicion = { r -> estado.abrir(ARendicion(contrato = id, id = r.id)) },
                             rendir = { p2 -> alcance.launch { rendir(p2) } },
                             recibo = { m, c -> if (c.compartido == true) estado.abrir(ARecibo(contrato = id, cobro = c.id)) else s.cobrando = aCobrar(m, c) },

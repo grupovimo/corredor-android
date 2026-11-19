@@ -163,13 +163,13 @@ fun Objetivos() {
         val s = sugerencias.firstOrNull { it.agenteId == id }
         if (s != null) {
             val d: Any = s.operacionId?.let { AFichaOperacion(id = it) } ?: s.contactoId?.let { AFichaContacto(id = it) }
-                ?: s.propiedadId?.let { AFichaPropiedad(id = it) } ?: AOperaciones
+                ?: s.propiedadId?.let { AFichaPropiedad(id = it) } ?: AOperaciones()
             return listOf(s.destacado, s.motivo).mapNotNull { it?.trim()?.takeIf { t -> t.isNotEmpty() } }.joinToString(": ") to d
         }
         val o = ops.firstOrNull { it.agenteId == id && it.etapa == "reserva" && it.sena == null }
         if (o != null) return "${o.nombre.split(",").firstOrNull() ?: ""}: reserva sin seña cargada" to AFichaOperacion(id = o.id)
         val nuevas = ops.count { it.agenteId == id && it.etapa == "nuevo" }
-        if (nuevas > 0) return "${if (nuevas == 1) "Una operación nueva" else "$nuevas operaciones nuevas"} sin contactar" to AOperaciones
+        if (nuevas > 0) return "${if (nuevas == 1) "Una operación nueva" else "$nuevas operaciones nuevas"} sin contactar" to AOperaciones()
         return null
     }
 

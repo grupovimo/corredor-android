@@ -340,7 +340,7 @@ fun MiPerfil() {
                             FilaPerfil("En la web", if (web.enWeb) (web.presentacion.lleno() ?: "Aparecés en Nosotros") else "No aparecés", verde = web.enWeb) { editandoWeb = true }
                         }
                         Linea()
-                        FilaPerfil("Avisos", avisosActivos?.let { if (it == 1) "1 activo" else "$it activos" } ?: "Configurar", verde = true) { estado.abrir(AConfigAvisos) }
+                        FilaPerfil("Avisos", avisosActivos?.let { if (it == 1) "1 activo" else "$it activos" } ?: "Configurar", verde = true) { estado.abrir(AConfigAvisos()) }
                     }
                     // Avisos en este dispositivo
                     push?.let { p ->
@@ -481,8 +481,8 @@ private fun dominioWeb(): String {
 }
 
 private val accesosPerfil: List<Triple<String, String, Any>> = listOf(
-    Triple("person.2", "Contactos", AContactos()), Triple("rectangle.split.3x1", "Operaciones", AOperaciones),
-    Triple("doc.text", "Contratos y cobranzas", ACobranzas), Triple("checklist", "Inventarios", ASeccion("inventarios")),
+    Triple("person.2", "Contactos", AContactos()), Triple("rectangle.split.3x1", "Operaciones", AOperaciones()),
+    Triple("doc.text", "Contratos y cobranzas", ACobranzas()), Triple("checklist", "Inventarios", ASeccion("inventarios")),
     Triple("flag", "Objetivo del mes", ASeccion("objetivos")), Triple("bell", "Avisos", AAvisos()),
     Triple("gearshape", "Configuración, consorcios e informes", ASeccion("mas")),
 )

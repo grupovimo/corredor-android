@@ -165,7 +165,7 @@ fun MasRaiz() {
         val x = mutableListOf<Potencia>()
         if (estado.esDuenio) {
             if (pasos?.whatsapp == false) x.add(Potencia("bubble.left.and.bubble.right", "Conectá tu WhatsApp", "Todas las consultas en una bandeja, con respuestas guardadas.", ASeccion(clave = "integraciones")))
-            if ((guia?.contratos ?: 0) == 0 && "contratos" in visibles) x.add(Potencia("dollarsign.circle", "Cobrá los alquileres", "Quién debe, el recibo por WhatsApp y la rendición al dueño.", AContratos))
+            if ((guia?.contratos ?: 0) == 0 && "contratos" in visibles) x.add(Potencia("dollarsign.circle", "Cobrá los alquileres", "Quién debe, el recibo por WhatsApp y la rendición al dueño.", AContratos()))
             if (pasos?.portales == false) x.add(Potencia("megaphone", "Publicá en portales", "Mercado Libre y los portales, sin cargar dos veces.", ASeccion(clave = "difusion")))
             if (!iaConectada) x.add(Potencia("sparkles", "Corredor en tu IA", "Preguntale a ChatGPT o Claude por tu cartera y tus cobros.", ASeccion(clave = "ia")))
             if (consorcios == 0 && "consorcios" in visibles) x.add(Potencia("building.columns", "Administrá consorcios", "Expensas, deudores y trabajos del edificio.", ASeccion(clave = "consorcios")))
@@ -268,7 +268,7 @@ fun MasRaiz() {
     fun persona() {
         Row(Modifier.fillMaxWidth().tarjeta().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f)) {
-                Tocable({ estado.abrir(APerfil) }, descripcion = "Mi perfil y avisos") {
+                Tocable({ estado.abrir(APerfil()) }, descripcion = "Mi perfil y avisos") {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.size(48.dp).clip(CircleShape).background(C.verde700), contentAlignment = Alignment.Center) {
                             Texto(Formato.iniciales(estado.usuario?.completo ?: "C"), Estilo(16f, Peso.bold), C.oro)
