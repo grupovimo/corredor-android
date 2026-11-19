@@ -113,7 +113,8 @@ object FichaImpresa {
         val inmo = api.opcional<Inmobiliaria>("/v1/inmobiliaria")
         val equipo = api.opcional<List<Miembro>>("/v1/equipo") ?: emptyList()
         val m = equipo.firstOrNull { it.usuarioId == p.agenteId }
-        val publica = if (p.publicada == true && p.slug != null) "${inmo?.web ?: Api.web()}/propiedades/${p.slug}" else null
+        // slug o id, como el panel: sin slug, el QR caía al WhatsApp y nunca a la ficha.
+        val publica = if (p.publicada == true) "${inmo?.web ?: Api.web()}/propiedades/${p.slug ?: p.id}" else null
         val wa = m?.telefono?.let { t -> "https://wa.me/${t.filter { it.isDigit() }}" }
         val fotos = mutableListOf<Bitmap>()
         for (u in (p.fotosUrl ?: emptyList()).take(cuantas)) Documentos.foto(u)?.let { fotos.add(it) }
