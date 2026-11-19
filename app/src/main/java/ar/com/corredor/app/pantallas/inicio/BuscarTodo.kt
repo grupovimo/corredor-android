@@ -66,7 +66,8 @@ object BuscarTodo {
     )
 
     /** Lo que se puede hacer desde la búsqueda (busqueda.ts · ACCIONES). */
-    data class Accion(val clave: String, val texto: String, val icono: String, val palabras: String) {
+    /** `detalle`: un segundo renglón (lo escrito, en «Preguntarle al asistente»). */
+    data class Accion(val clave: String, val texto: String, val icono: String, val palabras: String, val detalle: String? = null) {
         val id: String get() = clave
     }
 
@@ -148,7 +149,7 @@ fun BuscarTodo(texto: String) {
     /** Lo escrito como pregunta para el asistente (va última, como en ⌘K): «¿qué contratos ajustan?» no se encuentra
      *  buscando, se contesta. Desde tres letras. */
     val preguntaAsistente: BuscarTodo.Accion? =
-        if (filtro.isEmpty() && q.length >= 3) BuscarTodo.Accion("asistente", "Preguntarle al asistente: «${q.take(80)}»", "sparkles", "") else null
+        if (filtro.isEmpty() && q.length >= 3) BuscarTodo.Accion("asistente", "Preguntarle al asistente", "sparkles", "", detalle = "«${q.take(120)}»") else null
 
     /** Las acciones del bloque «Acciones»: las escritas y, al final, preguntarle al asistente. */
     val accionesConPregunta: List<BuscarTodo.Accion> = accionesVisibles + listOfNotNull(preguntaAsistente)
@@ -242,13 +243,16 @@ fun BuscarTodo(texto: String) {
     }
 
     @Composable
-    fun FilaSimple(icono: String, t: String) {
+    fun FilaSimple(icono: String, t: String, detalle: String? = null) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 50.dp).padding(horizontal = 14.dp),
+            Modifier.fillMaxWidth().heightIn(min = if (detalle == null) 50.dp else 56.dp).padding(horizontal = 14.dp, vertical = if (detalle == null) 0.dp else 8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.width(24.dp), contentAlignment = Alignment.Center) { Icono(icono, 19f, C.accion) }
-            Texto(t, Estilo.filaLista, C.texto, Modifier.weight(1f), lineas = 1)
+            Column(Modifier.weight(1f)) {
+                Texto(t, Estilo.filaLista, C.texto, lineas = 1)
+                if (detalle != null) Texto(detalle, Estilo.footnote, C.texto2, lineas = 2)
+            }
             Chevron()
         }
     }
@@ -365,7 +369,7 @@ fun BuscarTodo(texto: String) {
             Encabezado("Acciones")
             Column(Modifier.fillMaxWidth().tarjeta(16.dp)) {
                 accionesConPregunta.forEachIndexed { i, a ->
-                    key(a.id) { Tocable(alTocar = { hacer(a) }, modifier = Modifier.lineaArriba(i > 0)) { FilaSimple(a.icono, a.texto) } }
+                    key(a.id) { Tocable(alTocar = { hacer(a) }, modifier = Modifier.lineaArriba(i > 0)) { FilaSimple(a.icono, a.texto, a.detalle) } }
                 }
             }
         }

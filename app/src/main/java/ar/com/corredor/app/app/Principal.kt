@@ -16,7 +16,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -249,6 +251,7 @@ fun BarraNavegacion(b: Barra, atras: String?, volver: () -> Unit) {
 /** La app adentro (handoff · Navegación): cinco destinos (Inicio · Propiedades · MIRA · Mensajes · Más). MIRA es el
  *  botón oro elevado del centro y abre el abanico de acciones rápidas. Cada pestaña tiene su pila; Contactos,
  *  Operaciones, Cobranzas, Actas, Avisos y Perfil se apilan desde Inicio. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Principal() {
     val estado = LocalEstado.current
@@ -274,7 +277,9 @@ fun Principal() {
                 androidx.compose.animation.AnimatedVisibility(estado.accionesAbiertas, Modifier.zIndex(3f), enter = fadeIn(), exit = fadeOut()) { AccionesRapidas() }
                 BackHandler(estado.accionesAbiertas) { estado.accionesAbiertas = false }
             }
-            BarraPestanas()
+            // Con el teclado abierto la barra se esconde, como en iOS (el teclado la tapa): así el campo que escribe queda
+            // pegado al teclado y no flota el alto de la barra por encima.
+            if (!WindowInsets.isImeVisible) BarraPestanas()
         }
 
         AnimatedVisibility(estado.aviso != null, Modifier.align(Alignment.BottomCenter).zIndex(5f).navigationBarsPadding()

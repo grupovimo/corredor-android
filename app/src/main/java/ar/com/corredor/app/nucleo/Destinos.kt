@@ -69,7 +69,8 @@ import java.net.URLDecoder
 /** 2C Búsqueda global. */
 @Serializable data class ABuscar(val texto: String = "")
 /** El asistente (`/asistente?q=`): con `pregunta`, arranca preguntando eso. */
-@Serializable data class AAsistente(val pregunta: String = "")
+/** `enviar`: desde Buscar pregunta al abrir; desde un link de afuera (`/asistente?q=`) sólo deja la pregunta escrita. */
+@Serializable data class AAsistente(val pregunta: String = "", val enviar: Boolean = true)
 /** Lo que el handoff no dibuja y el panel sí tiene (configuración, equipo, consorcios, Mi web, informe,
  *  emprendimientos, temporada…): una sección por `clave`, con un `id` opcional. */
 @Serializable data class ASeccion(val clave: String, val id: String? = null)
@@ -166,7 +167,8 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                     else Ruta(Pestana.inicio, AAvisos(aviso = param("aviso"), responder = param("responder")))
                 "perfil" -> Ruta(Pestana.inicio, APerfil())
                 "buscar" -> Ruta(Pestana.inicio, ABuscar(param("q") ?: ""))
-                "asistente" -> Ruta(Pestana.inicio, AAsistente(param("q") ?: ""))
+                // Un link nunca pregunta solo (gastaría la IA y armaría propuestas): deja la pregunta escrita.
+                "asistente" -> Ruta(Pestana.inicio, AAsistente(param("q") ?: "", enviar = false))
                 "reserva", "reservas" -> Ruta(Pestana.mas, id?.let { AReserva(id = it) } ?: ASeccion("reservas"))
                 "temporada" -> if (id == "reservas" && p.size > 2) Ruta(Pestana.mas, AReservaTemporada(id = p[2])) else Ruta(Pestana.mas, ASeccion("temporada"))
                 // Configuración: cada sección por su nombre (`/configuracion/equipo`, `/configuracion/ia`…).

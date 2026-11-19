@@ -651,7 +651,8 @@ fun FichaContacto(id: String) {
             }
             // .safeAreaInset(edge: .bottom): el botón de guardar la nota, siempre a la vista.
             if (nota.trim().isNotEmpty()) {
-                Box(Modifier.fillMaxWidth().background(C.fondo.copy(alpha = 0.95f)).navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 8.dp)) { PieNota() }
+                // Sólo el teclado: la barra de pestañas ya deja el lugar de la navegación (y se esconde con el teclado).
+                Box(Modifier.fillMaxWidth().background(C.fondo.copy(alpha = 0.95f)).imePadding().padding(horizontal = 20.dp, vertical = 8.dp)) { PieNota() }
             }
         }
     }

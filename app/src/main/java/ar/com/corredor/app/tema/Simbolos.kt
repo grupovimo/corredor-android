@@ -48,7 +48,6 @@ internal object Simbolos {
         "calendar.badge.plus" to '\uef85', // calendar_add_on
         "calendar" to '\uebcc', // calendar_month
         "camera.badge.ellipsis" to '\ue8fc', // camera_enhance
-        "camera.badge.plus" to '\ue439', // add_a_photo
         "camera" to '\ue412', // photo_camera
         "car" to '\ueff7', // directions_car
         "chart.bar" to '\ue26b', // bar_chart
@@ -121,7 +120,6 @@ internal object Simbolos {
         "heart.slash" to '\ueac2', // heart_broken
         "hourglass.circle" to '\uea5b', // hourglass_top
         "hourglass" to '\ue88b', // hourglass_empty
-        "house.badge.plus" to '\uf8eb', // add_home
         "house" to '\ue9b2', // home
         "icloud.and.arrow.up" to '\ue2c3', // cloud_upload
         "icloud.slash" to '\ue2c1', // cloud_off
@@ -185,6 +183,7 @@ internal object Simbolos {
         "plus.circle" to '\ue990', // add_circle
         "plus.rectangle.on.rectangle" to '\ue03c', // library_add
         "plus.square.on.square" to '\ue03c', // library_add
+        "plus.viewfinder" to '\uf8eb', // add_home
         "plus" to '\ue145', // add
         "printer" to '\ue8ad', // print
         "puzzlepiece.extension" to '\ue87b', // extension

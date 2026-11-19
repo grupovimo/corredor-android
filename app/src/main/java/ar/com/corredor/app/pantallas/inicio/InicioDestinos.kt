@@ -13,7 +13,7 @@ import ar.com.corredor.app.pantallas.mas.*
 fun destinosInicio(d: Any): Boolean {
     when (d) {
         is ABuscar -> BuscarTodo(texto = d.texto)
-        is AAsistente -> Asistente(pregunta = d.pregunta)
+        is AAsistente -> Asistente(pregunta = d.pregunta, enviar = d.enviar)
         is AAvisos -> {
             // Un aviso puntual (`/avisos?aviso=<id>&responder=<acción>`): arriba y con su hoja.
             remember(d) { d.aviso?.let { Avisos.foco = it to d.responder } }

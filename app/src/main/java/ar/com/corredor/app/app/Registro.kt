@@ -115,7 +115,7 @@ object Registro {
         when (d) {
             // destinosInicio (Pantallas/Inicio/InicioDestinos.swift)
             is ABuscar -> BuscarTodo(texto = d.texto)
-            is AAsistente -> Asistente(pregunta = d.pregunta)
+            is AAsistente -> Asistente(pregunta = d.pregunta, enviar = d.enviar)
             is AAvisos -> {
                 // Un aviso puntual (`/avisos?aviso=<id>&responder=<acción>`): arriba y con su hoja.
                 d.aviso?.let { Avisos.foco = it to d.responder }

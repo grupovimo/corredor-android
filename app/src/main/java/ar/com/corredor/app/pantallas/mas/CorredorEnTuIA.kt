@@ -51,7 +51,8 @@ import java.time.ZoneId
 object CorredorEnTuIA {
     /** `GET /v1/ia/ajustes`: lo que eligió la dueña, el link para pegar y el aviso de la Ley 25.326 (texto). */
     @Serializable
-    data class Ajustes(val habilitado: Boolean? = null, val agendar: Boolean? = null, val mover: Boolean? = null, val url: String? = null, val aviso: String? = null)
+    data class Ajustes(val habilitado: Boolean? = null, val agendar: Boolean? = null, val mover: Boolean? = null, val iaPanel: Boolean? = null,
+                       val url: String? = null, val aviso: String? = null)
 
     /** `GET /v1/ia/conexiones`: de quién es, con qué asistente y qué permisos le dio. */
     @Serializable
@@ -99,8 +100,8 @@ object CorredorEnTuIA {
     }
 
     @Serializable
-    data class Cuerpo(val habilitado: Boolean, val agendar: Boolean, val mover: Boolean) {
-        constructor(a: Ajustes) : this(a.habilitado ?: false, a.agendar ?: false, a.mover ?: false)
+    data class Cuerpo(val habilitado: Boolean, val agendar: Boolean, val mover: Boolean, val iaPanel: Boolean) {
+        constructor(a: Ajustes) : this(a.habilitado ?: false, a.agendar ?: false, a.mover ?: false, a.iaPanel ?: true)
     }
 }
 
@@ -119,6 +120,8 @@ fun CorredorEnTuIA() {
     var sacando by remember { mutableStateOf<Set<String>>(emptySet()) }
     val duenio = estado.esDuenio
     val habilitado = ajustes?.habilitado ?: false
+    /** La IA del panel (asistente, MIRA, «Reescribir»): prendida si la API no dice nada. */
+    val iaPanel = ajustes?.iaPanel ?: true
 
     suspend fun cargar() {
         try {
@@ -181,6 +184,22 @@ fun CorredorEnTuIA() {
             }
             Llave(habilitado, cambiar({ a, v -> a.copy(habilitado = v) }) { if (it) "Corredor en tu IA, habilitada" else "Corredor en tu IA, apagada" },
                 habilitado = duenio, descripcion = "Habilitar Corredor en tu IA")
+        }
+    }
+
+    /** La IA del panel es otro interruptor: no abre conexiones externas. */
+    @Composable
+    fun iaDelPanel() {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 11.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+            Icono(if (iaPanel) "sparkles" else "power", 20f, if (iaPanel) C.okTinta else C.texto2)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Texto(if (iaPanel) "IA del panel, prendida" else "IA del panel, apagada", Estilo.filaLista, C.texto)
+                Texto(Formato.sinViudas(
+                    if (iaPanel) "El asistente, MIRA y «Reescribir» usan Claude, de Anthropic." else "El asistente contesta con los datos de Corredor, sin IA.",
+                ), Estilo.footnote, C.texto2)
+            }
+            Llave(iaPanel, cambiar({ a, v -> a.copy(iaPanel = v) }) { if (it) "IA del panel, prendida" else "IA del panel, apagada" },
+                habilitado = duenio, descripcion = "IA del panel")
         }
     }
 
@@ -332,6 +351,7 @@ fun CorredorEnTuIA() {
                     Texto(Formato.sinViudas("Tu asistente pasa a saber de tus propiedades, contactos, contratos y cobros."), Estilo.footnote, C.texto2)
                 }
                 SeccionLista { habilitar() }
+                SeccionLista { iaDelPanel() }
                 pasos(a)
                 val aviso = a.aviso?.takeIf { it.isNotBlank() }
                 if (aviso != null) {

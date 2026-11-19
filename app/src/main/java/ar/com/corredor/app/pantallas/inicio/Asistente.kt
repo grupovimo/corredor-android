@@ -7,22 +7,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +41,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.*
 import ar.com.corredor.app.nucleo.*
@@ -131,10 +130,11 @@ object Asistente {
     const val maxTurnos = 8
     const val maxLargo = 600
 
-    /** Las de la API mientras no llegan (dominio/asistente · Sugerencias). */
+    /** Mientras no llega la API, las que contesta el motor sin IA (dominio/asistente · SugerenciasMotor): nunca se ofrece
+     *  algo que termine en «no lo puedo contestar». */
     val sugerenciasBase = listOf(
         "¿Qué contratos ajustan este mes?", "¿Quiénes deben el alquiler?", "¿Qué tengo hoy?", "Contratos por vencer",
-        "Armame un mensaje para los que deben", "¿Quién busca un 3 ambientes en Palermo?",
+        "Borradores para revisar",
     )
 
     /** El historial para la API: los últimos turnos de texto, recortados; los errores no cuentan. */
@@ -174,10 +174,11 @@ object Asistente {
         return ASeccion(clave = "revision")
     }
 
-    /** De dónde salió la respuesta: el ícono y el texto de abajo. */
-    fun origen(r: RespuestaAsistente): Pair<String, String> = when (r.origen) {
+    /** De dónde salió la respuesta: el ícono y el texto de abajo. Si el plan no trae IA, la cabeza ya lo dice: el pie
+     *  queda en «Sin IA». Con IA en el plan (un tope, un corte), el pie dice el motivo. */
+    fun origen(r: RespuestaAsistente, hayIA: Boolean = true): Pair<String, String> = when (r.origen) {
         "motor" -> "bolt" to "Con los datos de Corredor"
-        "sin_ia" -> "info.circle" to (r.aviso?.nonEmpty ?: "Sin IA")
+        "sin_ia" -> "info.circle" to (if (hayIA) r.aviso?.nonEmpty ?: "Sin IA" else "Sin IA")
         else -> "sparkles" to "Con IA · puede equivocarse"
     }
 }
@@ -188,9 +189,10 @@ object Asistente {
  *  el motor de Corredor (al instante, sin IA) y, si hace falta y el plan la trae, la IA con lo que el rol deja ver. Lo
  *  que propone escribir queda como propuesta: se crea sólo al tocar «Confirmar» y va a los borradores para revisar (no
  *  se manda nada). La charla vive en la pantalla: el servidor no la guarda; cada pregunta lleva los últimos turnos.
- *  `pregunta`: con algo escrito (desde la búsqueda o un link `/asistente?q=`), arranca preguntando eso. */
+ *  `pregunta`: con algo escrito, desde la búsqueda arranca preguntando eso; desde un link de afuera (`/asistente?q=`,
+ *  `enviar` false) sólo lo deja escrito, para que nadie gaste la IA con un link. */
 @Composable
-fun Asistente(pregunta: String = "") {
+fun Asistente(pregunta: String = "", enviar: Boolean = true) {
     val estado = LocalEstado.current
     val alcance = rememberCoroutineScope()
     val focos = LocalFocusManager.current
@@ -226,6 +228,14 @@ fun Asistente(pregunta: String = "") {
             )
         } catch (e: CancellationException) {
             throw e
+        } catch (e: ErrorApi) {
+            if (e.estado == 402) {
+                // Sin plan: lleva a «Ver planes», no a un «Probar de nuevo» que va a fallar siempre.
+                estado.avisar(e)
+            } else {
+                val m = if (e.sinConexion) "No pude contestar. Revisá la señal y probá de nuevo." else (e.detalle.nonEmpty ?: e.titulo)
+                turnos = turnos + TurnoAsistente(id = siguiente(), rol = TurnoAsistente.Rol.error, texto = m, pregunta = q)
+            }
         } catch (e: Exception) {
             val a = e as? ErrorApi
             val m = if (a == null || a.sinConexion) "No pude contestar. Revisá la señal y probá de nuevo." else (a.detalle.nonEmpty ?: a.titulo)
@@ -277,15 +287,23 @@ fun Asistente(pregunta: String = "") {
     }
 
     LaunchedEffect(Unit) {
-        if (info == null) info = estado.api.opcional<EstadoAsistente>("/v1/asistente")
         if (arranco) return@LaunchedEffect
         arranco = true
-        pregunta.nonEmpty?.let { preguntar(it) }
+        // En paralelo: el estado (si hay IA) no demora la primera pregunta.
+        alcance.launch { if (info == null) info = estado.api.opcional<EstadoAsistente>("/v1/asistente") }
+        pregunta.nonEmpty?.let { if (enviar) preguntar(it) else texto = it }
     }
-    // Al final de la charla con cada turno (la cabeza, el arranque si no hay turnos, los turnos y «Buscando…»).
+    // La respuesta se lee desde arriba: con un turno del asistente se va a su comienzo; con la pregunta o «Buscando…», al
+    // final. Al abrir no se mueve (la cabeza y el aviso sin IA tienen que verse).
     LaunchedEffect(turnos.size, pensando) {
-        val n = 1 + (if (turnos.isEmpty()) 1 else 0) + turnos.size + (if (pensando) 1 else 0)
-        lista.animateScrollToItem(n - 1)
+        if (turnos.isEmpty() && !pensando) return@LaunchedEffect
+        val ultimo = turnos.lastOrNull()
+        if (!pensando && ultimo != null && ultimo.rol != TurnoAsistente.Rol.persona) {
+            lista.animateScrollToItem(1 + turnos.size - 1)
+        } else {
+            val n = 1 + (if (turnos.isEmpty()) 1 else 0) + turnos.size + (if (pensando) 1 else 0)
+            lista.animateScrollToItem(n - 1)
+        }
     }
 
     // MARK: Piezas
@@ -293,7 +311,7 @@ fun Asistente(pregunta: String = "") {
     @Composable
     fun Cabeza() {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Texto(Formato.sinViudas("Preguntá como lo dirías. Lo que propone escribir lo confirmás vos."), Estilo.subhead, C.texto2)
+            Texto(Formato.sinViudas("Preguntá como lo dirías. Lo que propongo escribir lo confirmás vos."), Estilo.subhead, C.texto2)
             val i = info
             val a = i?.aviso?.nonEmpty
             if (i != null && !i.ia && a != null) {
@@ -308,11 +326,12 @@ fun Asistente(pregunta: String = "") {
         }
     }
 
-    /** Para empezar: las sugerencias de la API, de a una por fila. */
+    /** Para empezar: las sugerencias de la API, de a una por fila. Debajo de una respuesta sin IA vuelven como «Probá con»
+     *  (tocables, en vez de una lista escrita). */
     @Composable
-    fun Arranque() {
+    fun Arranque(titulo: String = "PARA EMPEZAR") {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Texto("PARA EMPEZAR", Estilo(13f, Peso.bold, 0.5f / 13f), C.texto2, Modifier.padding(horizontal = 4.dp))
+            Texto(titulo, Estilo(13f, Peso.bold, 0.5f / 13f), C.texto2, Modifier.padding(horizontal = 4.dp))
             Column(Modifier.fillMaxWidth().tarjeta(16.dp)) {
                 val ss = info?.sugerencias?.takeIf { it.isNotEmpty() } ?: Asistente.sugerenciasBase
                 ss.forEachIndexed { i, s ->
@@ -365,7 +384,7 @@ fun Asistente(pregunta: String = "") {
 
     @Composable
     fun RespuestaTurno(t: TurnoAsistente, r: RespuestaAsistente) {
-        val o = Asistente.origen(r)
+        val o = Asistente.origen(r, hayIA = info?.ia ?: true)
         val pendientes = t.propuestas.count { it.estado == TurnoAsistente.EstadoPropuesta.pendiente }
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (r.texto.nonEmpty != null) {
@@ -397,7 +416,11 @@ fun Asistente(pregunta: String = "") {
             if (pendientes > 1 && estado.escribe) {
                 BotonHundido("Confirmar las $pendientes", { alcance.launch { confirmarTodas(t.id) } })
             }
-            ConIcono(o.second, o.first, Estilo.footnote, C.texto3, Modifier.padding(horizontal = 4.dp))
+            // texto2: el pie dice por qué no contestó la IA, es información (texto3 no llega a AA).
+            ConIcono(o.second, o.first, Estilo.footnote, C.texto2, Modifier.padding(horizontal = 4.dp))
+            if (r.origen == "sin_ia" && r.resultados.isNullOrEmpty() && t.id == turnos.lastOrNull()?.id) {
+                Box(Modifier.padding(top = 4.dp)) { Arranque("PROBÁ CON") }
+            }
         }
     }
 
@@ -407,10 +430,11 @@ fun Asistente(pregunta: String = "") {
             TurnoAsistente.Rol.persona -> {
                 val oscuro = LocalOscuro.current
                 val forma = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 6.dp, bottomStart = 18.dp)
-                Row(Modifier.fillMaxWidth()) {
-                    Spacer(Modifier.weight(1f).widthIn(min = 60.dp))
+                // Contra el borde derecho, con 60 de aire a la izquierda (Spacer(minLength: 60) de iOS): sin pesos, el
+                // Box se mide al texto.
+                Row(Modifier.fillMaxWidth().padding(start = 60.dp), horizontalArrangement = Arrangement.End) {
                     Box(
-                        Modifier.weight(1f, fill = false).clip(forma).background(if (oscuro) hex(0x1F3B33) else hex(0xDCEBE3))
+                        Modifier.clip(forma).background(if (oscuro) hex(0x1F3B33) else hex(0xDCEBE3))
                             .padding(horizontal = 12.dp, vertical = 9.dp),
                     ) { Texto(t.texto, Estilo.body16, C.texto) }
                 }
@@ -432,13 +456,16 @@ fun Asistente(pregunta: String = "") {
     @Composable
     fun Redactar() {
         Row(
-            Modifier.fillMaxWidth().background(C.elevado.copy(alpha = 0.94f)).navigationBarsPadding().imePadding().padding(horizontal = 8.dp, vertical = 8.dp),
+            // Sólo el teclado: la barra de pestañas ya deja el lugar de la navegación (y se esconde con el teclado).
+            Modifier.fillMaxWidth().background(C.elevado.copy(alpha = 0.94f)).imePadding().padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom,
         ) {
             val estilo = Estilo.body16
             BasicTextField(
                 value = texto, onValueChange = { texto = it }, minLines = 1, maxLines = 6,
                 textStyle = estilo.ts().copy(color = C.texto), cursorBrush = SolidColor(C.accion),
+                // Mayúscula al empezar la oración, como el TextField de iOS.
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.weight(1f).semantics { contentDescription = "Tu pregunta" },
                 decorationBox = { campo ->
                     Box(

@@ -231,6 +231,9 @@ class ColaMira private constructor() {
                 MiraLector.leer(x, api, this)
             } catch (e: CancellationException) { throw e } catch (e: ErrorApi) {
                 if (e.sinConexion) return
+                // El tope se renueva: la foto sigue en cola y no se prueba con las demás (no cuesta nada, la API corta
+                // antes de llamar a la IA).
+                if (e.codigo == "tope_ia") { actualizar(x); return }
                 x.estado = "error"
                 x.error = e.detalle
             } catch (e: Exception) {}
@@ -258,7 +261,8 @@ object MiraLector {
     suspend fun leer(f: FotoMira, api: Api, cola: ColaMira = ColaMira.compartida) {
         val datos = withContext(Dispatchers.IO) { cola.archivoDe(f)?.readBytes() } ?: return
         if (f.archivoId == null) {
-            f.archivoId = api.subir(datos, nombre = f.archivo, tipo = "image/jpeg", uso = "foto").id
+            // «cartel»: privada, nunca una foto de la propiedad (la API la deja como documento de la ficha).
+            f.archivoId = api.subir(datos, nombre = f.archivo, tipo = "image/jpeg", uso = "cartel").id
         }
         try {
             val l: LecturaMira = api.enviar("POST", "/v1/mira/extraer", Cuerpo(f.archivoId!!))
@@ -451,7 +455,8 @@ fun MiraRaiz() {
         }
         f = FormMira()
         alternativas = emptyList()
-        estado.tarea { completar(x) }
+        // Una que falló (la IA no respondió) se vuelve a leer al abrirla: lo inicia la persona, no un bucle.
+        if (x.estado == "error") estado.tarea { leer(x, recortada = false) } else estado.tarea { completar(x) }
     }
 
     val listoParaCaptar = f.operacion != null && f.tipo != null && f.direccion.trim().length >= 3 && !(alternativas.isNotEmpty() && f.precio == null)
@@ -817,7 +822,7 @@ private fun Revision(
                     Modifier.fillMaxWidth().heightIn(min = 54.dp).clip(RoundedCornerShape(15.dp)).background(C.accion.copy(alpha = if (listo) 1f else 0.45f)),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (captando) Rueda(C.sobreAccion) else Icono("house.badge.plus", 17f, C.sobreAccion)
+                    if (captando) Rueda(C.sobreAccion) else Icono("plus.viewfinder", 17f, C.sobreAccion)
                     Texto(if (nolee) "Captar con lo que hay" else if (dudaPrecio) "Elegí el precio para captar" else "Captar", Estilo(17f, Peso.bold, relativo = Relativo.headline), C.sobreAccion)
                 }
             }
@@ -864,7 +869,7 @@ private fun PantallaCaptada(p: Propiedad, contacto: String?, imagen: Bitmap?, f:
         FondoApp()
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).statusBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
             Column(Modifier.fillMaxWidth().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(96.dp).clip(CircleShape).background(C.oro), contentAlignment = Alignment.Center) { Icono("house.badge.plus", 38f, tinta, peso = Peso.semibold) }
+                Box(Modifier.size(96.dp).clip(CircleShape).background(C.oro), contentAlignment = Alignment.Center) { Icono("plus.viewfinder", 38f, tinta, peso = Peso.semibold) }
                 Texto("${p.direccion ?: "La propiedad"} quedó captada", Estilo.titulo3, C.texto, alinear = TextAlign.Center)
                 Texto(
                     Formato.sinViudas("Está como borrador en tu cartera, no se publica hasta que la completes.${if (contacto != null) " El dueño directo quedó cargado como contacto." else ""}"),

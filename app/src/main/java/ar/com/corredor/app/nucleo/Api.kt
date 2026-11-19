@@ -93,7 +93,7 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
         r.method(metodo, cuerpoHttp)
         val (codigo, datos, reintentar) = try {
             withContext(Dispatchers.IO) {
-                http.newCall(r.build()).esperar().use { Triple(it.code, it.body?.bytes() ?: ByteArray(0), it.header("Retry-After")) }
+                http.newCall(r.build()).apply { timeout().timeout(espera(ruta), TimeUnit.SECONDS) }.esperar().use { Triple(it.code, it.body?.bytes() ?: ByteArray(0), it.header("Retry-After")) }
             }
         } catch (e: CancellationException) {
             throw e
@@ -167,8 +167,15 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
         val decodificador get() = json
 
         fun cliente(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(20, TimeUnit.SECONDS).readTimeout(20, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS)
             .build()
+
+        /** Las rutas que llaman a la IA (Api.rutasLentas de iOS): el asistente puede dar varias vueltas con herramientas y
+         *  el servidor le da hasta 50 s; cortar a los 20 dejaba un «sin red» con lo gastado igual. */
+        val rutasLentas = setOf("/v1/asistente", "/v1/mira/extraer", "/v1/web/reescribir")
+
+        /** Cuánto se espera cada pedido entero (Api.espera de iOS): 60 s los de la IA, 20 los demás. */
+        fun espera(ruta: String): Long = if (ruta.substringBefore('?') in rutasLentas) 60 else 20
     }
 }
 
@@ -219,7 +226,7 @@ data class Archivo(val id: String, val nombre: String? = null, val tipo: String?
 /** Sube un archivo (multipart, campo `archivo`). */
 suspend fun Api.subir(datos: ByteArray, nombre: String, tipo: String, uso: String): Archivo {
     // Los topes de la API por uso (dominio/archivos): se cortan acá antes de subir de balde.
-    val tope = mapOf("foto" to 15, "marca" to 5)[uso] ?: 25
+    val tope = mapOf("foto" to 15, "cartel" to 15, "marca" to 5)[uso] ?: 25
     if (datos.size > (tope shl 20)) throw ErrorApi(422, "muy_grande", "Archivo muy grande", "El archivo pasa de $tope MB.")
     return decodificar(multipart("/v1/archivos", listOf("uso" to uso), datos, nombre, tipo))
 }

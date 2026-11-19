@@ -862,7 +862,7 @@ private fun HeroeFicha(p: Propiedad, alSumarFotos: () -> Unit, alTocar: (Int) ->
                 Modifier.fillMaxWidth().height(300.dp).background(C.hundida),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
             ) {
-                Icono("camera.badge.plus", 34f, C.accion)
+                Icono("photo.badge.plus", 34f, C.accion)
                 Texto("Sumá fotos", Estilo.subheadFuerte, C.accion)
                 Texto("Sin fotos no sale en los portales", Estilo.footnote, C.texto2)
             }

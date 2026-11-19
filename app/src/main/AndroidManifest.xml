@@ -118,6 +118,7 @@
                 <data android:pathPrefix="/invitaciones" />
                 <data android:pathPrefix="/conectar-ia/" />
                 <data android:pathPrefix="/buscar" />
+                <data android:pathPrefix="/asistente" />
                 <uri-relative-filter-group android:allow="false"><data android:queryPattern=".*web=1.*" /></uri-relative-filter-group>
                 <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/ficha" /></uri-relative-filter-group>
                 <uri-relative-filter-group android:allow="false"><data android:pathPattern=".*/tarjeta" /></uri-relative-filter-group>
