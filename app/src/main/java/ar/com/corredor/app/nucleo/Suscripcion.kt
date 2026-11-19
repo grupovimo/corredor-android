@@ -29,8 +29,9 @@ import kotlinx.serialization.Serializable
 import java.lang.ref.WeakReference
 import java.time.Instant
 
-/** La suscripción de la inmobiliaria (GET /v1/suscripcion): tres planes, mensual o anual, 14 días gratis y sólo lectura
- *  al vencer. En el teléfono se paga con Google Play (Play Billing, los mismos ids que la App Store); en la web, con
+/** La suscripción de la inmobiliaria (GET /v1/suscripcion): tres planes (Agente, Inmobiliaria y Equipo), mensual o anual
+ *  (diez meses), 14 días gratis con el plan Inmobiliaria y sólo lectura al vencer. Los topes (personas, propiedades
+ *  activas, contratos, MIRA) los aplica la API: acá se muestran. En el teléfono se paga con Google Play (Play Billing, los mismos ids que la App Store); en la web, con
  *  Mercado Pago. La API une todo. */
 @Serializable
 data class Suscripcion(
@@ -53,6 +54,10 @@ data class Suscripcion(
     /** Cuándo se borran los datos si no elige un plan (sólo vencida y con la purga prendida; si no, null). */
     val borraEn: FechaApi? = null,
     val agentes: Agentes = Agentes(),
+    /** El plan que rige hoy (en la prueba, Inmobiliaria) y lo usado de cada tope. Una API vieja no los manda. */
+    val planVigente: String? = null,
+    val personasExtra: Int = 0,
+    val topes: Topes? = null,
     val planes: List<Plan> = emptyList(),
     val mercadoPago: Boolean = false,
     /** Si la API confirma compras de Google Play (sin la cuenta de Play configurada, no: la compra daría 409
@@ -66,6 +71,12 @@ data class Suscripcion(
         val nombre: String,
         val resumen: String = "",
         val agentes: Int = 0,
+        /** Lo que cuesta cada persona más (0: el plan no suma personas). No se compra en la tienda. */
+        val personaExtraMes: Double = 0.0,
+        /** Topes del plan (0: sin tope). */
+        val propiedades: Int = 0,
+        val contratos: Int = 0,
+        val mira: Int = 0,
         val precioMes: Double = 0.0,
         val precioAnio: Double = 0.0,
         val incluye: List<String> = emptyList(),
@@ -81,12 +92,32 @@ data class Suscripcion(
     @Serializable
     data class Agentes(val usados: Int = 0, val cupo: Int? = null)
 
+    /** Lo usado de un recurso con tope (tope null: sin tope). */
+    @Serializable
+    data class Uso(val usados: Int = 0, val tope: Int? = null)
+
+    @Serializable
+    data class Topes(val propiedades: Uso = Uso(), val contratos: Uso = Uso(), val mira: Uso = Uso())
+
+    /** Lo que pasa el tope si se elige `p`: personas, propiedades activas y contratos que quedan en sólo lectura (nada
+     *  se borra). */
+    data class DeMas(val personas: Int, val propiedades: Int, val contratos: Int) {
+        val alguno: Boolean get() = personas + propiedades + contratos > 0
+    }
+
+    fun deMas(p: Plan): DeMas {
+        fun de(u: Uso?, t: Int): Int = if (u == null || t <= 0) 0 else maxOf(0, u.usados - t)
+        val extras = if (p.personaExtraMes > 0) personasExtra else 0
+        return DeMas(maxOf(0, agentes.usados - p.agentes - extras), de(topes?.propiedades, p.propiedades), de(topes?.contratos, p.contratos))
+    }
+
     @Serializable
     data class Cobro(val id: String, val medio: String = "", val detalle: String = "", val importe: Double? = null, val moneda: String? = null, val creadoEn: FechaApi = Instant.EPOCH)
 
     val planActual: Plan? get() = planes.firstOrNull { it.id == plan }
+    val planQueRige: Plan? get() = planes.firstOrNull { it.id == (planVigente ?: plan) }
 
-    /** «Prueba gratis · 9 días», «Plan Profesional · anual», «Sólo lectura». */
+    /** «Prueba gratis · 9 días», «Plan Inmobiliaria · anual», «Sólo lectura». */
     val nombreEstado: String get() = when (estado) {
         "prueba" -> if (diasRestantes == 1) "Prueba gratis · último día" else "Prueba gratis · $diasRestantes días"
         "activa" -> "Plan ${planActual?.nombre ?: ""} · ${if (ciclo == "anio") "anual" else "mensual"}"

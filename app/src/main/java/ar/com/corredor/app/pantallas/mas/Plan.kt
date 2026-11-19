@@ -96,8 +96,9 @@ private fun despuesDe(iso: String): Instant {
 
 // MARK: - Tu plan
 
-/** «Tu plan», como un carrito: cómo estás hoy, mensual o anual, los tres planes como tarjetas para
- *  elegir y el ticket con lo que pagás hoy, cuándo es el primer cobro y cuánto después. Se paga con
+/** «Tu plan», como un carrito: cómo estás hoy (y cuánto usás de cada tope), mensual o anual, los tres planes como
+ *  tarjetas para elegir y el ticket con lo que pagás hoy, cuándo es el primer cobro y cuánto después. Bajar de plan no
+ *  borra nada: el ticket dice qué queda en sólo lectura. Se paga con
  *  Google Play (los precios son los de la tienda de la cuenta de Google); la letra chica, la que pide la tienda. */
 @Composable
 fun PantallaPlan() {
@@ -106,7 +107,7 @@ fun PantallaPlan() {
     val alcance = rememberCoroutineScope()
     val tienda = Tienda.compartida
     var ciclo by remember { mutableStateOf("anio") }
-    var elegido by remember { mutableStateOf("profesional") }
+    var elegido by remember { mutableStateOf("inmobiliaria") }
     var comprando by remember { mutableStateOf(false) }
     var restaurando by remember { mutableStateOf(false) }
     var inicializado by remember { mutableStateOf(false) }
@@ -227,12 +228,12 @@ fun PantallaPlan() {
                         val primerCobro = gratis?.let { despuesDe(it) } ?: Instant.now()
                         val cada = if (ciclo == "anio") "año" else "mes"
                         val mismo = s.plan == plan.id && s.ciclo == ciclo && s.renueva && !s.soloLectura
-                        val sobran = if (plan.agentes > 0) maxOf(0, s.agentes.usados - plan.agentes) else 0
+                        val mas = s.deMas(plan)
                         val precioTxt = precio(plan, ciclo)
                         Column(Modifier.fillMaxWidth().tarjeta().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Texto("Resumen", Estilo.total, C.texto)
                             LineaTicket("Corredor ${plan.nombre}", if (ciclo == "anio") "anual" else "mensual", fuerte = true)
-                            LineaTicket("Personas que cargan", if (plan.agentes == 0) "sin tope" else if (plan.agentes == 1) "1" else "hasta ${plan.agentes}")
+                            LineaTicket("Personas que cargan", if (plan.agentes == 1) "1" else "hasta ${plan.agentes}")
                             if (ciclo == "anio") doceMeses(plan)?.let { LineaTicket("12 meses × ${precio(plan, "mes")}", it) }
                             if (ciclo == "anio") ahorro(plan)?.let { LineaTicket("2 meses de regalo", "−$it", tono = C.okTinta) }
                             LineaTicket("Total por $cada", precioTxt, fuerte = true)
@@ -253,19 +254,18 @@ fun PantallaPlan() {
                                 DatoTicket("Después", "$precioTxt cada $cada")
                                 DatoTicket("Medio de pago", "Tu cuenta de Google (Google Play)")
                             }
-                            if (sobran > 0) {
-                                Row(Modifier.clip(RoundedCornerShape(10.dp)).background(C.avisoFondo).padding(10.dp),
+                            if (mas.alguno) {
+                                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(C.avisoFondo).padding(10.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
-                                    Icono("person.2", 13f, C.oroTinta)
-                                    Texto(Formato.sinViudas("Hoy cargan ${s.agentes.usados} personas y este plan es para ${Formato.cantidad(plan.agentes, "persona", "personas")}. Pasá ${Formato.cantidad(sobran, "persona", "personas")} a lector en Equipo o elegí un plan más grande."),
-                                        Estilo.footnote, C.oroTinta)
+                                    Icono("info.circle", 13f, C.oroTinta)
+                                    Texto(Formato.sinViudas(textoDeMas(mas)), Estilo.footnote, C.oroTinta, Modifier.weight(1f))
                                 }
                             }
                             if (!s.pagaAfuera) {
                                 BotonPrincipal(
                                     if (mismo) "Es tu plan actual" else if (gratis != null) "Empezar gratis" else "Suscribirme por $precioTxt",
                                     { alcance.launch { comprar(plan) } }, Modifier.padding(top = 4.dp),
-                                    habilitado = !(prod == null || mismo || sobran > 0 || comprando), cargando = comprando,
+                                    habilitado = !(prod == null || mismo || comprando), cargando = comprando,
                                 )
                                 if (prod == null && (!tienda.cargando || !s.googlePlay)) {
                                     Texto(Formato.sinViudas("Pronto vas a poder elegir tu plan desde el teléfono. Mientras, seguís usando Corredor como hasta ahora."), Estilo.caption, C.texto3)
@@ -310,7 +310,7 @@ fun PantallaPlan() {
 private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
     val tono = if (s.estado == "vencida") Tono.rojo else if (s.estado == "prueba" && s.diasRestantes <= 3) Tono.oro else Tono.verde
     val titulo = when (s.estado) {
-        "prueba" -> "Tenés todo Corredor gratis hasta el ${Formato.fechaLarga(s.pruebaHasta)}."
+        "prueba" -> "Tenés el plan ${s.planQueRige?.nombre ?: "Inmobiliaria"} gratis hasta el ${Formato.fechaLarga(s.pruebaHasta)}."
         "activa" -> "Próximo cobro: ${Formato.fechaLarga(s.proximoCobro ?: s.vigenteHasta)}${s.importe?.let { " · ${Formato.plata(it, s.moneda ?: "ARS")}" } ?: ""}."
         "baja" -> "Tu plan no se renueva: vale hasta el ${Formato.fechaLarga(s.vigenteHasta)}."
         else -> "Tu inmobiliaria está en sólo lectura."
@@ -324,18 +324,13 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
             "Todo lo tuyo sigue acá y lo podés ver y exportar $hasta. Para volver a cargar, elegí un plan: se activa en el momento."
         }
     }
-    val personas = s.agentes.cupo?.let { c -> "${s.agentes.usados} de $c ${if (c == 1) "persona" else "personas"} que cargan" }
-        ?: Formato.cantidad(s.agentes.usados, "persona carga", "personas cargan")
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).tarjeta()) {
         Box(Modifier.width(4.dp).fillMaxHeight().background(tono.tinta))
         Column(Modifier.weight(1f).padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Texto(s.nombreEstado, Estilo.caption, tono.tinta, Modifier.clip(Capsula).background(tono.fondo).padding(horizontal = 10.dp, vertical = 4.dp))
             Texto(titulo, Estilo.titulo3, C.texto)
             Texto(Formato.sinViudas(detalle), Estilo.footnote, C.texto2)
-            Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icono("person.2", 13f, C.texto3)
-                Texto(personas, Estilo.footnote, C.texto2)
-            }
+            UsoPlan(s, Modifier.padding(top = 6.dp))
             // «Administrar la suscripción» (manageSubscriptionsSheet): la de Google Play, en Play.
             if (s.medio == "google" && s.renueva && duenio) {
                 Box(Modifier.padding(top = 4.dp)) {
@@ -346,6 +341,42 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
             }
         }
     }
+}
+
+/** Lo que usás del plan que rige: personas, propiedades activas, contratos y MIRA, con su barra (casi o en el tope: oro;
+ *  pasado, después de bajar de plan: rojo). */
+@Composable
+private fun UsoPlan(s: Suscripcion, modifier: Modifier = Modifier) {
+    val filas = buildList {
+        add("Personas que cargan" to Suscripcion.Uso(s.agentes.usados, s.agentes.cupo))
+        s.topes?.let { add("Propiedades activas" to it.propiedades); add("Contratos de alquiler" to it.contratos); add("Carteles con MIRA este mes" to it.mira) }
+    }
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        filas.forEach { (nombre, u) ->
+            val t = u.tope
+            val lleno = t != null && u.usados > t
+            val casi = t != null && t > 0 && u.usados.toDouble() / t >= 0.85
+            Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Texto(nombre, Estilo.footnote, C.texto2, Modifier.weight(1f).padding(end = 8.dp))
+                    Texto(if (t != null) "${u.usados} de $t" else "${u.usados} · sin tope", Estilo.footnote, if (lleno) C.errorTinta else C.texto, numeros = true)
+                }
+                if (t != null && t > 0) {
+                    BarraAvance(minOf(1.0, u.usados.toDouble() / t), color = if (lleno) C.errorTinta else if (casi) C.oroTinta else C.accion)
+                }
+            }
+        }
+    }
+}
+
+/** Bajar de plan no borra nada: lo que pasa el tope queda en sólo lectura hasta liberar lugar. */
+private fun textoDeMas(m: Suscripcion.DeMas): String {
+    val partes = buildList {
+        if (m.personas > 0) add("${Formato.cantidad(m.personas, "persona queda", "personas quedan")} sin cargar (pasalas a lector en Equipo)")
+        if (m.propiedades > 0) add("${Formato.cantidad(m.propiedades, "propiedad activa queda", "propiedades activas quedan")} fuera de tu web")
+        if (m.contratos > 0) add("${Formato.cantidad(m.contratos, "contrato no se cobra", "contratos no se cobran")} desde Corredor")
+    }
+    return "Con este plan no se borra nada, pero lo que pasa el tope queda en sólo lectura hasta que liberes lugar: " + partes.joinToString("; ") + "."
 }
 
 @Composable

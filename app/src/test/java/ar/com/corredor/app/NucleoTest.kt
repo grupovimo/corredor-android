@@ -42,14 +42,17 @@ class NucleoTest {
         {"estado":"prueba","plan":null,"ciclo":"mes","medio":null,"pruebaHasta":"2026-11-19T12:00:00Z","pagadoHasta":null,
          "vigenteHasta":"2026-11-19T12:00:00Z","diasRestantes":5,"renueva":false,"proximoCobro":null,"importe":null,"moneda":null,
          "esperando":null,"soloLectura":false,"enPrueba":true,"funciones":["ia"],"agentes":{"usados":2,"cupo":null},
-         "planes":[{"id":"inicial","nombre":"Inicial","resumen":"x","agentes":1,"precioMes":29900,"precioAnio":299000,"funciones":[],
-           "incluye":["1 persona"],"destacado":false,"appleMes":"ar.com.corredor.app.inicial.mes","appleAnio":"ar.com.corredor.app.inicial.anio"}],
+         "planes":[{"id":"agente","nombre":"Agente","resumen":"x","agentes":1,"precioMes":24900,"precioAnio":249000,"funciones":[],
+           "incluye":["1 persona"],"destacado":false,"appleMes":"ar.com.corredor.app.agente.mes","appleAnio":"ar.com.corredor.app.agente.anio"}],
          "mercadoPago":false,"cobros":[],"graciaDias":3}
         """
         val s = Api.json.decodeFromString<Suscripcion>(json)
         assertEquals("Prueba gratis · 5 días", s.nombreEstado)
         assertTrue(s.pideAtencion)
-        assertEquals("ar.com.corredor.app.inicial.anio", s.planes.first().producto("anio"))
+        assertEquals("ar.com.corredor.app.agente.anio", s.planes.first().producto("anio"))
+        // Una API de antes de los topes no los manda: no rompe.
+        assertEquals(null, s.topes)
+        assertEquals(1, s.deMas(s.planes.first()).personas)
         assertFalse(s.conMercadoPago)
         assertFalse(s.googlePlay)
     }
@@ -115,7 +118,7 @@ class NucleoTest {
     }
 
     @Test fun planPagadoConOtroMedio() {
-        val s = Suscripcion(estado = "activa", plan = "inicial", medio = "apple", renueva = true)
+        val s = Suscripcion(estado = "activa", plan = "agente", medio = "apple", renueva = true)
         assertTrue(s.pagaAfuera)
         assertEquals("Se administra donde lo contrataste.", s.comoSePaga)
         assertFalse(s.copy(medio = "google").pagaAfuera)

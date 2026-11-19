@@ -2290,51 +2290,133 @@
   "soloLectura": false,
   "enPrueba": true,
   "funciones": [
-   "ia"
+   "alquileres",
+   "portales",
+   "mira",
+   "ia",
+   "informes"
   ],
   "agentes": {
    "usados": 2,
-   "cupo": null
+   "cupo": 4
   },
   "planes": [
    {
-    "id": "inicial",
-    "nombre": "Inicial",
-    "resumen": "Para arrancar solo",
+    "id": "agente",
+    "nombre": "Agente",
+    "resumen": "Para el corredor que trabaja solo.",
     "agentes": 1,
-    "precioMes": 29900,
-    "precioAnio": 299000,
-    "funciones": [],
+    "personaExtraMes": 0,
+    "personaExtraAnio": 0,
+    "propiedades": 30,
+    "contratos": 15,
+    "mira": 100,
+    "precioMes": 24900,
+    "precioAnio": 249000,
+    "funciones": [
+     "alquileres",
+     "portales",
+     "mira"
+    ],
     "incluye": [
-     "1 persona",
-     "Web y portales"
+     "1 persona que carga (lectores sin cargo)",
+     "Hasta 30 propiedades activas",
+     "Tu web con tu dominio",
+     "Mercado Libre, Zonaprop y Argenprop",
+     "Hasta 15 contratos de alquiler",
+     "MIRA: 100 carteles por mes"
     ],
     "destacado": false,
-    "appleMes": "ar.com.corredor.app.inicial.mes",
-    "appleAnio": "ar.com.corredor.app.inicial.anio"
+    "appleMes": "ar.com.corredor.app.agente.mes",
+    "appleAnio": "ar.com.corredor.app.agente.anio"
+   },
+   {
+    "id": "inmobiliaria",
+    "nombre": "Inmobiliaria",
+    "resumen": "Para la inmobiliaria con alquileres.",
+    "agentes": 4,
+    "personaExtraMes": 0,
+    "personaExtraAnio": 0,
+    "propiedades": 150,
+    "contratos": 100,
+    "mira": 0,
+    "precioMes": 59900,
+    "precioAnio": 599000,
+    "funciones": [
+     "alquileres",
+     "portales",
+     "mira",
+     "ia",
+     "informes"
+    ],
+    "incluye": [
+     "Hasta 4 personas que cargan",
+     "Hasta 150 propiedades activas",
+     "Hasta 100 contratos de alquiler",
+     "Todo lo del plan Agente",
+     "MIRA, asistente con IA y Corredor en tu IA",
+     "Informes básicos"
+    ],
+    "destacado": true,
+    "appleMes": "ar.com.corredor.app.inmobiliaria.mes",
+    "appleAnio": "ar.com.corredor.app.inmobiliaria.anio"
    },
    {
     "id": "equipo",
     "nombre": "Equipo",
-    "resumen": "Para la inmobiliaria con agentes",
-    "agentes": 5,
-    "precioMes": 59900,
-    "precioAnio": 599000,
+    "resumen": "Para la inmobiliaria que administra todo.",
+    "agentes": 12,
+    "personaExtraMes": 7900,
+    "personaExtraAnio": 79000,
+    "propiedades": 0,
+    "contratos": 0,
+    "mira": 0,
+    "precioMes": 119900,
+    "precioAnio": 1199000,
     "funciones": [
-     "ia"
+     "alquileres",
+     "portales",
+     "mira",
+     "ia",
+     "informes",
+     "informes_completos",
+     "consorcios",
+     "temporada",
+     "emprendimientos"
     ],
     "incluye": [
-     "Hasta 5 personas",
-     "Corredor en tu IA"
+     "12 personas que cargan, y más si las necesitás",
+     "Propiedades y contratos sin tope",
+     "Todo lo del plan Inmobiliaria",
+     "Consorcios y sueldos",
+     "Alquileres temporarios",
+     "Emprendimientos",
+     "Informes completos"
     ],
-    "destacado": true,
+    "destacado": false,
     "appleMes": "ar.com.corredor.app.equipo.mes",
     "appleAnio": "ar.com.corredor.app.equipo.anio"
    }
   ],
   "mercadoPago": false,
   "cobros": [],
-  "graciaDias": 3
+  "graciaDias": 3,
+  "planVigente": "inmobiliaria",
+  "personasExtra": 0,
+  "topes": {
+   "propiedades": {
+    "usados": 37,
+    "tope": 150
+   },
+   "contratos": {
+    "usados": 12,
+    "tope": 100
+   },
+   "mira": {
+    "usados": 18,
+    "tope": null
+   }
+  }
  },
  "/v1/ia/ajustes": {
   "habilitado": false,
