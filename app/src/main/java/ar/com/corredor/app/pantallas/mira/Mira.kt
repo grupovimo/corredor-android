@@ -402,7 +402,18 @@ fun MiraRaiz() {
             completar(x)
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             if (e is ErrorApi && e.sinConexion) fase = Fase.sinSenal
-            else { estado.avisar(e); fase = Fase.apuntando }
+            else {
+                estado.avisar(e)
+                // Una de la cola que vuelve a fallar (la IA apagada, un tope, sin respuesta) se carga a mano: la foto ya
+                // está y volver a la cámara la dejaba sin salida.
+                if (x0.estado == "error") {
+                    cola.actualizar(x)
+                    foto = x.copy()
+                    completar(x)
+                } else {
+                    fase = Fase.apuntando
+                }
+            }
         }
     }
 

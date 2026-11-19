@@ -291,7 +291,10 @@ fun Asistente(pregunta: String = "", enviar: Boolean = true) {
         arranco = true
         // En paralelo: el estado (si hay IA) no demora la primera pregunta.
         alcance.launch { if (info == null) info = estado.api.opcional<EstadoAsistente>("/v1/asistente") }
-        pregunta.nonEmpty?.let { if (enviar) preguntar(it) else texto = it }
+        val q0 = pregunta.nonEmpty
+        if (q0 != null) {
+            if (enviar) preguntar(q0) else texto = q0
+        }
     }
     // La respuesta se lee desde arriba: con un turno del asistente se va a su comienzo; con la pregunta o «Buscando…», al
     // final. Al abrir no se mueve (la cabeza y el aviso sin IA tienen que verse).
