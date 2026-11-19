@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.*
 import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.tema.*
+import ar.com.corredor.app.pantallas.mas.BandaPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
@@ -436,9 +437,15 @@ private fun CabeceraFicha(k: ContratoAPI, escribe: Boolean, cobrar: () -> Unit, 
             Texto(plazoFicha(k), Estilo.footnote, C.texto2)
             Texto(k.propiedadTitulo ?: "Contrato sin propiedad", Estilo.titulo, C.texto)
         }
+        if (k.enPlan == false) {
+            // Quedó fuera del plan al bajar: se ve; no se cobra ni se rinde desde Corredor.
+            BandaPlan("Quedó fuera de tu plan",
+                "Se ve, pero no se cobra ni se rinde desde Corredor. Nada se borró: pasá a un plan más grande, o marcá como rescindido otro que ya terminó.",
+                icono = "lock")
+        }
         if (escribe) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (k.tipo == "alquiler") BotonHundido("Registrar cobro", cobrar, Modifier.weight(1f), simbolo = "dollarsign.circle")
+                if (k.tipo == "alquiler" && k.enPlan != false) BotonHundido("Registrar cobro", cobrar, Modifier.weight(1f), simbolo = "dollarsign.circle")
                 BotonHundido("Renovar", renovar, Modifier.weight(1f), simbolo = "arrow.triangle.2.circlepath")
             }
         }
@@ -664,7 +671,7 @@ private fun FilaMesFicha(
                     Icono("ellipsis.circle", 20f, C.texto2)
                 }
             }
-        } else if (escribe) {
+        } else if (escribe && k.enPlan != false) {
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (k.contactoId != null && m.estado != "sin_registro") {
                     Box(Modifier.size(40.dp, 44.dp).clickable { recordar(m.periodo.take(7)) }.semantics { contentDescription = "Recordar por WhatsApp" },

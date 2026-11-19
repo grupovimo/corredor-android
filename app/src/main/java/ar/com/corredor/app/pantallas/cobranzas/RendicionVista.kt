@@ -305,7 +305,7 @@ fun RendicionVista(
             emitiendo = false
             confirmar = false
             val detalle = (e as? ErrorApi)?.detalle ?: ""
-            estado.sugerir("No se emitió · $detalle", "Reintentar") { confirmar = true }
+            estado.avisarConReintento(e, "No se emitió · $detalle") { confirmar = true }
         }
     }
 

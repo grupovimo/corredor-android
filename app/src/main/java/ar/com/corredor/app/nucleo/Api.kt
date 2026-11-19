@@ -39,8 +39,14 @@ data class ErrorApi(
     val reintentarEn: Int? = null,
     /** Los errores por campo del problem+json (`issues: [{path, message}]`): «direccion» → «Poné la dirección.». */
     val campos: Map<String, String> = emptyMap(),
+    /** En un 402 del plan (tope_plan, plan_insuficiente): el plan que lo habilita ("" si no hay uno) y el recurso con
+     *  tope. «Ver planes» abre Tu plan con ése elegido. */
+    val plan: String = "",
+    val recurso: String = "",
 ) : Exception(detalle) {
     val sinConexion: Boolean get() = codigo == "sin_conexion"
+    /** Lo frena el plan (402): se arregla eligiendo un plan, no reintentando. */
+    val delPlan: Boolean get() = estado == 402
     val sinSesion: Boolean get() = estado == 401 && codigo == "sin_sesion"
 
     companion object {
@@ -75,7 +81,7 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
     @Serializable
     private data class Problema(
         val status: Int? = null, val code: String? = null, val title: String? = null, val detail: String? = null,
-        val restantes: Int? = null, val issues: List<ProblemaApi.Campo>? = null,
+        val restantes: Int? = null, val issues: List<ProblemaApi.Campo>? = null, val plan: String? = null, val recurso: String? = null,
     )
 
     /** La URL de `ruta`. La ruta puede traer su propia query (`/v1/x?y=z`, como las acciones de los avisos). */
@@ -105,7 +111,7 @@ class Api(val base: String, @Volatile var token: String? = null, val http: OkHtt
         val campos = (p.issues ?: emptyList()).mapNotNull { c -> c.path?.let { it to (c.message ?: "Revisá este dato.") } }
             .groupBy({ it.first }, { it.second }).mapValues { it.value.first() }
         val e = ErrorApi(codigo, p.code ?: "interno", p.title ?: "Algo salió mal", p.detail ?: "Probá de nuevo en un rato.", p.restantes,
-            reintentar?.toIntOrNull(), campos)
+            reintentar?.toIntOrNull(), campos, p.plan ?: "", p.recurso ?: "")
         reaccionar(e.estado, e.codigo)
         throw e
     }

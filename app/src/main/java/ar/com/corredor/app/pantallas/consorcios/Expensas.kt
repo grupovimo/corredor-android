@@ -68,7 +68,7 @@ fun PestanaExpensasConsorcio(c: ConsorcioAPI, periodos: List<PeriodoAPI>) {
             estado.avisar("${Cons.plural(r.encolados, "recibo sale", "recibos salen")} por mail${if (sin.isEmpty()) "" else " · ${sin.size} sin mail (${sin.joinToString(", ")})"}")
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             val t = (e as? ErrorApi)?.detalle ?: "Probá de nuevo."
-            estado.sugerir("No se mandaron · $t", "Reintentar") { estado.tarea { enviar(f) } }
+            estado.avisarConReintento(e, "No se mandaron · $t") { estado.tarea { enviar(f) } }
         }
         mandando = false
     }

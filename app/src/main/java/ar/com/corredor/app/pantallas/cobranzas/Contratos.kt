@@ -75,6 +75,8 @@ data class ContratoAPI(
     val propiedadTitulo: String? = null,
     val contactoNombre: String? = null,
     val propietarioNombre: String? = null,
+    /** false: quedó fuera del plan al bajar (pasa el tope de contratos). Se ve; no se cobra ni se rinde. */
+    val enPlan: Boolean? = null,
 ) {
     val ajusteTexto: String
         get() {

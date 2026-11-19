@@ -231,9 +231,9 @@ class ColaMira private constructor() {
                 MiraLector.leer(x, api, this)
             } catch (e: CancellationException) { throw e } catch (e: ErrorApi) {
                 if (e.sinConexion) return
-                // El tope se renueva: la foto sigue en cola y no se prueba con las demás (no cuesta nada, la API corta
-                // antes de llamar a la IA).
-                if (e.codigo == "tope_ia") { actualizar(x); return }
+                // El tope se renueva (el de la IA, o el de MIRA del plan al mes siguiente): la foto sigue en cola, con su
+                // archivo ya subido, y no se prueba con las demás (la API corta antes de llamar a la IA).
+                if (e.codigo == "tope_ia" || e.codigo == "tope_plan") { actualizar(x); return }
                 x.estado = "error"
                 x.error = e.detalle
             } catch (e: Exception) {}
@@ -405,8 +405,9 @@ fun MiraRaiz() {
             else {
                 estado.avisar(e)
                 // Una de la cola que vuelve a fallar (la IA apagada, un tope, sin respuesta) se carga a mano: la foto ya
-                // está y volver a la cámara la dejaba sin salida.
-                if (x0.estado == "error") {
+                // está y volver a la cámara la dejaba sin salida. Con el tope de MIRA del plan (402), igual: la foto se
+                // guarda con su archivo y se carga a mano, con el aviso y «Ver planes» acá.
+                if (x0.estado == "error" || (e is ErrorApi && e.delPlan)) {
                     cola.actualizar(x)
                     foto = x.copy()
                     completar(x)

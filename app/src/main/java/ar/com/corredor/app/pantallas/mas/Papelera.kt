@@ -116,7 +116,7 @@ fun Papelera() {
             if (d != null) estado.sugerir("Recuperaste ${b.titulo}", "Ver", d) else estado.avisar("Recuperaste ${b.titulo}")
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             ocultos = ocultos - b.clave
-            estado.sugerir("No se recuperó · ${(e as? ErrorApi)?.detalle ?: "probá de nuevo"}", "Reintentar") { alcance.launch { recuperar(b) } }
+            estado.avisarConReintento(e, "No se recuperó · ${(e as? ErrorApi)?.detalle ?: "probá de nuevo"}") { alcance.launch { recuperar(b) } }
         }
     }
 

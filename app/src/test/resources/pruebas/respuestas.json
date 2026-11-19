@@ -2350,10 +2350,10 @@
      "informes"
     ],
     "incluye": [
+     "Todo lo del plan\u00a0Agente, y además:",
      "Hasta 4 personas que cargan",
      "Hasta 150 propiedades activas",
      "Hasta 100 contratos de alquiler",
-     "Todo lo del plan Agente",
      "MIRA, asistente con IA y Corredor en tu IA",
      "Informes básicos"
     ],
@@ -2385,9 +2385,9 @@
      "emprendimientos"
     ],
     "incluye": [
-     "12 personas que cargan, y más si las necesitás",
+     "Todo lo del plan\u00a0Inmobiliaria, y además:",
+     "12 personas que cargan (+$7.900 por mes cada persona extra)",
      "Propiedades y contratos sin tope",
-     "Todo lo del plan Inmobiliaria",
      "Consorcios y sueldos",
      "Alquileres temporarios",
      "Emprendimientos",
@@ -2428,7 +2428,7 @@
  "/v1/ia/conexiones": [],
  "/v1/asistente": {
   "ia": false,
-  "aviso": "La IA viene con el plan Profesional. Sin ella contesto lo más común.",
+  "aviso": "La IA viene con el plan Inmobiliaria. Sin ella contesto lo más común.",
   "sugerencias": [
    "¿Qué contratos ajustan este mes?",
    "¿Quiénes deben el alquiler?",

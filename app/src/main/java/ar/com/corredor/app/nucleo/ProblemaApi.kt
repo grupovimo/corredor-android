@@ -10,6 +10,9 @@ data class ProblemaApi(
     val title: String? = null,
     val detail: String? = null,
     val issues: List<Campo>? = null,
+    /** En un 402 del plan: el plan que lo habilita y el recurso con tope (personas, propiedades…). */
+    val plan: String? = null,
+    val recurso: String? = null,
 ) {
     @Serializable
     data class Campo(val path: String? = null, val message: String? = null)

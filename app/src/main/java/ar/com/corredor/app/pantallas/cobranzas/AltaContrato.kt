@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import ar.com.corredor.app.app.*
 import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.tema.*
+import ar.com.corredor.app.pantallas.mas.BandaPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -356,7 +357,7 @@ fun AltaContrato(
                 return
             }
             s.creando = false
-            estado.sugerir(ea?.let { if (it.detalle.isEmpty()) it.titulo else it.detalle } ?: "No se creó el contrato.", "Reintentar") {
+            estado.avisarConReintento(e, ea?.let { if (it.detalle.isEmpty()) it.titulo else it.detalle } ?: "No se creó el contrato.") {
                 alcance.launch { crear() }
             }
             return
@@ -468,6 +469,13 @@ fun AltaContrato(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         CabezaAlta(s) { programarGuardado(ya = true) }
+                        // Con el tope de contratos lleno se avisa al abrir (una renovación no ocupa otro lugar).
+                        val lleno = if (s.paso == 0 && s.d.renueva == null) estado.suscripcion?.topeLleno("contratos") else null
+                        if (lleno != null) {
+                            BandaPlan("Tenés ${lleno.usados} de ${lleno.tope} contratos de alquiler, el tope de tu plan ${lleno.plan}",
+                                "Lo que cargues queda como borrador hasta que pases a ${lleno.siguiente?.nombre ?: "un plan más grande"} o marques como rescindido uno que ya terminó. Una renovación no ocupa otro lugar.",
+                                plan = lleno.siguiente?.id ?: "")
+                        }
                         when (s.paso) {
                             0 -> PasoPartesAlta(s, renovar, operacion)
                             1 -> PasoPlazoAlta(s)

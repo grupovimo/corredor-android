@@ -49,6 +49,8 @@ data class Suscripcion(
     val importe: Double? = null,
     val moneda: String? = null,
     val esperando: String? = null,
+    /** Una baja de plan ya autorizada (Mercado Pago): el actual sigue hasta `desde` y ahí entra éste. */
+    val proximo: Proximo? = null,
     val soloLectura: Boolean = false,
     val enPrueba: Boolean = false,
     /** Cuándo se borran los datos si no elige un plan (sólo vencida y con la purga prendida; si no, null). */
@@ -92,6 +94,9 @@ data class Suscripcion(
     @Serializable
     data class Agentes(val usados: Int = 0, val cupo: Int? = null)
 
+    @Serializable
+    data class Proximo(val plan: String, val ciclo: String = "mes", val desde: FechaApi = Instant.EPOCH)
+
     /** Lo usado de un recurso con tope (tope null: sin tope). */
     @Serializable
     data class Uso(val usados: Int = 0, val tope: Int? = null)
@@ -105,10 +110,49 @@ data class Suscripcion(
         val alguno: Boolean get() = personas + propiedades + contratos > 0
     }
 
-    fun deMas(p: Plan): DeMas {
+    /** `conExtras`: cuenta las personas pagas aparte; una compra en la tienda las pone en 0 (Apple y Google no venden
+     *  personas extra), así que el ticket de la app las deja afuera. */
+    fun deMas(p: Plan, conExtras: Boolean = true): DeMas {
         fun de(u: Uso?, t: Int): Int = if (u == null || t <= 0) 0 else maxOf(0, u.usados - t)
-        val extras = if (p.personaExtraMes > 0) personasExtra else 0
+        val extras = if (conExtras && p.personaExtraMes > 0) personasExtra else 0
         return DeMas(maxOf(0, agentes.usados - p.agentes - extras), de(topes?.propiedades, p.propiedades), de(topes?.contratos, p.contratos))
+    }
+
+    /** Lo que pasa el tope del plan que rige (después de bajar de plan): se ve, no se borra. */
+    val fueraDelPlan: DeMas get() {
+        fun de(u: Uso?): Int = u?.tope?.let { maxOf(0, u.usados - it) } ?: 0
+        return DeMas(agentes.cupo?.let { maxOf(0, agentes.usados - it) } ?: 0, de(topes?.propiedades), de(topes?.contratos))
+    }
+
+    /** «6 propiedades y 2 contratos» (lo que quedó fuera del plan), o null si nada. */
+    val textoFuera: String? get() {
+        val f = fueraDelPlan
+        val partes = buildList {
+            if (f.propiedades > 0) add(if (f.propiedades == 1) "1 propiedad" else "${f.propiedades} propiedades")
+            if (f.contratos > 0) add(if (f.contratos == 1) "1 contrato" else "${f.contratos} contratos")
+            if (f.personas > 0) add(if (f.personas == 1) "1 persona" else "${f.personas} personas")
+        }
+        if (partes.isEmpty()) return null
+        return if (partes.size == 1) partes[0] else partes.dropLast(1).joinToString(", ") + " y " + partes.last()
+    }
+
+    /** El tope ya lleno de un recurso (personas, propiedades, contratos): lo que se cargue de más no entra. Con el plan
+     *  que da más lugar (como la API: el más chico más grande que el que rige). */
+    data class TopeLleno(val usados: Int, val tope: Int, val plan: String, val siguiente: Plan?)
+
+    fun topeLleno(recurso: String): TopeLleno? {
+        val u = when (recurso) {
+            "personas" -> Uso(agentes.usados, agentes.cupo)
+            "propiedades" -> topes?.propiedades
+            else -> topes?.contratos
+        } ?: return null
+        val t = u.tope ?: return null
+        if (u.usados < t) return null
+        fun tope(p: Plan): Int = when (recurso) { "personas" -> p.agentes; "propiedades" -> p.propiedades; else -> p.contratos }
+        val i = planes.indexOfFirst { it.id == (planVigente ?: plan) }.coerceAtLeast(0)
+        val actual = planes.getOrNull(i)
+        val sig = planes.drop(i + 1).firstOrNull { p -> actual == null || tope(p) == 0 || tope(p) > tope(actual) } ?: planes.lastOrNull()
+        return TopeLleno(u.usados, t, planQueRige?.nombre ?: "", sig)
     }
 
     @Serializable
@@ -125,8 +169,10 @@ data class Suscripcion(
         else -> "Sólo lectura"
     }
 
-    /** Hay que avisarle arriba (Inicio, Más): la última semana de prueba, sin renovar o vencida. */
-    val pideAtencion: Boolean get() = estado == "vencida" || (estado == "prueba" && diasRestantes <= 7) || (estado == "baja" && diasRestantes <= 7)
+    /** Hay que avisarle arriba (Inicio, Más): la última semana de prueba, sin renovar, vencida o con algo fuera del plan
+     *  (bajó de plan con más de lo que entra). */
+    val pideAtencion: Boolean get() = estado == "vencida" || (estado == "prueba" && diasRestantes <= 7) || (estado == "baja" && diasRestantes <= 7) ||
+        textoFuera != null
 
     /** Se paga con Mercado Pago desde la web (no se puede cambiar desde el teléfono). */
     val conMercadoPago: Boolean get() = medio == "mercadopago" && renueva && !soloLectura

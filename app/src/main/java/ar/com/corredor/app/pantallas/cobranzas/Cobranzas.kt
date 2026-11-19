@@ -780,7 +780,7 @@ object Cobrar {
         mostrar?.invoke()
         val n = TextosCobro.primerNombre(a.nombre)
         val detalle = (e as? ErrorApi)?.detalle ?: ""
-        estado.sugerir("No se guardó el cobro de ${if (n.isEmpty()) "este contrato" else n}. $detalle", "Reintentar") {
+        estado.avisarConReintento(e, "No se guardó el cobro de ${if (n.isEmpty()) "este contrato" else n}. $detalle") {
             registrar(estado, a, monto, medio, conceptos, pagadoEl, texto, ocultar, mostrar, recibo, alListo)
         }
     }

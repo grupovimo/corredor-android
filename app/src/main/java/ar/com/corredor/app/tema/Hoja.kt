@@ -129,6 +129,8 @@ fun Hoja(
                         }
                     }
                 }
+                // El aviso de abajo dentro de la hoja (es otra ventana: el de la raíz queda tapado).
+                AvisoDentro(alCerrar)
             }
         }
     }

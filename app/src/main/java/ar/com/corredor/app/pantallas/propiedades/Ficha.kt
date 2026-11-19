@@ -54,6 +54,7 @@ import ar.com.corredor.app.pantallas.cartera.Contacto
 import ar.com.corredor.app.pantallas.cartera.Operacion
 import ar.com.corredor.app.pantallas.cobranzas.ContratoAPI
 import ar.com.corredor.app.tema.*
+import ar.com.corredor.app.pantallas.mas.BandaPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -154,7 +155,19 @@ fun FichaPropiedad(
     var yaAbrio by remember { mutableStateOf(false) }
 
     val lector = !estado.escribe
+    /** Se puede editar y publicar: escribe y la propiedad entra en el plan (la que quedó fuera se ve, pero no se edita;
+     *  la API lo frena igual). */
+    val edita = estado.escribe && p?.fueraDelPlan != true
     val link = "${web ?: ""}/propiedades/${p?.slug ?: id}"
+
+    /** Compartir: fuera del plan, su link no la muestra (dice «Consultanos»), así que no se manda y se dice. */
+    fun abrirCompartir() {
+        if (p?.fueraDelPlan == true) {
+            estado.sugerirIr("Quedó fuera de tu plan: su link no la muestra. Pasá a un plan más grande para compartirla.", "Ver planes") { estado.irAPlan() }
+            return
+        }
+        compartir = true
+    }
 
     // MARK: Lo que se calcula
 
@@ -171,6 +184,7 @@ fun FichaPropiedad(
     val proximaVisita = visitasProp.filter { it.estado == "pendiente" && it.empiezaEn > Instant.now().minusSeconds(7200) }.minByOrNull { it.empiezaEn }
 
     fun portales(p: Propiedad): List<FilaPortal> = PortalesCartera.todos.map { pt ->
+        if (pt.clave == "web" && p.fueraDelPlan) return@map FilaPortal("web", pt.nombre, "pausa", "No se muestra: quedó fuera de tu plan")
         if (pt.clave == "web") {
             return@map FilaPortal(
                 "web", pt.nombre, if (p.publicada == true) "ok" else "off",
@@ -428,7 +442,7 @@ fun FichaPropiedad(
         if (pv != null) {
             Refrescable({ cargar() }, Modifier.fillMaxSize()) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    HeroeFicha(pv, alSumarFotos = { if (estado.escribe) estado.abrir(AEditarEnPaso(id = pv.id, paso = "fotos")) }) { i ->
+                    HeroeFicha(pv, alSumarFotos = { if (edita) estado.abrir(AEditarEnPaso(id = pv.id, paso = "fotos")) }) { i ->
                         estado.abrir(AGaleria(id = pv.id, indice = i))
                     }
                     Box(Modifier.fillMaxWidth().offset(y = (-22).dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))) {
@@ -440,6 +454,11 @@ fun FichaPropiedad(
                     ) {
                         // Cabeza
                         CabezaFicha(pv, senal, lugar(pv), lineaPrecio(pv), cargada(pv, senal))
+                        if (pv.fueraDelPlan) {
+                            BandaPlan("Quedó fuera de tu plan",
+                                "No sale en tu web ni en los portales, y no se edita. Nada se borró: pasá a un plan más grande, o marcá otra como vendida, alquilada o suspendida.",
+                                icono = "lock")
+                        }
                         proximaVisita?.let { v ->
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(M.rTarjeta)).background(C.avisoFondo).padding(14.dp),
@@ -459,7 +478,7 @@ fun FichaPropiedad(
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(Modifier.weight(1f)) { TituloBloque("Comodidades") }
-                                    if (estado.escribe) BotonLinkFicha("Editar", Estilo.subheadFuerte, C.accion) { estado.abrir(AEditarEnPaso(id = pv.id, paso = "comodidades")) }
+                                    if (edita) BotonLinkFicha("Editar", Estilo.subheadFuerte, C.accion) { estado.abrir(AEditarEnPaso(id = pv.id, paso = "comodidades")) }
                                 }
                                 ChipsComodidades(pv.comodidades ?: emptyList())
                             }
@@ -510,7 +529,7 @@ fun FichaPropiedad(
                                                     Texto(x.nombre, Estilo.filaLista, C.texto)
                                                     Texto(x.detalle, Estilo.footnote, if (x.estado == "err") C.errorTinta else C.texto2, lineas = 2)
                                                 }
-                                                if (portalEnUso == x.clave) Rueda() else if (!lector) {
+                                                if (portalEnUso == x.clave) Rueda() else if (edita) {
                                                     when {
                                                         x.estado == "ok" && x.clave == "web" -> BotonLinkFicha("Copiar link", Estilo.footnoteFuerte, C.accion) {
                                                             copiar(ctx, link); estado.avisar("Link copiado. Pegalo donde quieras mandarlo.")
@@ -668,7 +687,7 @@ fun FichaPropiedad(
                                                     Texto(Formato.cantidad(buscan.size, "contacto busca algo así", "contactos buscan algo así"), Estilo.filaLista, C.texto)
                                                     Texto(resumenBusca(pv), Estilo.footnote, C.texto2)
                                                 }
-                                                BotonTonal("Mandarles", { compartir = true }, alto = 30.dp)
+                                                BotonTonal("Mandarles", { abrirCompartir() }, alto = 30.dp)
                                             }
                                         }
                                         if (ps.size > 3) {
@@ -712,7 +731,7 @@ fun FichaPropiedad(
                                 } else {
                                     Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Texto("Sin propietario cargado.", Estilo.footnote, C.texto2)
-                                        if (estado.escribe) BotonLinkFicha("Sumalo desde la ficha", Estilo.footnoteFuerte, C.accion) { estado.abrir(AAltaPropiedad(editar = pv.id)) }
+                                        if (edita) BotonLinkFicha("Sumalo desde la ficha", Estilo.footnoteFuerte, C.accion) { estado.abrir(AAltaPropiedad(editar = pv.id)) }
                                         Spacer(Modifier.weight(1f))
                                     }
                                 }
@@ -747,13 +766,13 @@ fun FichaPropiedad(
             Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CirculoFicha("chevron.left", "Volver") { cerrar() }
                 Spacer(Modifier.weight(1f))
-                if (estado.escribe) {
+                if (edita) {
                     CirculoFicha("pencil", "Editar") { estado.abrir(AAltaPropiedad(editar = pv.id)) }
                     CirculoFicha(if (pv.destacada == true) "pin.fill" else "pin", if (pv.destacada == true) "Desfijar" else "Fijar en el lateral") { fijar(pv) }
                 }
-                CirculoFicha("square.and.arrow.up", "Compartir") { compartir = true }
+                CirculoFicha("square.and.arrow.up", "Compartir") { abrirCompartir() }
                 MenuBoton(buildList {
-                    if (estado.escribe) {
+                    if (edita) {
                         add(OpcionDeMenu("Editar", "pencil") { estado.abrir(AAltaPropiedad(editar = pv.id)) })
                         if (pv.operacion != "temporario") add(OpcionDeMenu("Reservar", "bookmark") { reservar = true })
                         add(OpcionDeMenu(if (pv.destacada == true) "Desfijar" else "Fijar en el lateral", "pin") { fijar(pv) })
@@ -779,7 +798,7 @@ fun FichaPropiedad(
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(C.fondo.copy(alpha = 0.94f)).navigationBarsPadding()) {
                 Box(Modifier.fillMaxWidth().height(0.5.dp).background(C.linea))
                 Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Tocable({ compartir = true }, Modifier.weight(1f)) {
+                    Tocable({ abrirCompartir() }, Modifier.weight(1f)) {
                         Row(
                             Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(14.dp)).background(hex(0x25D366)),
                             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
@@ -790,7 +809,7 @@ fun FichaPropiedad(
                     }
                     if (estado.escribe) CuadradoFicha("calendar", "Agendar visita") { agendar = true }
                     propietario?.telefono?.let { t -> CuadradoFicha("phone", "Llamar al propietario") { Afuera.llamar(t) } }
-                    if (estado.escribe) CuadradoFicha("camera", "Sumar fotos") { estado.abrir(AEditarEnPaso(id = pv.id, paso = "fotos")) }
+                    if (edita) CuadradoFicha("camera", "Sumar fotos") { estado.abrir(AEditarEnPaso(id = pv.id, paso = "fotos")) }
                 }
             }
         } else if (ev != null) {

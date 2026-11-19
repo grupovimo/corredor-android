@@ -316,6 +316,17 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
     var enviando by remember { mutableStateOf(false) }
     var campos by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var link by remember { mutableStateOf<String?>(null) }
+    /** El 402 de la API (el cupo se llenó entre que se abrió y se mandó), dicho debajo del mail como la web. */
+    var frenoPlan by remember { mutableStateOf<ErrorApi?>(null) }
+    /** El cupo de personas que cargan ya está lleno: se invita como lector (sin cargo), y se dice antes. */
+    val lleno = estado.suscripcion?.topeLleno("personas")
+    LaunchedEffect(Unit) { if (lleno != null) rol = "lector" }
+
+    /** «Ver planes» desde la hoja: primero se cierra, después Tu plan. */
+    fun irAPlan(plan: String) {
+        alCerrar()
+        estado.irAPlan(plan)
+    }
 
     @Serializable data class Cuerpo(val email: String, val rol: String)
 
@@ -332,7 +343,11 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
             val i = Api.json.decodeFromString<EquipoTipos.Invitacion>(d)
             link = i.link ?: ""
             alInvitar()
-        } catch (e: CancellationException) { throw e } catch (e: Exception) { campos = estado.camposDe(e) } finally { enviando = false }
+        } catch (e: CancellationException) { throw e } catch (e: Exception) {
+            frenoPlan = null
+            val ea = (e as? ErrorCampos)?.api ?: (e as? ErrorApi)
+            if (ea != null && ea.delPlan) { frenoPlan = ea; estado.cargarSuscripcion() } else campos = estado.camposDe(e)
+        } finally { enviando = false }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -345,6 +360,10 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
             })
         ListaAgrupada {
             Texto(Formato.sinViudas("Le llega un mail con el link. También podés copiarlo y mandarlo por WhatsApp."), Estilo.footnote, C.texto2, Modifier.padding(horizontal = 16.dp))
+            val s = estado.suscripcion
+            if (link == null && lleno != null && s != null) {
+                Box(Modifier.padding(horizontal = 16.dp)) { BandaCupo(lleno, s) { irAPlan(it) } }
+            }
             val l = link
             if (l != null) {
                 SeccionLista {
@@ -364,12 +383,17 @@ fun InvitarAlEquipo(alCerrar: () -> Unit, alInvitar: suspend () -> Unit) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Entrada(mail, { mail = it }, "nombre@gmail.com", Modifier.semantics { contentDescription = "Mail" }, teclado = KeyboardType.Email, sinCorrector = true)
                             ErrorDeCampo(campos["email"])
+                            frenoPlan?.let { f ->
+                                MensajeError(f.detalle.ifEmpty { f.titulo })
+                                BotonTexto("Ver planes", { irAPlan(f.plan) }, alto = 40.dp)
+                            }
                         }
                     }
                 }
                 SeccionLista("Rol") {
                     Box(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        Segmentado(listOf("agente" to "Agente", "lector" to "Lector", "duenio" to "Dueño"), rol, { rol = it })
+                        // Con el cupo lleno, sólo Lector (sin cargo): la franja de arriba dice por qué.
+                        Segmentado(if (lleno != null) listOf("lector" to "Lector") else listOf("agente" to "Agente", "lector" to "Lector", "duenio" to "Dueño"), rol, { rol = it })
                     }
                     Separador()
                     FilaLista { Texto(Formato.sinViudas(EquipoTipos.roles.firstOrNull { it.first == rol }?.third ?: ""), Estilo.footnote, C.texto2) }
@@ -423,5 +447,24 @@ fun CarteraAgente(usuario: String, nombre: String) {
                 } else EsqueletoFilas(5)
             }
         }
+    }
+}
+
+/** La franja del cupo lleno al invitar (bandaCupo en Equipo.swift). */
+@Composable
+private fun BandaCupo(l: Suscripcion.TopeLleno, s: Suscripcion, ir: (String) -> Unit) {
+    val personas = if (l.tope == 1) "1 persona que carga" else "${l.tope} personas que cargan"
+    val extra = s.planQueRige?.personaExtraMes ?: 0.0
+    if (extra > 0) {
+        // El Equipo suma personas pagas, pero con Mercado Pago (la tienda no las vende).
+        val id = s.planQueRige?.id ?: ""
+        BandaPlan("Tu plan ${l.plan} es para $personas",
+            "Invitala como lectora (sin cargo). Cada persona más cuesta ${Formato.plata(extra)} por mes y se suma pagando con Mercado Pago desde la web.",
+            plan = id, ir = { ir(id) })
+    } else {
+        val id = l.siguiente?.id ?: ""
+        BandaPlan("Tu plan ${l.plan} es para $personas",
+            "Invitala como lectora (sin cargo), o pasá a ${l.siguiente?.nombre ?: "un plan más grande"} para sumar a alguien que cargue.",
+            plan = id, accion = l.siguiente?.let { "Pasar a ${it.nombre}" } ?: "Ver planes", ir = { ir(id) })
     }
 }

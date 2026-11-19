@@ -346,7 +346,11 @@ fun PantallaCompleta(visible: Boolean, alCerrar: () -> Unit, cerrable: Boolean =
         // `cerrable = false` es `.interactiveDismissDisabled()`: «atrás» no la cierra.
         BackHandler(enabled = cerrable) { alCerrar() }
         CompositionLocalProvider(LocalCerrarHoja provides alCerrar) {
-            Box(Modifier.fillMaxSize().background(C.fondo).clickable(remember { MutableInteractionSource() }, null) {}) { contenido() }
+            Box(Modifier.fillMaxSize().background(C.fondo).clickable(remember { MutableInteractionSource() }, null) {}) {
+                contenido()
+                // El aviso de abajo encima de la pantalla completa (MIRA, el alta): el de la raíz queda debajo.
+                AvisoDentro(alCerrar)
+            }
         }
     }
 }

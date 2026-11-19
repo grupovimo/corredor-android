@@ -87,6 +87,7 @@ import ar.com.corredor.app.app.BotonBarra
 import ar.com.corredor.app.app.LocalEstado
 import ar.com.corredor.app.nucleo.*
 import ar.com.corredor.app.tema.*
+import ar.com.corredor.app.pantallas.mas.BandaPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -523,6 +524,12 @@ fun AltaPropiedad(
     var envioAlta by remember { mutableStateOf(UUID.randomUUID().toString()) }
     var web by remember { mutableStateOf<String?>(null) }
     var ultimo by remember { mutableStateOf<DatosAlta?>(null) }
+    /** El servidor no la dejó publicar por el plan (402): queda el borrador, y se dice acá. */
+    var frenoPlan by remember { mutableStateOf<ErrorApi?>(null) }
+    /** Alta nueva con el tope de propiedades activas lleno: queda como borrador hasta que haya lugar. */
+    val sinLugar = if (editar == null) estado.suscripcion?.topeLleno("propiedades") else null
+    /** Edición de una que quedó fuera del plan: no se edita (cada guardado chocaría con el 402). */
+    val fueraDelPlan = editar != null && base?.fueraDelPlan == true
     val tareas = remember { TareasAlta() }
     val desplazar = rememberScrollState()
     val posiciones = remember { mutableStateMapOf<String, Int>() }
@@ -534,6 +541,7 @@ fun AltaPropiedad(
 
     val etiquetaSeguir: String = run {
         if (editar != null) return@run "Listo"
+        if (sinLugar != null || frenoPlan != null) return@run "Guardar como borrador"
         if (publicando) return@run "Publicando…"
         val n = lugares.size
         if (n == 0) "Guardar sin publicar" else "Publicar en $n ${if (n == 1) "lugar" else "lugares"}"
@@ -618,7 +626,7 @@ fun AltaPropiedad(
     }
 
     fun programarGuardado() {
-        if (publicando || salidas != null || d == ultimo) return
+        if (publicando || salidas != null || d == ultimo || fueraDelPlan) return
         tareas.espera?.cancel()
         tareas.espera = alcance.launch {
             delay(if (editar == null) 800 else 700)
@@ -709,6 +717,8 @@ fun AltaPropiedad(
                 estado.avisar(e.error)
                 return
             } catch (e: ErrorApi) {
+                // El tope del plan: reintentar no sirve; la franja dice que quedó como borrador.
+                if (e.delPlan) frenoPlan = e
                 if (e.sinConexion) {
                     // Sin señal, el alta queda en la cola y se sube sola (con la misma clave: no se carga dos veces).
                     try {
@@ -767,8 +777,17 @@ fun AltaPropiedad(
         }
         if (editar != null) {
             tareas.espera?.cancel()
+            if (fueraDelPlan) { cerrar(); return }
             guardarYa()
             if (guardado != "error") { estado.version += 1; cerrar() }
+            return
+        }
+        if (sinLugar != null || frenoPlan != null) {
+            // Sin lugar en el plan: queda el borrador (se retoma desde «Nueva» cuando haya lugar).
+            tareas.espera?.cancel()
+            guardarYa()
+            estado.avisar("Quedó guardada como borrador. La publicás cuando tengas lugar en tu plan.")
+            cerrar()
             return
         }
         publicar()
@@ -993,6 +1012,18 @@ fun AltaPropiedad(
                         Texto(textoGuardado, Estilo(13f, Peso.semibold), tinta)
                         if (guardado == "error") Box(Modifier.clickable { alcance.launch { guardarYa() } }) { Texto("Reintentar", Estilo(13f, Peso.bold), tinta) }
                     }
+                }
+                // La franja del plan en el momento justo: al abrir el alta con el tope lleno, si el servidor la frenó al
+                // publicar, o al editar una que quedó fuera del plan.
+                val f = frenoPlan
+                when {
+                    fueraDelPlan -> BandaPlan("Quedó fuera de tu plan",
+                        "Se ve, pero no se edita ni sale en tu web ni en los portales. Para editarla, pasá a un plan más grande o marcá otra como vendida, alquilada o suspendida.",
+                        icono = "lock")
+                    f != null -> BandaPlan("Quedó guardada como borrador", f.detalle.ifEmpty { f.titulo }, plan = f.plan)
+                    sinLugar != null -> BandaPlan("Tenés ${sinLugar.usados} de ${sinLugar.tope} propiedades activas, el tope de tu plan ${sinLugar.plan}",
+                        "Esta queda como borrador hasta que pases a ${sinLugar.siguiente?.nombre ?: "un plan más grande"} o marques otra como vendida, alquilada o suspendida.",
+                        plan = sinLugar.siguiente?.id ?: "")
                 }
                 // A medio cargar: «Para seguir», los borradores de la persona (de la web, de otro aparato o de MIRA).
                 if (editar == null && borradorId == null && paraSeguir.isNotEmpty() && d == DatosAlta()) {

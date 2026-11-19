@@ -521,7 +521,7 @@ class PantallasTest {
     @Test fun planPagadoAfuera() {
         val base = Api.json.parseToJsonElement(ApiDePrueba.respuestas["/v1/suscripcion"]!!).jsonObject
         val s = JsonObject(base + mapOf(
-            "estado" to JsonPrimitive("activa"), "plan" to JsonPrimitive("inicial"), "medio" to JsonPrimitive("apple"),
+            "estado" to JsonPrimitive("activa"), "plan" to JsonPrimitive("agente"), "medio" to JsonPrimitive("apple"),
             "renueva" to JsonPrimitive(true), "enPrueba" to JsonPrimitive(false), "diasRestantes" to JsonPrimitive(20),
         ))
         montar("PlanPagadoAfuera", estado(extra = mapOf("/v1/suscripcion" to s.toString()))) { PantallaPlan() }

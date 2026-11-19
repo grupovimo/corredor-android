@@ -602,7 +602,7 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
     fun fila(p: Propiedad) {
         val s = senales[p.id]
         val mandar = AccionFila("Mandar", "square.and.arrow.up", hex(0x25D366)) { compartir = p }
-        val derecha: List<AccionFila> = if (estado.escribe && !seleccionando) listOf(
+        val derecha: List<AccionFila> = if (estado.escribe && !seleccionando && !p.fueraDelPlan) listOf(
             AccionFila(
                 if (p.publicada == false) "Publicar" else "Despublicar", if (p.publicada == false) "arrow.up.circle" else "eye.slash", hex(0x8E8E93),
             ) { publicar(p) },
@@ -612,8 +612,10 @@ fun PropiedadesRaiz(inicial: FiltrosCartera? = null, titulo: String? = null) {
             add(OpcionDeMenu("Mandar la ficha", "square.and.arrow.up") { compartir = p })
             if (estado.escribe) {
                 add(OpcionDeMenu("Agendar visita", "calendar.badge.plus") { agendar = p })
-                add(OpcionDeMenu("Editar", "pencil") { estado.abrir(AAltaPropiedad(editar = p.id)) })
-                add(OpcionDeMenu(if (p.publicada == false) "Publicar" else "Despublicar", if (p.publicada == false) "arrow.up.circle" else "eye.slash") { publicar(p) })
+                if (!p.fueraDelPlan) {
+                    add(OpcionDeMenu("Editar", "pencil") { estado.abrir(AAltaPropiedad(editar = p.id)) })
+                    add(OpcionDeMenu(if (p.publicada == false) "Publicar" else "Despublicar", if (p.publicada == false) "arrow.up.circle" else "eye.slash") { publicar(p) })
+                }
                 add(OpcionDeMenu("Seleccionar", "checkmark.circle") { seleccionando = true; marcar(p.id) })
             }
         }
@@ -819,6 +821,8 @@ fun fijadaPropiedad(p: Propiedad, s: Senal?): Pair<String, Tono?> {
 
 /** El chip de estado de cada fila (3A): lo más importante que le pasa a la propiedad (`PropiedadesRaiz.chip` en iOS). */
 fun chipPropiedad(p: Propiedad, s: Senal?): Pair<String, Tono> {
+    // Quedó fuera del plan al bajar: no sale en la web ni se edita (lo más importante que le pasa).
+    if (p.fueraDelPlan) return "Fuera de tu plan" to Tono.oro
     Cartera.atencion(p, s)?.let { a -> return a.first to (if (a.second == Tono.neutro) Tono.verde else a.second) }
     return Cartera.estado(p)
 }

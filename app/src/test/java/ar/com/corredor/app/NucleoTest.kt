@@ -57,6 +57,31 @@ class NucleoTest {
         assertFalse(s.googlePlay)
     }
 
+    /** El ticket de la compra en la tienda: Google y Apple dejan las personas extra en 0, así que no se cuentan (Equipo
+     *  con 3 extras pagadas por Mercado Pago y 15 que cargan: 3 quedan sin cargar). Igual que testDeMasSinExtrasEnLaTienda. */
+    @Test fun deMasSinExtrasEnLaTienda() {
+        val json = """
+        {"estado":"baja","plan":"equipo","ciclo":"mes","medio":"mercadopago","pruebaHasta":"2026-10-01T12:00:00Z","pagadoHasta":"2026-12-01T12:00:00Z",
+         "vigenteHasta":"2026-12-01T12:00:00Z","diasRestantes":12,"renueva":false,"soloLectura":false,"enPrueba":false,"personasExtra":3,
+         "agentes":{"usados":15,"cupo":15},"planVigente":"equipo",
+         "topes":{"propiedades":{"usados":36,"tope":null},"contratos":{"usados":3,"tope":null},"mira":{"usados":0,"tope":null}},
+         "planes":[{"id":"agente","nombre":"Agente","resumen":"x","agentes":1,"propiedades":30,"contratos":15,"mira":100,"precioMes":24900,"precioAnio":249000,
+           "incluye":[],"destacado":false,"appleMes":"a.mes","appleAnio":"a.anio"},
+          {"id":"equipo","nombre":"Equipo","resumen":"x","agentes":12,"personaExtraMes":7900,"precioMes":119900,"precioAnio":1199000,
+           "incluye":[],"destacado":false,"appleMes":"e.mes","appleAnio":"e.anio"}],
+         "mercadoPago":true,"cobros":[]}
+        """
+        val s = Api.json.decodeFromString<Suscripcion>(json)
+        val equipo = s.planes[1]
+        assertEquals(0, s.deMas(equipo).personas)
+        assertEquals(3, s.deMas(equipo, conExtras = false).personas)
+        // Bajar a Agente: 6 propiedades de más; el carrito lo dice.
+        assertEquals(6, s.deMas(s.planes[0]).propiedades)
+        assertEquals(null, s.textoFuera)
+        assertEquals(null, s.topeLleno("propiedades"))
+        assertEquals(15, s.topeLleno("personas")?.tope)
+    }
+
     @Test fun diaDeConsorciosEnHoraArgentina() {
         // Cargado el 17 a las 22:30 en Buenos Aires: en UTC ya es el 18.
         assertEquals("2026-11-17", Cons.diaLocal("2026-11-18T01:30:00.123456789Z"))

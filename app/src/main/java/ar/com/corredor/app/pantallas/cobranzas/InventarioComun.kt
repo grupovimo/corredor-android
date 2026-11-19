@@ -174,8 +174,8 @@ object Inv {
 
     /** Un error en el aviso de abajo, con «Reintentar». */
     fun errorConReintento(estado: Estado, e: Throwable, reintentar: () -> Unit) {
-        estado.avisar(e)
-        if (estado.aviso?.ok == false) estado.aviso = estado.aviso?.copy(accion = "Reintentar" to reintentar)
+        // «Reintentar», o «Ver planes» si lo frena el plan.
+        estado.avisarConReintento(e, reintentar = reintentar)
     }
 }
 

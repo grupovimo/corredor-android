@@ -194,7 +194,11 @@ fun PantallaPlan() {
         if (!inicializado) {
             inicializado = true
             (x.esperando ?: x.plan)?.let { elegido = it; ciclo = x.ciclo }
+            // Pasado de los topes (bajó de plan): el más chico en el que entra todo lo que se usa.
+            if (x.textoFuera != null) x.planes.firstOrNull { !x.deMas(it).alguno }?.let { elegido = it.id }
         }
+        // Desde un aviso de tope («Ver planes»): el plan que lo habilita, elegido.
+        estado.planSugerido?.let { p -> if (x.planes.any { it.id == p }) { elegido = p; estado.planSugerido = null } }
         tienda.cargar(x.planes.flatMap { listOf(it.appleMes, it.appleAnio) })
     }
 
@@ -228,7 +232,8 @@ fun PantallaPlan() {
                         val primerCobro = gratis?.let { despuesDe(it) } ?: Instant.now()
                         val cada = if (ciclo == "anio") "año" else "mes"
                         val mismo = s.plan == plan.id && s.ciclo == ciclo && s.renueva && !s.soloLectura
-                        val mas = s.deMas(plan)
+                        // La compra en la tienda deja las personas extra en 0: el ticket cuenta sin ellas.
+                        val mas = s.deMas(plan, conExtras = false)
                         val precioTxt = precio(plan, ciclo)
                         Column(Modifier.fillMaxWidth().tarjeta().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Texto("Resumen", Estilo.total, C.texto)
@@ -308,16 +313,21 @@ fun PantallaPlan() {
 
 @Composable
 private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
-    val tono = if (s.estado == "vencida") Tono.rojo else if (s.estado == "prueba" && s.diasRestantes <= 3) Tono.oro else Tono.verde
-    val titulo = when (s.estado) {
+    val fuera = if (s.estado == "vencida") null else s.textoFuera
+    val tono = if (s.estado == "vencida") Tono.rojo else if (fuera != null || (s.estado == "prueba" && s.diasRestantes <= 3)) Tono.oro else Tono.verde
+    val proximo = s.proximo?.let { p -> s.planes.firstOrNull { it.id == p.plan }?.let { p to it } }
+    val titulo = if (fuera != null) "$fuera quedaron fuera de tu plan." else when (s.estado) {
         "prueba" -> "Tenés el plan ${s.planQueRige?.nombre ?: "Inmobiliaria"} gratis hasta el ${Formato.fechaLarga(s.pruebaHasta)}."
         "activa" -> "Próximo cobro: ${Formato.fechaLarga(s.proximoCobro ?: s.vigenteHasta)}${s.importe?.let { " · ${Formato.plata(it, s.moneda ?: "ARS")}" } ?: ""}."
         "baja" -> "Tu plan no se renueva: vale hasta el ${Formato.fechaLarga(s.vigenteHasta)}."
         else -> "Tu inmobiliaria está en sólo lectura."
     }
-    val detalle = when (s.estado) {
+    val detalle = if (fuera != null) "No salen en tu web ni en los portales, y los contratos no se cobran desde Corredor. Nada se borró: pasá a un plan más grande o liberá lugar." else when (s.estado) {
         "prueba" -> "Elegí tu plan cuando quieras. Si no elegís, queda en sólo lectura 90 días para que exportes tus datos, y después se borran."
-        "activa" -> s.comoSePaga
+        // Una baja ya autorizada: el plan actual sigue hasta que termina lo pagado.
+        "activa" -> proximo?.let { (p, nuevo) ->
+            "Seguís con el plan ${s.planActual?.nombre ?: ""} hasta el ${Formato.fechaLarga(p.desde)}; ese día pasás a ${nuevo.nombre} (${if (p.ciclo == "anio") "anual" else "mensual"}), con el primer cobro."
+        } ?: s.comoSePaga
         "baja" -> "Elegí un plan para seguir sin cortes. Lo que ya pagaste no se pierde."
         else -> {
             val hasta = s.borraEn?.let { "hasta el ${Formato.fechaLarga(it)}, cuando se borra" } ?: "durante 90 días; después se borra"
@@ -328,7 +338,7 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
         Box(Modifier.width(4.dp).fillMaxHeight().background(tono.tinta))
         Column(Modifier.weight(1f).padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Texto(s.nombreEstado, Estilo.caption, tono.tinta, Modifier.clip(Capsula).background(tono.fondo).padding(horizontal = 10.dp, vertical = 4.dp))
-            Texto(titulo, Estilo.titulo3, C.texto)
+            Texto(Formato.sinViudas(titulo), Estilo.titulo3, C.texto)
             Texto(Formato.sinViudas(detalle), Estilo.footnote, C.texto2)
             UsoPlan(s, Modifier.padding(top = 6.dp))
             // «Administrar la suscripción» (manageSubscriptionsSheet): la de Google Play, en Play.
@@ -349,21 +359,25 @@ private fun CabeceraPlan(s: Suscripcion, duenio: Boolean, ctx: Context) {
 private fun UsoPlan(s: Suscripcion, modifier: Modifier = Modifier) {
     val filas = buildList {
         add("Personas que cargan" to Suscripcion.Uso(s.agentes.usados, s.agentes.cupo))
-        s.topes?.let { add("Propiedades activas" to it.propiedades); add("Contratos de alquiler" to it.contratos); add("Carteles con MIRA este mes" to it.mira) }
+        s.topes?.let { add("Propiedades activas" to it.propiedades); add("Contratos de alquiler" to it.contratos); add("MIRA este mes" to it.mira) }
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         filas.forEach { (nombre, u) ->
             val t = u.tope
             val lleno = t != null && u.usados > t
+            val alTope = t != null && u.usados >= t
             val casi = t != null && t > 0 && u.usados.toDouble() / t >= 0.85
+            // MIRA sin tope del plan muestra sólo lo usado: la IA tiene su propio límite de uso razonable.
+            val sinTope = if (nombre.startsWith("MIRA")) "${u.usados}" else "${u.usados} · sin tope"
             Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Texto(nombre, Estilo.footnote, C.texto2, Modifier.weight(1f).padding(end = 8.dp))
-                    Texto(if (t != null) "${u.usados} de $t" else "${u.usados} · sin tope", Estilo.footnote, if (lleno) C.errorTinta else C.texto, numeros = true)
+                    Texto(if (t != null) "${u.usados} de $t" else sinTope, Estilo.footnote, if (lleno) C.errorTinta else C.texto, numeros = true)
                 }
                 if (t != null && t > 0) {
                     BarraAvance(minOf(1.0, u.usados.toDouble() / t), color = if (lleno) C.errorTinta else if (casi) C.oroTinta else C.accion)
                 }
+                if (alTope) Texto(if (lleno) "Pasaste el tope" else "Llegaste al tope", Estilo(Estilo.caption.tamano, Peso.semibold, relativo = Estilo.caption.relativo), if (lleno) C.errorTinta else C.oroTinta)
             }
         }
     }
@@ -372,7 +386,7 @@ private fun UsoPlan(s: Suscripcion, modifier: Modifier = Modifier) {
 /** Bajar de plan no borra nada: lo que pasa el tope queda en sólo lectura hasta liberar lugar. */
 private fun textoDeMas(m: Suscripcion.DeMas): String {
     val partes = buildList {
-        if (m.personas > 0) add("${Formato.cantidad(m.personas, "persona queda", "personas quedan")} sin cargar (pasalas a lector en Equipo)")
+        if (m.personas > 0) add("${Formato.cantidad(m.personas, "persona queda", "personas quedan")} sin cargar (pasalas a lector desde Más › Equipo)")
         if (m.propiedades > 0) add("${Formato.cantidad(m.propiedades, "propiedad activa queda", "propiedades activas quedan")} fuera de tu web")
         if (m.contratos > 0) add("${Formato.cantidad(m.contratos, "contrato no se cobra", "contratos no se cobran")} desde Corredor")
     }
@@ -402,7 +416,7 @@ private fun TarjetaPlan(p: Suscripcion.Plan, s: Suscripcion, on: Boolean, ciclo:
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(20.dp).clip(Capsula).border(if (on) 6.dp else 2.dp, if (on) C.accion else C.linea2, Capsula))
                 Texto(p.nombre, Estilo.total, C.texto)
-                if (actual) ChipPlan("Tu plan", Tono.verde) else if (p.destacado) ChipPlan("El más elegido", Tono.oro)
+                if (actual) ChipPlan("Tu plan", Tono.verde) else if (p.destacado) ChipPlan("Recomendado", Tono.oro)
             }
             Texto(p.resumen, Estilo.footnote, C.texto2)
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -419,6 +433,10 @@ private fun TarjetaPlan(p: Suscripcion.Plan, s: Suscripcion, on: Boolean, ciclo:
                         Texto(x, Estilo.footnote, C.texto2)
                     }
                 }
+            }
+            // En el teléfono no se compran personas extra (Apple y Google no las venden): se dice.
+            if (p.personaExtraMes > 0) {
+                Texto(Formato.sinViudas("Las personas extra se suman pagando con Mercado Pago desde la web."), Estilo.caption, C.texto3)
             }
         }
     }
@@ -489,8 +507,9 @@ fun AvisoPlan() {
     val s = estado.suscripcion ?: return
     if (!s.pideAtencion) return
     val vencida = s.estado == "vencida"
-    val tono = if (vencida) Tono.rojo else if (s.diasRestantes <= 3 || s.estado == "baja") Tono.oro else Tono.verde
-    val texto = when (s.estado) {
+    val fuera = s.textoFuera
+    val tono = if (vencida) Tono.rojo else if (s.diasRestantes <= 3 || s.estado == "baja" || fuera != null) Tono.oro else Tono.verde
+    val texto = if (!vencida && fuera != null) "$fuera quedaron fuera de tu plan: se ven, pero no salen en tu web ni se cobran. Nada se borró." else when (s.estado) {
         "vencida" -> when {
             !estado.esDuenio -> "La inmobiliaria está en sólo lectura."
             s.borraEn != null -> "Estás en sólo lectura. Si no elegís un plan, el ${Formato.fechaLarga(s.borraEn)} se borran tus datos."
@@ -505,9 +524,34 @@ fun AvisoPlan() {
             Icono(if (vencida) "lock" else "hourglass", 17f, tono.tinta)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Texto(texto, Estilo.subheadFuerte, tono.tinta)
-                Texto(if (estado.esDuenio) (if (s.estado == "baja") "Renovar" else "Elegí tu plan") else "Ver los planes", Estilo.footnote, tono.tinta.copy(alpha = 0.85f))
+                Texto(if (estado.esDuenio) (if (!vencida && fuera != null) "Ver planes" else if (s.estado == "baja") "Renovar" else "Elegí tu plan") else "Ver los planes", Estilo.footnote, tono.tinta.copy(alpha = 0.85f))
             }
             Icono("chevron.right", 13f, tono.tinta)
+        }
+    }
+}
+
+/** La franja del plan dentro de una pantalla, en el momento justo: «Tenés 30 de 30 propiedades activas» al abrir un alta,
+ *  «Quedó fuera de tu plan» en una ficha. Oro (no es un error: se arregla eligiendo un plan o liberando lugar), con el
+ *  botón a Tu plan y el plan que lo habilita ya elegido. `ir`: lo que hace el botón (dentro de una hoja, cerrarla
+ *  antes); por defecto, Tu plan. Clon de BandaPlan en Plan.swift. */
+@Composable
+fun BandaPlan(titulo: String, texto: String, plan: String = "", accion: String = "Ver planes", icono: String = "crown", ir: (() -> Unit)? = null) {
+    val estado = LocalEstado.current
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(C.avisoFondo).padding(14.dp).semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top,
+    ) {
+        Icono(icono, 17f, C.oroTinta, peso = Peso.semibold)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Texto(Formato.sinViudas(titulo), Estilo.subheadFuerte, C.oroTinta)
+            Texto(Formato.sinViudas(texto), Estilo.footnote, C.oroTinta)
+            Tocable({ ir?.invoke() ?: estado.irAPlan(plan) }, hundir = false) {
+                Row(Modifier.heightIn(min = 44.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Texto(accion, Estilo(15f, Peso.bold, relativo = Relativo.subheadline), C.oroTinta)
+                    Icono("arrow.right", 13f, C.oroTinta)
+                }
+            }
         }
     }
 }

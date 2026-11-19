@@ -59,7 +59,12 @@ data class Propiedad(
     val ficha: JSONLibre? = null,
     val creadaEn: FechaApi? = null,
     val actualizadoEn: FechaApi? = null,
+    /** false: quedó fuera del plan al bajar (pasa el tope de propiedades activas). Se ve, pero no se edita ni sale en
+     *  la web ni en los portales. Vender, alquilar, suspender o borrar sí (libera lugar). */
+    val enPlan: Boolean? = null,
 ) {
+    /** Quedó fuera del plan (ver `enPlan`). */
+    val fueraDelPlan: Boolean get() = enPlan == false
     val nombre: String get() = titulo?.nonEmpty ?: direccion ?: "Propiedad"
     /** Captada con MIRA (lo que la web muestra en «Captadas»). */
     val deMira: Boolean get() = ficha?.get("notasInternas")?.texto?.startsWith("Captada con MIRA") == true

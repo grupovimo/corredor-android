@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,7 +81,12 @@ fun EstadoVacio(
 /** El error de traer una lista (12f): «No pudimos traer los pedidos». */
 @Composable
 fun EstadoError(que: String, error: ErrorApi, reintentar: () -> Unit) {
-    if (error.sinConexion) {
+    // Si lo frena el plan (402: los informes con Agente, un módulo del Equipo), no es un error: dice qué plan lo trae
+    // y lleva a Tu plan.
+    if (error.delPlan) {
+        val estado = ar.com.corredor.app.app.LocalEstado.current
+        EstadoVacio("lock", error.titulo, error.detalle, accion = "Ver planes" to { estado.irAPlan(error.plan) })
+    } else if (error.sinConexion) {
         EstadoVacio("wifi.slash", "Sin conexión", "Lo que cargues queda en cola y se sube solo cuando vuelva la señal.", accion = "Reintentar" to reintentar)
     } else {
         EstadoVacio("exclamationmark.triangle", "No pudimos traer $que", "Probá de nuevo en un ratito.", accion = "Reintentar" to reintentar)
@@ -160,6 +168,26 @@ fun VistaAviso(aviso: Aviso, cerrar: () -> Unit) {
             Tocable({ d(); cerrar() }, hundir = false) {
                 Texto("Deshacer", Estilo(15f, Peso.bold, relativo = Relativo.subheadline), C.oro, Modifier.padding(vertical = 12.dp))
             }
+        }
+    }
+}
+
+/** El aviso de abajo dentro de una hoja o una pantalla completa (invitar, la acción rápida, MIRA): la hoja es otra
+ *  ventana y la pantalla completa va encima, así que el aviso de la raíz quedaría tapado (justo el «Llegaste al tope» en
+ *  el momento de invitar o de cargar). Si la acción lleva a otra pantalla («Ver planes»), primero se cierra la hoja
+ *  (`cerrar`). Es el .conAviso() de iOS. */
+@Composable
+fun BoxScope.AvisoDentro(cerrar: () -> Unit) {
+    val estado = ar.com.corredor.app.app.LocalEstado.current
+    androidx.compose.animation.AnimatedVisibility(
+        estado.aviso != null, Modifier.align(Alignment.BottomCenter).zIndex(20f).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 24.dp),
+        enter = androidx.compose.animation.slideInVertically(androidx.compose.animation.core.spring()) { it } + androidx.compose.animation.fadeIn(),
+        exit = androidx.compose.animation.slideOutVertically(androidx.compose.animation.core.spring()) { it } + androidx.compose.animation.fadeOut(),
+    ) {
+        estado.aviso?.let { a ->
+            val accion = a.accion
+            val dentro = if (a.navega && accion != null) a.copy(accion = accion.first to { cerrar(); accion.second() }) else a
+            VistaAviso(dentro) { estado.aviso = null }
         }
     }
 }

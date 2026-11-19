@@ -190,7 +190,7 @@ fun LiquidarConsorcio(consorcio: String, pedido: String? = null) {
             estado.api.hacer("POST", "$base/liquidar")
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             val t = (e as? ErrorApi)?.detalle ?: "Probá de nuevo."
-            estado.sugerir("No se emitió · $t", "Reintentar") { estado.tarea { emitir(f) } }
+            estado.avisarConReintento(e, "No se emitió · $t") { estado.tarea { emitir(f) } }
             return false
         }
         // Ya está liquidado: si el envío falla, se reintenta desde Expensas (no se vuelve a liquidar).

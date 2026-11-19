@@ -100,6 +100,8 @@ data class Aviso(
     /** La sugerencia del paso siguiente («Publicar», «Cargar contrato»): su texto y qué hace. */
     val accion: Pair<String, () -> Unit>? = null,
     val id: String = UUID.randomUUID().toString(),
+    /** La acción lleva a otra pantalla («Ver planes»): dentro de una hoja, primero se cierra la hoja. */
+    val navega: Boolean = false,
 )
 
 /** El estado de la app: la sesión (token en el Llavero), la inmobiliaria y el rol, la pestaña y la navegación, el aviso
@@ -118,6 +120,8 @@ class Estado(api: Api? = null) {
     val api: Api = api ?: Api(Api.urlConfigurada(), ModoPrueba.token ?: Llavero.leer("token"))
     var sesion by mutableStateOf<Sesion?>(null)
     var aviso by mutableStateOf<Aviso?>(null)
+    /** El plan que sugirió un 402 (tope_plan, plan_insuficiente): Tu plan lo abre elegido. */
+    var planSugerido by mutableStateOf<String?>(null)
     /** Pantalla bloqueada con la huella o la cara (1D) hasta que la persona se identifique. */
     var bloqueada by mutableStateOf(false)
     /** La pestaña elegida y lo apilado en cada una (NavigationPath en iOS). */
@@ -541,8 +545,13 @@ class Estado(api: Api? = null) {
         sugerir(texto, boton, hacer = { abrir(destino) })
     }
 
-    fun sugerir(texto: String, boton: String, hacer: () -> Unit) {
-        val a = Aviso(texto, ok = true, accion = boton to hacer)
+    fun sugerir(texto: String, boton: String, hacer: () -> Unit) = sugerirAviso(texto, boton, false, hacer)
+
+    /** Como `sugerir`, con una acción que lleva a otra pantalla («Ver planes»): dentro de una hoja, primero la cierra. */
+    fun sugerirIr(texto: String, boton: String, hacer: () -> Unit) = sugerirAviso(texto, boton, true, hacer)
+
+    private fun sugerirAviso(texto: String, boton: String, navega: Boolean, hacer: () -> Unit) {
+        val a = Aviso(texto, ok = true, accion = boton to hacer, navega = navega)
         aviso = a
         avisoTarea?.cancel()
         avisoTarea = alcance.launch {
@@ -555,11 +564,29 @@ class Estado(api: Api? = null) {
     fun avisar(e: Throwable) {
         // 402: la prueba terminó, el plan no trae eso o no hay lugar en el equipo: lleva a «Tu plan».
         if (e is ErrorApi && e.estado == 402) {
-            sugerir(e.detalle.ifEmpty { e.titulo }, "Ver planes", ASeccion("plan"))
+            val plan = e.plan
+            sugerirIr(e.detalle.ifEmpty { e.titulo }, "Ver planes") { irAPlan(plan) }
             tarea { cargarSuscripcion() }
             return
         }
         if (e is ErrorApi) avisar(e.detalle.ifEmpty { e.titulo }, ok = false) else avisar("Algo salió mal. Probá de nuevo.", ok = false)
+    }
+
+    /** El error de un pedido que se puede volver a intentar: «Reintentar»; pero si lo frena el plan (402), reintentar
+     *  choca con el mismo tope, así que va «Ver planes». */
+    fun avisarConReintento(e: Throwable, texto: String? = null, reintentar: () -> Unit) {
+        if (e is ErrorApi && e.delPlan) { avisar(e); return }
+        val t = texto ?: (e as? ErrorApi)?.let { it.detalle.ifEmpty { it.titulo } } ?: "Algo salió mal."
+        sugerir(t, "Reintentar", hacer = reintentar)
+    }
+
+    /** Tu plan, con el plan sugerido elegido. Cierra antes lo que esté presentado (la acción rápida, MIRA): la pantalla
+     *  se apila debajo. */
+    fun irAPlan(plan: String = "") {
+        planSugerido = plan.ifEmpty { null }
+        hojaRapida = null
+        miraAbierta = false
+        abrir(ASeccion("plan", plan.ifEmpty { null }))
     }
 
     // MARK: Lo del sistema (openURL, ShareLink, UIPasteboard)

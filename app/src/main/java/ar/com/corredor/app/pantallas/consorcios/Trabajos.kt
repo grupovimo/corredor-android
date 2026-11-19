@@ -181,7 +181,7 @@ fun FichaTrabajoConsorcio(consorcio: String, id: String) {
         } catch (e: CancellationException) { throw e } catch (e: Exception) {
             local = null
             val d = (e as? ErrorApi)?.detalle ?: "Probá de nuevo."
-            estado.sugerir("No se guardó · $d", "Reintentar") { estado.tarea { cambiar(nuevo) } }
+            estado.avisarConReintento(e, "No se guardó · $d") { estado.tarea { cambiar(nuevo) } }
         }
     }
 
