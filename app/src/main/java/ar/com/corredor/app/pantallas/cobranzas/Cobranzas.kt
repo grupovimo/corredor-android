@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
 
 // Los destinos de Cobranzas, contratos, rendiciones y actas (`destinosCobranzas()` en iOS). Los registra
 // app/Registro.kt:
-//   ACobranzas → Cobranzas()
+//   ACobranzas → Cobranzas(recordar = c.recordar)
 //   ARegistrarCobro → Cobranzas(registrar = true, contrato = r.contrato)
 //   AContratos → Contratos()
 //   AContratosFiltro → Contratos(vista = f.vista, indice = f.indice)
@@ -255,6 +255,8 @@ fun Cobranzas(
     /** «Registrar cobro» abierto al entrar (de los avisos o la búsqueda) y el contrato, si viene. */
     registrar: Boolean = false,
     contrato: String? = null,
+    /** «Recordar a todos» abierto al entrar (el asistente sin IA lleva acá), si alguien debe. */
+    recordar: Boolean = false,
 ) {
     val estado = LocalEstado.current
     val ctx = LocalContext.current
@@ -350,7 +352,13 @@ fun Cobranzas(
 
     /** `?registrar=1&contrato=<id>`: abre el cobro de ese contrato, o «¿De quién es el cobro?». */
     fun abrirPedido(deben: List<FilaDeuda>, visibles: List<FilaDeuda>) {
-        if (!registrar || pedidoHecho || !estado.escribe) return
+        if (pedidoHecho) return
+        if (recordar) {
+            pedidoHecho = true
+            if (deben.isNotEmpty()) todos = true
+            return
+        }
+        if (!registrar || !estado.escribe) return
         pedidoHecho = true
         val f = contrato?.let { c -> (deben + visibles).firstOrNull { it.contratoId == c } }
         if (f != null) cobrando = f.aCobrar else elegir = true
@@ -475,7 +483,7 @@ fun Cobranzas(
                     }
                     PanelSeccion(m, previo, moneda, Mes, enCurso) { d -> periodo = d }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        BotonHundido("Contratos", { estado.abrir(AContratos) }, Modifier.weight(1f))
+                        BotonHundido("Contratos", { estado.abrir(AContratos()) }, Modifier.weight(1f))
                         BotonHundido("Rendiciones", { estado.abrir(ASeccion(clave = "rendiciones")) }, Modifier.weight(1f))
                     }
                     GraficoCobranzaMeses()

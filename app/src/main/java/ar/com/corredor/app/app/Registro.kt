@@ -156,7 +156,7 @@ object Registro {
             is AFichaOperacion -> FichaOperacion(id = d.id)
 
             // destinosCobranzas (Pantallas/Cobranzas/Cobranzas.swift e InventarioComun.swift)
-            is ACobranzas -> Cobranzas()
+            is ACobranzas -> Cobranzas(recordar = d.recordar)
             is ARegistrarCobro -> Cobranzas(registrar = true, contrato = d.contrato)
             is AContratos -> Contratos()
             is AContratosFiltro -> Contratos(vista = d.vista, indice = d.indice)

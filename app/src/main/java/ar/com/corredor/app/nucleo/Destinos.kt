@@ -50,7 +50,8 @@ import java.net.URLDecoder
 /** 9C Ficha de una operación. */
 @Serializable data class AFichaOperacion(val id: String)
 /** 10A Por cobrar. */
-@Serializable class ACobranzas { override fun equals(other: Any?) = other is ACobranzas; override fun hashCode() = 13 }
+/** `recordar`: «Recordar a todos» abierto al entrar (`/cobranzas?recordar=1`, lo que ofrece el asistente sin IA). */
+@Serializable data class ACobranzas(val recordar: Boolean = false)
 /** Los contratos (la lista) y la ficha de uno. */
 @Serializable class AContratos { override fun equals(other: Any?) = other is AContratos; override fun hashCode() = 14 }
 @Serializable data class AFichaContrato(val id: String)
@@ -136,7 +137,7 @@ data class Ruta(val pestana: Pestana, val destino: Any? = null) {
                 "contacto", "contactos" -> Ruta(Pestana.inicio, id?.let { AFichaContacto(it) } ?: AContactos(agente = if (param("agente") == "libre") "libre" else null))
                 "operacion", "operaciones" -> Ruta(Pestana.inicio, id?.let { AFichaOperacion(it) } ?: AOperaciones())
                 // `/cobranzas?registrar=1&contrato=<id>`: la hoja de «Registrar cobro» abierta.
-                "cobranzas" -> if (param("registrar") == "1") Ruta(Pestana.inicio, ARegistrarCobro(contrato = param("contrato"))) else Ruta(Pestana.inicio, ACobranzas())
+                "cobranzas" -> if (param("registrar") == "1") Ruta(Pestana.inicio, ARegistrarCobro(contrato = param("contrato"))) else Ruta(Pestana.inicio, ACobranzas(recordar = param("recordar") == "1"))
                 "contrato", "contratos" -> when {
                     id == "nuevo" -> Ruta(Pestana.inicio, AAltaContrato(borrador = borrador, renovar = param("renovar")))
                     // `/contratos/<id>?recordar=AAAA-MM`: el recordatorio de ese mes.
