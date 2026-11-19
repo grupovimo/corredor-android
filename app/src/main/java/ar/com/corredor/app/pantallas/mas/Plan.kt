@@ -434,9 +434,9 @@ private fun TarjetaPlan(p: Suscripcion.Plan, s: Suscripcion, on: Boolean, ciclo:
                     }
                 }
             }
-            // En el teléfono no se compran personas extra (Apple y Google no las venden): se dice.
+            // En el teléfono no se compran personas extra (Apple y Google no las venden): se dice, sin mandar a pagar por fuera (reglas de las tiendas).
             if (p.personaExtraMes > 0) {
-                Texto(Formato.sinViudas("Las personas extra se suman pagando con Mercado Pago desde la web."), Estilo.caption, C.texto3)
+                Texto(Formato.sinViudas("Las personas extra no se contratan desde la app."), Estilo.caption, C.texto3)
             }
         }
     }

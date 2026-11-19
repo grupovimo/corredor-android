@@ -456,10 +456,10 @@ private fun BandaCupo(l: Suscripcion.TopeLleno, s: Suscripcion, ir: (String) -> 
     val personas = if (l.tope == 1) "1 persona que carga" else "${l.tope} personas que cargan"
     val extra = s.planQueRige?.personaExtraMes ?: 0.0
     if (extra > 0) {
-        // El Equipo suma personas pagas, pero con Mercado Pago (la tienda no las vende).
+        // El Equipo suma personas pagas, pero no en la tienda. Sin decir dónde ni cuánto: las reglas de Apple y Google no dejan mandar a pagar por fuera.
         val id = s.planQueRige?.id ?: ""
         BandaPlan("Tu plan ${l.plan} es para $personas",
-            "Invitala como lectora (sin cargo). Cada persona más cuesta ${Formato.plata(extra)} por mes y se suma pagando con Mercado Pago desde la web.",
+            "Invitala como lectora (sin cargo). Las personas extra no se contratan desde la app.",
             plan = id, ir = { ir(id) })
     } else {
         val id = l.siguiente?.id ?: ""
