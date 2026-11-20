@@ -243,10 +243,11 @@ fun MasRaiz() {
     /** «Potenciá tu negocio»: lo que todavía no usa, en tarjetas que se deslizan, cada una con «Activar». */
     @Composable
     fun potencia() {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column {
             Box(Modifier.padding(horizontal = 16.dp)) { TituloBloque("Potenciá tu negocio") }
+            // Aire arriba y abajo para la sombra de las tarjetas, que el carrusel recorta.
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 potenciar.forEach { x ->

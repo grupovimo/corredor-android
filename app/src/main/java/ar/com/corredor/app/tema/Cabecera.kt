@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -115,20 +116,22 @@ fun CabeceraPestana(
     BoxWithConstraints(Modifier.fillMaxWidth()) {
     val arriba = sobre != null || (cuantos > 0 && anchoTitulo + 8.dp + 44.dp * cuantos - 8.dp > maxWidth - 32.dp)
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 6.dp)) {
-        // Con renglón de arriba (fecha, inmobiliaria), los botones van ahí; sin él, en el renglón del título.
-        if (arriba) {
+        // Con renglón de arriba (fecha, inmobiliaria), los botones van a la derecha de ese renglón; sin él, en el
+        // renglón del título (o en el suyo si el título no entra). Nunca solos encima de «sobre».
+        if (arriba && sobre == null) {
             Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) { Spacer(Modifier.weight(1f)); botones() }
         } else {
             Spacer(Modifier.height(12.dp))
         }
         if (sobre != null) {
-            Row(Modifier.padding(bottom = if (logo == null) 0.dp else 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (logo != null) {
                     val forma = RoundedCornerShape(9.dp)
                     SubcomposeAsyncImage(logo, null, Modifier.size(34.dp).clip(forma).background(C.superficie).border(1.dp, C.linea, forma),
                         contentScale = ContentScale.Fit, loading = { Box(Modifier.fillMaxSize().background(C.hundida)) })
                 }
-                Texto(sobre.uppercase(Formato.argentina), Estilo(13f, Peso.semibold, relativo = Relativo.footnote), C.texto2, lineas = 1, tracking = 13f * 0.04f)
+                Texto(sobre.uppercase(Formato.argentina), Estilo(13f, Peso.semibold, relativo = Relativo.footnote), C.texto2, Modifier.weight(1f), lineas = 1, tracking = 13f * 0.04f)
+                botones()
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
